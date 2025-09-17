@@ -9,11 +9,28 @@ yarn-error.log*
 .next/trace.json
 out/
 
-# Environment files
+# Environment files - ALL variants (API key protection)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Specific environment protection
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
+.env.staging
+
+# API Key files
+**/api-keys.*
+**/*-credentials.*
+**/*-secrets.*
+**/*.key
+**/*.pem
+.secrets/
 
 # TypeScript
 tsconfig.tsbuildinfo
