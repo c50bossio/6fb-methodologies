@@ -306,7 +306,7 @@ class StripeWebhookProcessor {
       const quantity = parseInt(session.metadata?.quantity || '1')
       const customerEmail = session.customer_details?.email || 'unknown@email.com'
       const totalAmount = session.amount_total || 0
-      const customerName = session.metadata?.customerName || session.customer_details?.name
+      const customerName = session.metadata?.customerName || session.customer_details?.name || undefined
 
       // Calculate remaining tickets using real inventory system
       const cityId = session.metadata?.cityId || 'unknown-city'
