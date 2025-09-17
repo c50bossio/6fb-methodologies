@@ -548,9 +548,9 @@ class StripeWebhookProcessor {
       // Send SMS alert to team
       if (process.env.TEAM_ALERT_PHONE) {
         try {
-          await smsService.sendSMS(
-            process.env.TEAM_ALERT_PHONE,
-            `🎯 6FB Workshop Alert: ${cityId} ${tier.toUpperCase()} down to ${remainingSpots} spots!`
+          await smsService.sendSystemAlert(
+            `🎯 6FB Workshop Alert: ${cityId} ${tier.toUpperCase()} down to ${remainingSpots} spots!`,
+            'medium'
           )
         } catch (smsError) {
           console.error('Failed to send inventory SMS alert:', smsError)
