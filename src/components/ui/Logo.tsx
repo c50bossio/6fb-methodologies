@@ -44,12 +44,12 @@ export function Logo({
       <Image
         src="/images/6fb-logo.png"
         alt="6 Figure Barber"
-        width={60} // Base size for aspect ratio
-        height={60}
+        width={120} // Higher resolution base for better quality
+        height={120}
         className={cn(
           'object-contain',
-          // Responsive height that matches heading-xl text sizes (30% bigger)
-          'h-[2.6rem] md:h-[3.25rem] lg:h-[3.9rem]', // ~42px/52px/62px (30% increase from original)
+          // Responsive height that matches heading-xl text sizes (60% bigger total)
+          'h-[3.4rem] md:h-[4.2rem] lg:h-[5.1rem]', // ~54px/67px/82px (60% increase from original)
           'w-auto', // Maintain aspect ratio
           'mx-1', // Small horizontal spacing
           variantStyles[variant],
