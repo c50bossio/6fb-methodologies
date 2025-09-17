@@ -41,11 +41,9 @@ export function Logo({
   // Handle inline logos with responsive sizing
   if (size === 'inline') {
     const logoElement = (
-      <Image
-        src="/images/6fb-logo.png"
+      <img
+        src="/images/6fb-logo-new.png"
         alt="6 Figure Barber"
-        width={120} // Higher resolution base for better quality
-        height={120}
         className={cn(
           'object-contain',
           // Responsive height that matches heading-xl text sizes (60% bigger total)
@@ -55,7 +53,6 @@ export function Logo({
           variantStyles[variant],
           className
         )}
-        priority={variant === 'header' || variant === 'hero' || variant === 'inline'}
         onClick={onClick}
       />
     )
@@ -82,8 +79,8 @@ export function Logo({
 
   // Standard logo handling for non-inline usage
   const logoElement = (
-    <Image
-      src="/images/6fb-logo.png"
+    <img
+      src="/images/6fb-logo-new.png"
       alt="6 Figure Barber"
       width={width}
       height={height}
@@ -92,7 +89,6 @@ export function Logo({
         variantStyles[variant],
         className
       )}
-      priority={variant === 'header' || variant === 'hero'}
       onClick={onClick}
     />
   )
