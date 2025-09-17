@@ -104,7 +104,7 @@ class InventoryStore {
   }
 
   // Atomic operation wrapper to prevent race conditions
-  private async withLock<T>(cityId: string, operation: () => T | Promise<T>): Promise<T> {
+  async withLock<T>(cityId: string, operation: () => T | Promise<T>): Promise<T> {
     const lockKey = `${cityId}_lock`
 
     // Wait for existing lock to complete
