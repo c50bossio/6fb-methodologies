@@ -251,6 +251,3 @@ Time: ${new Date().toLocaleString()}`;
 
 // Export singleton instance
 export const smsService = new SMSService();
-
-// Export types for external use
-export type { SMSDeliveryResult, TicketSaleData };
