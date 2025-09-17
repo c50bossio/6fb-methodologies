@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
+import { Logo } from '@/components/ui/Logo'
 import { ArrowRight, Calendar, MapPin, Users } from 'lucide-react'
 
 export function HeroSection() {
@@ -52,7 +53,7 @@ export function HeroSection() {
           >
             Transform Your Barbering Business with
             <span className="text-tomb45-green block mt-2">
-              Proven 6FB Methodologies
+              Proven <Logo size="inline" variant="inline" /> Methodologies
             </span>
           </motion.h1>
 
