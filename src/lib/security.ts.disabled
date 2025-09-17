@@ -1,0 +1,422 @@
+// Enhanced Security and Fraud Detection System
+import crypto from 'crypto'
+import { z } from 'zod'
+
+// Rate Limiting System
+class RateLimiter {
+  private static requests: Map<string, { count: number; resetTime: number }> = new Map()
+
+  static isAllowed(
+    identifier: string,
+    maxRequests: number,
+    windowMs: number
+  ): { allowed: boolean; remaining: number; resetTime: number } {
+    const now = Date.now()
+    const key = identifier
+    const existing = this.requests.get(key)
+
+    if (!existing || now > existing.resetTime) {
+      // Reset window
+      const resetTime = now + windowMs
+      this.requests.set(key, { count: 1, resetTime })
+      return {
+        allowed: true,
+        remaining: maxRequests - 1,
+        resetTime
+      }
+    }
+
+    if (existing.count >= maxRequests) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetTime: existing.resetTime
+      }
+    }
+
+    existing.count++
+    this.requests.set(key, existing)
+
+    return {
+      allowed: true,
+      remaining: maxRequests - existing.count,
+      resetTime: existing.resetTime
+    }
+  }
+
+  static cleanup(): void {
+    const now = Date.now()
+    for (const [key, value] of this.requests.entries()) {
+      if (now > value.resetTime) {
+        this.requests.delete(key)
+      }
+    }
+  }
+}
+
+// Security Monitoring System
+class SecurityMonitor {
+  private static events: Array<{
+    timestamp: number
+    type: string
+    data: any
+    ip: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+  }> = []
+
+  static logEvent(
+    type: string,
+    data: any,
+    ip: string,
+    severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
+  ): void {
+    this.events.push({
+      timestamp: Date.now(),
+      type,
+      data,
+      ip,
+      severity
+    })
+
+    // Keep only last 1000 events in memory
+    if (this.events.length > 1000) {
+      this.events.splice(0, this.events.length - 1000)
+    }
+
+    // In production, this would send to monitoring services like:
+    // - Sentry for error tracking
+    // - Datadog for security monitoring
+    // - Custom webhook for critical alerts
+
+    if (severity === 'critical') {
+      console.error('CRITICAL SECURITY EVENT:', { type, data, ip })
+      // Could trigger immediate alerts
+    }
+  }
+
+  static getRecentEvents(timeframeMs: number = 3600000): Array<any> {
+    const cutoff = Date.now() - timeframeMs
+    return this.events.filter(event => event.timestamp > cutoff)
+  }
+
+  static getThreatAnalysis(ip: string): {
+    riskScore: number
+    riskLevel: 'low' | 'medium' | 'high'
+    reasons: string[]
+    recommendedActions: string[]
+  } {
+    const recentEvents = this.getRecentEvents(3600000) // Last hour
+    const ipEvents = recentEvents.filter(event => event.ip === ip)
+
+    let riskScore = 0
+    const reasons: string[] = []
+    const recommendedActions: string[] = []
+
+    // Analyze event patterns
+    if (ipEvents.length > 10) {
+      riskScore += 30
+      reasons.push('High activity volume')
+      recommendedActions.push('Monitor closely')
+    }
+
+    const rateLimitEvents = ipEvents.filter(e => e.type === 'rate_limit_exceeded')
+    if (rateLimitEvents.length > 0) {
+      riskScore += 25
+      reasons.push('Rate limit violations')
+      recommendedActions.push('Consider temporary block')
+    }
+
+    const validationErrors = ipEvents.filter(e => e.type === 'input_validation_failed')
+    if (validationErrors.length > 3) {
+      riskScore += 20
+      reasons.push('Multiple validation failures')
+      recommendedActions.push('Review request patterns')
+    }
+
+    const highRiskPayments = ipEvents.filter(e => e.type === 'high_risk_payment_attempt')
+    if (highRiskPayments.length > 0) {
+      riskScore += 35
+      reasons.push('High-risk payment attempts')
+      recommendedActions.push('Enhanced verification required')
+    }
+
+    const riskLevel = riskScore >= 50 ? 'high' : riskScore >= 25 ? 'medium' : 'low'
+
+    return {
+      riskScore,
+      riskLevel,
+      reasons,
+      recommendedActions
+    }
+  }
+}
+
+// Input Validation Schemas
+export const API_SCHEMAS = {
+  createCheckoutSession: z.object({
+    ticketType: z.enum(['GA', 'VIP']),
+    quantity: z.number().min(1).max(10),
+    customerEmail: z.string().email().optional(),
+    customerName: z.string().min(1).max(100).optional(),
+    isSixFBMember: z.boolean().optional(),
+    registrationData: z.any().optional(),
+  }),
+
+  memberVerification: z.object({
+    email: z.string().email(),
+    name: z.string().min(1).max(100).optional(),
+  }),
+
+  webhookPayload: z.object({
+    email: z.string().email(),
+    name: z.string().min(1).max(100).optional(),
+    groupId: z.string().optional(),
+    membershipQuestions: z.any().optional(),
+    timestamp: z.string().optional(),
+    action: z.string().optional(),
+  })
+}
+
+// Enhanced Input Validation and Sanitization
+export function validateInput<T>(
+  data: any,
+  schema: z.ZodSchema<T>
+): {
+  valid: boolean
+  errors: string[]
+  sanitizedData?: T
+} {
+  try {
+    const result = schema.safeParse(data)
+
+    if (result.success) {
+      return {
+        valid: true,
+        errors: [],
+        sanitizedData: result.data
+      }
+    } else {
+      const errors = result.error.errors.map(err =>
+        `${err.path.join('.')}: ${err.message}`
+      )
+
+      return {
+        valid: false,
+        errors
+      }
+    }
+  } catch (error) {
+    return {
+      valid: false,
+      errors: ['Validation error occurred']
+    }
+  }
+}
+
+// XSS and Injection Protection
+export function sanitizeString(input: string): string {
+  if (typeof input !== 'string') return ''
+
+  return input
+    .replace(/[<>'"]/g, '') // Remove potentially dangerous characters
+    .trim()
+    .slice(0, 1000) // Limit length
+}
+
+export function sanitizeObject(obj: any): any {
+  if (typeof obj === 'string') {
+    return sanitizeString(obj)
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeObject)
+  }
+
+  if (obj && typeof obj === 'object') {
+    const sanitized: any = {}
+    for (const [key, value] of Object.entries(obj)) {
+      const sanitizedKey = sanitizeString(key)
+      if (sanitizedKey.length > 0) {
+        sanitized[sanitizedKey] = sanitizeObject(value)
+      }
+    }
+    return sanitized
+  }
+
+  return obj
+}
+
+// Cryptographic Utilities
+export function generateSecureToken(length: number = 32): string {
+  return crypto.randomBytes(length).toString('hex')
+}
+
+export function hashData(data: string, salt?: string): string {
+  const actualSalt = salt || crypto.randomBytes(16).toString('hex')
+  const hash = crypto.pbkdf2Sync(data, actualSalt, 100000, 64, 'sha512')
+  return `${actualSalt}:${hash.toString('hex')}`
+}
+
+export function verifyHash(data: string, hash: string): boolean {
+  try {
+    const [salt, originalHash] = hash.split(':')
+    const newHash = crypto.pbkdf2Sync(data, salt, 100000, 64, 'sha512')
+    return crypto.timingSafeEqual(
+      Buffer.from(originalHash, 'hex'),
+      newHash
+    )
+  } catch {
+    return false
+  }
+}
+
+// CSRF Protection
+export function generateCSRFToken(): string {
+  return generateSecureToken(32)
+}
+
+export function validateCSRFToken(token: string, sessionToken: string): boolean {
+  return crypto.timingSafeEqual(
+    Buffer.from(token, 'hex'),
+    Buffer.from(sessionToken, 'hex')
+  )
+}
+
+// IP-based Geolocation and Risk Assessment
+export function assessIPRisk(ip: string): {
+  riskScore: number
+  riskFactors: string[]
+  allowedCountries: string[]
+  blockedCountries: string[]
+} {
+  // This would typically integrate with services like:
+  // - MaxMind GeoIP2
+  // - IPinfo
+  // - IPstack
+  // For now, we'll return basic analysis
+
+  const riskFactors: string[] = []
+  let riskScore = 0
+
+  // Basic IP validation
+  if (ip === 'unknown' || ip === '127.0.0.1' || ip === '::1') {
+    riskScore += 10
+    riskFactors.push('Local or unknown IP')
+  }
+
+  // Check for common VPN/Proxy IP patterns (simplified)
+  const vpnPatterns = [
+    /^10\./, // Private network
+    /^192\.168\./, // Private network
+    /^172\.(1[6-9]|2[0-9]|3[01])\./, // Private network
+  ]
+
+  for (const pattern of vpnPatterns) {
+    if (pattern.test(ip)) {
+      riskScore += 5
+      riskFactors.push('Private network IP')
+      break
+    }
+  }
+
+  // Countries with higher fraud rates (example list)
+  const blockedCountries = ['XX', 'YY'] // Would be actual country codes
+  const allowedCountries = ['US', 'CA', 'GB', 'AU', 'EU']
+
+  return {
+    riskScore,
+    riskFactors,
+    allowedCountries,
+    blockedCountries
+  }
+}
+
+// Fraud Detection Patterns
+export function detectFraudPatterns(userData: {
+  email: string
+  ip: string
+  userAgent: string
+  amount: number
+  timestamp: number
+}): {
+  isSuspicious: boolean
+  riskScore: number
+  patterns: string[]
+  recommendations: string[]
+} {
+  const patterns: string[] = []
+  const recommendations: string[] = []
+  let riskScore = 0
+
+  // Email analysis
+  const emailDomain = userData.email.split('@')[1]
+  const suspiciousEmailDomains = [
+    'tempmail.org',
+    '10minutemail.com',
+    'guerrillamail.com',
+    'mailinator.com'
+  ]
+
+  if (suspiciousEmailDomains.some(domain => emailDomain?.includes(domain))) {
+    riskScore += 40
+    patterns.push('Disposable email domain')
+    recommendations.push('Require email verification')
+  }
+
+  // Amount analysis
+  const unusualAmounts = [999999, 123456, 111111] // Common test amounts
+  if (unusualAmounts.includes(userData.amount)) {
+    riskScore += 25
+    patterns.push('Unusual payment amount')
+    recommendations.push('Manual review required')
+  }
+
+  // High value transactions
+  if (userData.amount > 500000) { // > $5000
+    riskScore += 20
+    patterns.push('High value transaction')
+    recommendations.push('Enhanced verification')
+  }
+
+  // User agent analysis
+  if (!userData.userAgent || userData.userAgent.length < 20) {
+    riskScore += 15
+    patterns.push('Suspicious user agent')
+    recommendations.push('Browser fingerprinting')
+  }
+
+  // Time-based analysis
+  const hour = new Date(userData.timestamp).getHours()
+  if (hour >= 2 && hour <= 6) { // Late night activity
+    riskScore += 10
+    patterns.push('Unusual time activity')
+  }
+
+  const isSuspicious = riskScore >= 50
+
+  return {
+    isSuspicious,
+    riskScore,
+    patterns,
+    recommendations
+  }
+}
+
+// Content Security Policy
+export const CSP_HEADER = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self' data:;
+  connect-src 'self' api.stripe.com hooks.zapier.com;
+  frame-src js.stripe.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+`.replace(/\s+/g, ' ').trim()
+
+// Export main classes
+export { RateLimiter, SecurityMonitor }

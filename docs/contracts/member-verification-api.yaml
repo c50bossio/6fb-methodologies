@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: 6FB Member Verification API
+  description: API for verifying 6FB community membership and eligibility for workshop discounts
+  version: 1.0.0
+  contact:
+    name: 6FB Methodologies Support
+    email: support@6fbmethodologies.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://workshop.6fbmethodologies.com/api
+    description: Production server
+
+paths:
+  /verify-member:
+    post:
+      summary: Verify 6FB member status
+      description: |
+        Verifies if the provided email address belongs to an active 6FB community member
+        and returns their membership details including discount eligibility.
+      operationId: verifyMember
+      tags:
+        - Member Verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberVerificationRequest'
+            examples:
+              valid_member:
+                summary: Valid member email
+                value:
+                  email: "john.barber@example.com"
+              invalid_member:
+                summary: Non-member email
+                value:
+                  email: "notamember@example.com"
+      responses:
+        '200':
+          description: Member verification completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberVerificationResponse'
+              examples:
+                member_found:
+                  summary: Active member found
+                  value:
+                    success: true
+                    isMember: true
+                    member:
+                      name: "John Smith"
+                      tier: "premium"
+                      discountEligible: true
+                member_not_found:
+                  summary: Member not found
+                  value:
+                    success: true
+                    isMember: false
+                    member: null
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_email:
+                  summary: Invalid email format
+                  value:
+                    success: false
+                    error: "Valid email is required"
+                missing_email:
+                  summary: Missing email parameter
+                  value:
+                    success: false
+                    error: "Email parameter is required"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "Rate limit exceeded. Please try again later."
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "Internal server error"
+
+components:
+  schemas:
+    MemberVerificationRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to verify membership for
+          example: "john.barber@example.com"
+          maxLength: 255
+
+    MemberVerificationResponse:
+      type: object
+      required:
+        - success
+        - isMember
+      properties:
+        success:
+          type: boolean
+          description: Whether the API call was successful
+          example: true
+        isMember:
+          type: boolean
+          description: Whether the email belongs to an active 6FB member
+          example: true
+        member:
+          $ref: '#/components/schemas/MemberDetails'
+
+    MemberDetails:
+      type: object
+      nullable: true
+      description: Member details (null if not a member)
+      properties:
+        name:
+          type: string
+          description: Full name of the member
+          example: "John Smith"
+        tier:
+          type: string
+          enum: [basic, premium, elite]
+          description: Membership tier in 6FB community
+          example: "premium"
+        discountEligible:
+          type: boolean
+          description: Whether the member is eligible for the 20% discount
+          example: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          description: Always false for error responses
+          example: false
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Valid email is required"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for internal service communication (future implementation)
+
+security: []
+
+tags:
+  - name: Member Verification
+    description: Operations for verifying 6FB community membership
+
+externalDocs:
+  description: 6FB Methodologies Workshop Documentation
+  url: https://docs.6fbmethodologies.com

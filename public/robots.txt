@@ -1,0 +1,51 @@
+# 6FB Methodologies Workshop - Robots.txt
+# Allow all crawlers to access all content
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://6fbmethodologies.com/sitemap.xml
+
+# Host directive (for Search Console)
+Host: https://6fbmethodologies.com
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Specific directives for search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+# Block specific paths if needed (none for this workshop site)
+# Disallow: /private/
+# Disallow: /admin/
+
+# Allow social media crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Block potentially problematic crawlers
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

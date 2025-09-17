@@ -1,0 +1,412 @@
+openapi: 3.0.3
+info:
+  title: Workshop Webhook API
+  description: Webhook endpoints for external integrations (Zapier, Stripe) to update workshop data
+  version: 1.0.0
+  contact:
+    name: 6FB Methodologies Support
+    email: support@6fbmethodologies.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://workshop.6fbmethodologies.com/api
+    description: Production server
+
+paths:
+  /webhooks/zapier:
+    post:
+      summary: Zapier webhook for member management
+      description: |
+        Receives webhook events from Zapier to add, remove, or update 6FB members
+        based on Skool community activity.
+      operationId: handleZapierWebhook
+      tags:
+        - Webhooks
+      security:
+        - ZapierSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZapierWebhookPayload'
+            examples:
+              member_added:
+                summary: New member joined 6FB community
+                value:
+                  action: "member_added"
+                  memberId: "skool_12345"
+                  email: "newmember@example.com"
+                  name: "New Member"
+                  joinDate: "2025-01-15T10:00:00Z"
+                  tier: "basic"
+                  metadata:
+                    source: "skool"
+                    communityName: "6FB Methodologies"
+              member_removed:
+                summary: Member left 6FB community
+                value:
+                  action: "member_removed"
+                  memberId: "skool_12345"
+                  email: "former@example.com"
+                  name: "Former Member"
+                  leftDate: "2025-01-15T10:00:00Z"
+              member_updated:
+                summary: Member tier updated
+                value:
+                  action: "member_updated"
+                  memberId: "skool_12345"
+                  email: "updated@example.com"
+                  name: "Updated Member"
+                  tier: "premium"
+                  updatedDate: "2025-01-15T10:00:00Z"
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSuccessResponse'
+              examples:
+                member_added:
+                  summary: Member successfully added
+                  value:
+                    success: true
+                    message: "Member added successfully"
+                    memberId: "member_001"
+                member_updated:
+                  summary: Member successfully updated
+                  value:
+                    success: true
+                    message: "Member updated successfully"
+                    memberId: "member_001"
+        '400':
+          description: Invalid webhook payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookErrorResponse'
+              examples:
+                invalid_action:
+                  summary: Invalid action type
+                  value:
+                    success: false
+                    error: "Invalid action type"
+                missing_fields:
+                  summary: Missing required fields
+                  value:
+                    success: false
+                    error: "Missing required fields: email, action"
+        '401':
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookErrorResponse'
+              example:
+                success: false
+                error: "Invalid signature"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookErrorResponse'
+              example:
+                success: false
+                error: "Failed to process webhook"
+
+  /webhooks/stripe:
+    post:
+      summary: Stripe webhook for payment events
+      description: |
+        Receives webhook events from Stripe for checkout session completion,
+        payment success, and payment failure events.
+      operationId: handleStripeWebhook
+      tags:
+        - Webhooks
+      security:
+        - StripeSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StripeWebhookPayload'
+            examples:
+              checkout_completed:
+                summary: Checkout session completed successfully
+                value:
+                  id: "evt_1234567890"
+                  object: "event"
+                  type: "checkout.session.completed"
+                  data:
+                    object:
+                      id: "cs_test_1234567890"
+                      payment_status: "paid"
+                      customer_details:
+                        email: "customer@example.com"
+                        name: "John Smith"
+                      amount_total: 80000
+                      currency: "usd"
+                      metadata:
+                        ticketType: "GA"
+                        quantity: "1"
+                        isSixFBMember: "true"
+                        firstName: "John"
+                        lastName: "Smith"
+              payment_failed:
+                summary: Payment failed during checkout
+                value:
+                  id: "evt_0987654321"
+                  object: "event"
+                  type: "checkout.session.async_payment_failed"
+                  data:
+                    object:
+                      id: "cs_test_0987654321"
+                      payment_status: "unpaid"
+                      customer_details:
+                        email: "customer@example.com"
+                      amount_total: 80000
+                      currency: "usd"
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSuccessResponse'
+              examples:
+                payment_processed:
+                  summary: Payment successfully processed
+                  value:
+                    success: true
+                    message: "Payment processed successfully"
+                    orderId: "order_001"
+        '400':
+          description: Invalid webhook payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookErrorResponse'
+              example:
+                success: false
+                error: "Invalid webhook payload"
+        '401':
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookErrorResponse'
+              example:
+                success: false
+                error: "Invalid Stripe signature"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookErrorResponse'
+              example:
+                success: false
+                error: "Failed to process payment webhook"
+
+components:
+  schemas:
+    ZapierWebhookPayload:
+      type: object
+      required:
+        - action
+        - memberId
+        - email
+        - name
+      properties:
+        action:
+          type: string
+          enum: [member_added, member_removed, member_updated]
+          description: Action performed on the member
+          example: "member_added"
+        memberId:
+          type: string
+          description: Unique member ID from Skool
+          example: "skool_12345"
+        email:
+          type: string
+          format: email
+          description: Member's email address
+          example: "member@example.com"
+        name:
+          type: string
+          description: Member's full name
+          example: "John Smith"
+        joinDate:
+          type: string
+          format: date-time
+          description: When the member joined (for member_added)
+          example: "2025-01-15T10:00:00Z"
+        leftDate:
+          type: string
+          format: date-time
+          description: When the member left (for member_removed)
+          example: "2025-01-15T10:00:00Z"
+        updatedDate:
+          type: string
+          format: date-time
+          description: When the member was updated (for member_updated)
+          example: "2025-01-15T10:00:00Z"
+        tier:
+          type: string
+          enum: [basic, premium, elite]
+          description: Member's tier in the community
+          example: "basic"
+        metadata:
+          type: object
+          description: Additional metadata about the member
+          additionalProperties:
+            type: string
+          example:
+            source: "skool"
+            communityName: "6FB Methodologies"
+
+    StripeWebhookPayload:
+      type: object
+      required:
+        - id
+        - object
+        - type
+        - data
+      properties:
+        id:
+          type: string
+          description: Unique event ID from Stripe
+          example: "evt_1234567890"
+        object:
+          type: string
+          enum: [event]
+          description: Always "event" for webhook events
+          example: "event"
+        type:
+          type: string
+          description: Type of Stripe event
+          enum:
+            - checkout.session.completed
+            - checkout.session.async_payment_succeeded
+            - checkout.session.async_payment_failed
+          example: "checkout.session.completed"
+        data:
+          type: object
+          required:
+            - object
+          properties:
+            object:
+              $ref: '#/components/schemas/StripeCheckoutSession'
+
+    StripeCheckoutSession:
+      type: object
+      required:
+        - id
+        - payment_status
+        - amount_total
+        - currency
+      properties:
+        id:
+          type: string
+          description: Stripe checkout session ID
+          example: "cs_test_1234567890"
+        payment_status:
+          type: string
+          enum: [paid, unpaid, no_payment_required]
+          description: Status of the payment
+          example: "paid"
+        customer_details:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+              example: "customer@example.com"
+            name:
+              type: string
+              example: "John Smith"
+        amount_total:
+          type: integer
+          description: Total amount in cents
+          example: 80000
+        currency:
+          type: string
+          description: Currency code
+          example: "usd"
+        metadata:
+          type: object
+          description: Custom metadata from checkout creation
+          additionalProperties:
+            type: string
+          example:
+            ticketType: "GA"
+            quantity: "1"
+            isSixFBMember: "true"
+            firstName: "John"
+            lastName: "Smith"
+
+    WebhookSuccessResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          description: Always true for successful responses
+          example: true
+        message:
+          type: string
+          description: Human-readable success message
+          example: "Webhook processed successfully"
+        memberId:
+          type: string
+          description: Member ID (for member-related webhooks)
+          example: "member_001"
+        orderId:
+          type: string
+          description: Order ID (for payment-related webhooks)
+          example: "order_001"
+
+    WebhookErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          description: Always false for error responses
+          example: false
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Invalid webhook signature"
+
+  securitySchemes:
+    ZapierSignature:
+      type: apiKey
+      in: header
+      name: X-Zapier-Signature
+      description: HMAC SHA-256 signature for webhook verification
+    StripeSignature:
+      type: apiKey
+      in: header
+      name: Stripe-Signature
+      description: Stripe webhook signature for verification
+
+security:
+  - ZapierSignature: []
+  - StripeSignature: []
+
+tags:
+  - name: Webhooks
+    description: Webhook endpoints for external service integrations
+
+externalDocs:
+  description: Webhook Security Best Practices
+  url: https://webhook.site/secure-webhooks

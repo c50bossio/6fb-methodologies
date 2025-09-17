@@ -1,0 +1,80 @@
+[
+  {
+    "status": "PASS",
+    "test": "Next.js Setup",
+    "message": "Build directory and configs present",
+    "timestamp": "2025-09-17T13:05:37.959Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Environment Config",
+    "message": "Development environment configured",
+    "timestamp": "2025-09-17T13:05:37.960Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Production Config",
+    "message": "Production environment file exists",
+    "timestamp": "2025-09-17T13:05:37.960Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Homepage Load",
+    "message": "Loaded successfully (146946 bytes)",
+    "timestamp": "2025-09-17T13:05:40.765Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Security Headers",
+    "message": "All 5 security headers configured",
+    "timestamp": "2025-09-17T13:05:40.817Z"
+  },
+  {
+    "status": "PASS",
+    "test": "CSRF Protection",
+    "message": "POST requests properly protected",
+    "timestamp": "2025-09-17T13:05:40.835Z"
+  },
+  {
+    "status": "PASS",
+    "test": "API /api/workshop-schedule",
+    "message": "Responding (200)",
+    "timestamp": "2025-09-17T13:05:42.528Z"
+  },
+  {
+    "status": "PASS",
+    "test": "API /api/analytics",
+    "message": "Responding (400)",
+    "timestamp": "2025-09-17T13:05:42.851Z"
+  },
+  {
+    "status": "PASS",
+    "test": "API /api/verify-member",
+    "message": "Responding (405)",
+    "timestamp": "2025-09-17T13:05:44.184Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Bulk Discount (1 tickets)",
+    "message": "Original: $1000, Discount: 0%, Final: $1000",
+    "timestamp": "2025-09-17T13:05:44.184Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Bulk Discount (2 tickets)",
+    "message": "Original: $2000, Discount: 5%, Final: $1900",
+    "timestamp": "2025-09-17T13:05:44.184Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Bulk Discount (3 tickets)",
+    "message": "Original: $3000, Discount: 10%, Final: $2700",
+    "timestamp": "2025-09-17T13:05:44.184Z"
+  },
+  {
+    "status": "PASS",
+    "test": "Bulk Discount (4 tickets)",
+    "message": "Original: $4000, Discount: 15%, Final: $3400",
+    "timestamp": "2025-09-17T13:05:44.184Z"
+  }
+]

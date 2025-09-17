@@ -1,0 +1,295 @@
+# 6FB Methodologies Workshop - Kubernetes Ingress
+# Production-ready ingress configuration with SSL, security, and monitoring
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: 6fb-methodologies-ingress
+  namespace: 6fb-methodologies
+  labels:
+    app: 6fb-methodologies
+    component: ingress
+  annotations:
+    # Ingress controller
+    kubernetes.io/ingress.class: "nginx"
+
+    # SSL/TLS configuration
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-RSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384"
+
+    # Security headers
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+      add_header X-Frame-Options DENY always;
+      add_header X-Content-Type-Options nosniff always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://checkout.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com;" always;
+      add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit-rps: "30"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+
+    # Client body and timeouts
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+
+    # Backend protocol
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+
+    # Custom error pages
+    nginx.ingress.kubernetes.io/custom-http-errors: "404,429,500,502,503,504"
+    nginx.ingress.kubernetes.io/default-backend: "6fb-methodologies-error-pages"
+
+    # Monitoring and observability
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "true"
+
+    # Performance optimizations
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+
+spec:
+  tls:
+    - hosts:
+        - 6fbmethodologies.com
+        - www.6fbmethodologies.com
+      secretName: 6fb-methodologies-tls
+
+  rules:
+    # Main domain
+    - host: 6fbmethodologies.com
+      http:
+        paths:
+          # API endpoints with specific rate limiting
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          - path: /api/create-checkout-session
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          - path: /api/webhooks
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          - path: /api/inventory
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # Health check endpoint (no rate limiting)
+          - path: /api/health
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # Metrics endpoint (restricted access)
+          - path: /api/metrics
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # All other API endpoints
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # Static assets
+          - path: /_next/static
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # Main application
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+    # WWW subdomain (redirect to main domain)
+    - host: www.6fbmethodologies.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+---
+# Special ingress for API endpoints with stricter rate limiting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: 6fb-methodologies-api-strict
+  namespace: 6fb-methodologies
+  labels:
+    app: 6fb-methodologies
+    component: ingress-api
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+    # Stricter rate limiting for auth endpoints
+    nginx.ingress.kubernetes.io/rate-limit-rps: "5"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "3"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+
+    # Additional security for auth endpoints
+    nginx.ingress.kubernetes.io/satisfy: "any"
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email"
+
+    # Custom responses for rate limiting
+    nginx.ingress.kubernetes.io/limit-req-status-code: "429"
+    nginx.ingress.kubernetes.io/limit-conn-status-code: "429"
+
+spec:
+  tls:
+    - hosts:
+        - 6fbmethodologies.com
+      secretName: 6fb-methodologies-tls
+
+  rules:
+    - host: 6fbmethodologies.com
+      http:
+        paths:
+          # Authentication endpoints (strict rate limiting)
+          - path: /api/auth/login
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          - path: /api/auth/register
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          - path: /api/auth/reset-password
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+---
+# Webhook-specific ingress with higher rate limits
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: 6fb-methodologies-webhooks
+  namespace: 6fb-methodologies
+  labels:
+    app: 6fb-methodologies
+    component: ingress-webhooks
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+    # Higher rate limits for legitimate webhook traffic
+    nginx.ingress.kubernetes.io/rate-limit-rps: "100"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "50"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+
+    # Webhook-specific optimizations
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+
+    # IP whitelist for known webhook sources (if applicable)
+    # nginx.ingress.kubernetes.io/whitelist-source-range: "54.187.174.169,54.187.205.235,54.187.216.72"
+
+spec:
+  tls:
+    - hosts:
+        - 6fbmethodologies.com
+      secretName: 6fb-methodologies-tls
+
+  rules:
+    - host: 6fbmethodologies.com
+      http:
+        paths:
+          # Stripe webhooks
+          - path: /api/webhooks/stripe
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # Zapier webhooks
+          - path: /api/webhooks/zapier
+            pathType: Exact
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80
+
+          # Alert webhooks
+          - path: /api/webhooks/alerts
+            pathType: Prefix
+            backend:
+              service:
+                name: 6fb-methodologies-app-service
+                port:
+                  number: 80

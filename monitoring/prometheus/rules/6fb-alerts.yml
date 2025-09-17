@@ -1,0 +1,309 @@
+# 6FB Methodologies Workshop - Prometheus Alert Rules
+# Comprehensive alerting for production ticket sales system
+
+groups:
+  # ==============================================
+  # Application Health Alerts
+  # ==============================================
+  - name: 6fb.application
+    rules:
+      - alert: ApplicationDown
+        expr: up{job="6fb-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "6FB Application is down"
+          description: "The 6FB Methodologies application has been down for more than 30 seconds."
+          runbook_url: "https://docs.6fb.com/runbooks/application-down"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="6fb-app"}[5m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for more than 2 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="6fb-app",status=~"5.."}[5m]) / rate(http_requests_total{job="6fb-app"}[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for more than 1 minute."
+
+      - alert: HealthCheckFailing
+        expr: probe_success{job="6fb-health"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "Application health check failing"
+          description: "Health check endpoint has been failing for more than 1 minute."
+
+  # ==============================================
+  # Ticket Sales Business Logic Alerts
+  # ==============================================
+  - name: 6fb.business
+    rules:
+      - alert: InventoryLow
+        expr: 6fb_inventory_available{tier="ga"} < 5
+        for: 0s
+        labels:
+          severity: warning
+          component: inventory
+        annotations:
+          summary: "Low GA ticket inventory in {{ $labels.city }}"
+          description: "Only {{ $value }} GA tickets remaining for {{ $labels.city }}."
+
+      - alert: InventoryVIPLow
+        expr: 6fb_inventory_available{tier="vip"} < 2
+        for: 0s
+        labels:
+          severity: warning
+          component: inventory
+        annotations:
+          summary: "Low VIP ticket inventory in {{ $labels.city }}"
+          description: "Only {{ $value }} VIP tickets remaining for {{ $labels.city }}."
+
+      - alert: InventorySoldOut
+        expr: 6fb_inventory_available < 1
+        for: 0s
+        labels:
+          severity: info
+          component: inventory
+        annotations:
+          summary: "Tickets sold out for {{ $labels.city }}"
+          description: "{{ $labels.tier }} tickets are sold out for {{ $labels.city }}."
+
+      - alert: HighSalesVolume
+        expr: rate(6fb_tickets_sold_total[5m]) > 0.5
+        for: 1m
+        labels:
+          severity: info
+          component: sales
+        annotations:
+          summary: "High sales volume detected"
+          description: "Selling {{ $value }} tickets per second over the last 5 minutes."
+
+      - alert: PaymentProcessingErrors
+        expr: rate(6fb_payment_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: payments
+        annotations:
+          summary: "Payment processing errors detected"
+          description: "{{ $value }} payment errors per second over the last 5 minutes."
+
+      - alert: StripeWebhookFailures
+        expr: rate(6fb_stripe_webhook_failures_total[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          component: webhooks
+        annotations:
+          summary: "Stripe webhook failures detected"
+          description: "{{ $value }} Stripe webhook failures per second over the last 5 minutes."
+
+  # ==============================================
+  # SMS Notification Alerts
+  # ==============================================
+  - name: 6fb.notifications
+    rules:
+      - alert: SMSDeliveryFailures
+        expr: rate(6fb_sms_delivery_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: sms
+        annotations:
+          summary: "SMS delivery failures detected"
+          description: "{{ $value }} SMS delivery failures per second over the last 5 minutes."
+
+      - alert: SMSServiceDown
+        expr: 6fb_sms_service_available == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: sms
+        annotations:
+          summary: "SMS service unavailable"
+          description: "SMS notification service has been unavailable for more than 1 minute."
+
+      - alert: SMSQueueBacklog
+        expr: 6fb_sms_queue_size > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: sms
+        annotations:
+          summary: "SMS queue backlog detected"
+          description: "SMS queue has {{ $value }} pending messages for more than 5 minutes."
+
+  # ==============================================
+  # Database Performance Alerts
+  # ==============================================
+  - name: 6fb.database
+    rules:
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 30 seconds."
+
+      - alert: DatabaseHighConnections
+        expr: pg_stat_database_numbackends{datname="6fb_methodologies"} > 80
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High number of database connections"
+          description: "Database has {{ $value }} active connections for more than 2 minutes."
+
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_stat_database_tup_fetched{datname="6fb_methodologies"}[5m]) / rate(pg_stat_database_tup_returned{datname="6fb_methodologies"}[5m]) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database query performance degraded"
+          description: "Database query efficiency is {{ $value | humanizePercentage }}."
+
+      - alert: DatabaseDiskSpace
+        expr: (pg_database_size_bytes{datname="6fb_methodologies"} / 1024 / 1024 / 1024) > 5
+        for: 0s
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database size growing large"
+          description: "Database size is {{ $value }}GB."
+
+  # ==============================================
+  # Redis Cache Alerts
+  # ==============================================
+  - name: 6fb.cache
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache has been down for more than 30 seconds."
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 2m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+
+      - alert: RedisCacheHitRateLow
+        expr: rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis cache hit rate low"
+          description: "Redis cache hit rate is {{ $value | humanizePercentage }}."
+
+  # ==============================================
+  # Infrastructure Alerts
+  # ==============================================
+  - name: 6fb.infrastructure
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs"} / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value | humanizePercentage }} available on {{ $labels.instance }}."
+
+      - alert: NginxDown
+        expr: up{job="nginx"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Nginx reverse proxy is down"
+          description: "Nginx has been down for more than 30 seconds."
+
+  # ==============================================
+  # Security Alerts
+  # ==============================================
+  - name: 6fb.security
+    rules:
+      - alert: SuspiciousRequestVolume
+        expr: rate(http_requests_total{job="6fb-app"}[1m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Suspicious request volume detected"
+          description: "Receiving {{ $value }} requests per second for more than 2 minutes."
+
+      - alert: HighFailedLoginAttempts
+        expr: rate(6fb_failed_login_attempts_total[5m]) > 0.5
+        for: 1m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High failed login attempts"
+          description: "{{ $value }} failed login attempts per second over the last 5 minutes."
+
+      - alert: WebhookSignatureFailures
+        expr: rate(6fb_webhook_signature_failures_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Webhook signature validation failures"
+          description: "{{ $value }} webhook signature failures per second over the last 5 minutes."

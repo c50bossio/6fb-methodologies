@@ -1,0 +1,60 @@
+<svg width="640" height="1136" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mobile screenshot mockup -->
+  <defs>
+    <linearGradient id="mobileGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="640" height="1136" fill="url(#mobileGradient)"/>
+
+  <!-- Mobile frame -->
+  <rect x="20" y="40" width="600" height="1056" rx="40" fill="#2a2a2a" stroke="#00C851" stroke-width="2"/>
+
+  <!-- Status bar -->
+  <rect x="40" y="60" width="560" height="40" fill="#1a1a1a"/>
+  <text x="60" y="85" font-family="Arial, sans-serif" font-size="14" fill="#f8f9fa">9:41</text>
+  <text x="560" y="85" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#f8f9fa">100%</text>
+
+  <!-- App content -->
+  <rect x="40" y="100" width="560" height="976" fill="#1a1a1a"/>
+
+  <!-- Hero section -->
+  <rect x="60" y="120" width="520" height="300" fill="#00C851" opacity="0.1"/>
+  <rect x="200" y="180" width="240" height="80" rx="10" fill="#00C851"/>
+  <text x="320" y="230" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="24" font-weight="bold" fill="white">6FB WORKSHOP</text>
+
+  <text x="320" y="280" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="16" fill="#f8f9fa">Transform Your Business</text>
+
+  <text x="320" y="310" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="14" fill="#e9ecef">December 2025</text>
+
+  <!-- CTA Button -->
+  <rect x="160" y="350" width="320" height="50" rx="25" fill="#00C851"/>
+  <text x="320" y="380" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="18" font-weight="bold" fill="white">REGISTER NOW</text>
+
+  <!-- Content sections -->
+  <rect x="60" y="440" width="520" height="200" fill="#242424" rx="10"/>
+  <text x="80" y="470" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#f8f9fa">Workshop Overview</text>
+  <text x="80" y="500" font-family="Arial, sans-serif" font-size="14" fill="#e9ecef">• Proven 6FB Methodologies</text>
+  <text x="80" y="525" font-family="Arial, sans-serif" font-size="14" fill="#e9ecef">• Scale to 6-Figure Revenue</text>
+  <text x="80" y="550" font-family="Arial, sans-serif" font-size="14" fill="#e9ecef">• Elite Business Strategies</text>
+  <text x="80" y="575" font-family="Arial, sans-serif" font-size="14" fill="#e9ecef">• Intensive 2-Day Experience</text>
+
+  <rect x="60" y="660" width="520" height="160" fill="#242424" rx="10"/>
+  <text x="80" y="690" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#f8f9fa">Pricing</text>
+  <text x="80" y="720" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#00C851">$2,497</text>
+  <text x="80" y="745" font-family="Arial, sans-serif" font-size="14" fill="#e9ecef">Early Bird Pricing</text>
+  <text x="80" y="770" font-family="Arial, sans-serif" font-size="14" fill="#f87171">🔥 Only 23 Seats Remaining</text>
+
+  <!-- Bottom navigation -->
+  <rect x="40" y="1036" width="560" height="60" fill="#242424"/>
+  <circle cx="160" cy="1066" r="15" fill="#00C851"/>
+  <circle cx="320" cy="1066" r="15" fill="#6c757d"/>
+  <circle cx="480" cy="1066" r="15" fill="#6c757d"/>
+</svg>

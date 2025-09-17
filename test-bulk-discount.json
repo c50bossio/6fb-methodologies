@@ -1,0 +1,11 @@
+{
+  "ticketType": "GA",
+  "quantity": 3,
+  "customerEmail": "test@example.com",
+  "customerName": "Test User",
+  "isSixFBMember": false,
+  "registrationData": {
+    "firstName": "Test",
+    "lastName": "User"
+  }
+}

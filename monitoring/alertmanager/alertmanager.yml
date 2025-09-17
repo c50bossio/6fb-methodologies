@@ -1,0 +1,289 @@
+# 6FB Methodologies Workshop - Alertmanager Configuration
+# Multi-channel alerting with intelligent routing and throttling
+
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@6fbmethodologies.com'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+
+  # Default notification timeout
+  resolve_timeout: 5m
+
+# Template definitions
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree for alert routing
+route:
+  group_by: ['alertname', 'component']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'default-webhook'
+
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 5m
+      routes:
+        # Application down - highest priority
+        - match:
+            alertname: ApplicationDown
+          receiver: 'application-down'
+          group_wait: 0s
+          repeat_interval: 2m
+
+        # Database down - highest priority
+        - match:
+            alertname: DatabaseDown
+          receiver: 'database-down'
+          group_wait: 0s
+          repeat_interval: 2m
+
+        # Payment processing issues
+        - match:
+            component: payments
+          receiver: 'payment-alerts'
+          repeat_interval: 5m
+
+    # Warning alerts - standard notification
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 2m
+      repeat_interval: 1h
+
+    # Business alerts - sales team notification
+    - match:
+        component: inventory
+      receiver: 'business-alerts'
+      group_wait: 1m
+      repeat_interval: 30m
+
+    - match:
+        component: sales
+      receiver: 'business-alerts'
+      group_wait: 1m
+      repeat_interval: 15m
+
+    # SMS notification issues
+    - match:
+        component: sms
+      receiver: 'sms-alerts'
+      group_wait: 2m
+      repeat_interval: 30m
+
+    # Security alerts - immediate notification
+    - match:
+        component: security
+      receiver: 'security-alerts'
+      group_wait: 30s
+      repeat_interval: 10m
+
+    # Info alerts - low priority
+    - match:
+        severity: info
+      receiver: 'info-alerts'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Inhibition rules to reduce noise
+inhibit_rules:
+  # Inhibit any warning alerts when the application is down
+  - source_match:
+      alertname: ApplicationDown
+    target_match_re:
+      severity: warning
+    equal: ['instance']
+
+  # Inhibit database connection alerts when database is down
+  - source_match:
+      alertname: DatabaseDown
+    target_match:
+      component: database
+    equal: ['instance']
+
+  # Inhibit cache alerts when Redis is down
+  - source_match:
+      alertname: RedisDown
+    target_match:
+      component: cache
+    equal: ['instance']
+
+# Receiver definitions
+receivers:
+  # Default webhook for all alerts
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/default'
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: '${WEBHOOK_USERNAME}'
+            password: '${WEBHOOK_PASSWORD}'
+
+  # Critical alerts - multiple channels
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'devops@6fbmethodologies.com'
+        subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Component: {{ .Labels.component }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ if .Annotations.runbook_url }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/critical'
+        send_resolved: true
+
+      # Slack webhook for critical alerts
+      - url: '${SLACK_WEBHOOK_URL}'
+        send_resolved: true
+        title: '🚨 CRITICAL ALERT'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+  # Application down - highest priority
+  - name: 'application-down'
+    email_configs:
+      - to: 'devops@6fbmethodologies.com,management@6fbmethodologies.com'
+        subject: '🚨 APPLICATION DOWN - 6FB Methodologies'
+        body: |
+          THE 6FB METHODOLOGIES APPLICATION IS DOWN!
+
+          This requires immediate attention as ticket sales are affected.
+
+          Time: {{ .GroupLabels.alertname }} at {{ (.Alerts.Firing | first).StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+
+          Please check the application immediately.
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/application-down'
+        send_resolved: true
+
+      # SMS alert for application down
+      - url: 'http://app:3000/api/webhooks/alerts/sms'
+        send_resolved: true
+
+  # Database down alerts
+  - name: 'database-down'
+    email_configs:
+      - to: 'devops@6fbmethodologies.com'
+        subject: '🚨 DATABASE DOWN - 6FB Methodologies'
+        body: |
+          The PostgreSQL database is down!
+
+          This affects all ticket sales and inventory tracking.
+
+          Time: {{ (.Alerts.Firing | first).StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/database-down'
+        send_resolved: true
+
+  # Payment alerts
+  - name: 'payment-alerts'
+    email_configs:
+      - to: 'devops@6fbmethodologies.com,finance@6fbmethodologies.com'
+        subject: '💳 Payment Alert - 6FB Methodologies'
+        body: |
+          {{ range .Alerts }}
+          Payment Issue: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/payments'
+        send_resolved: true
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'devops@6fbmethodologies.com'
+        subject: '⚠️ Warning - {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Warning: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Component: {{ .Labels.component }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/warning'
+        send_resolved: true
+
+  # Business alerts for sales team
+  - name: 'business-alerts'
+    email_configs:
+      - to: 'sales@6fbmethodologies.com,management@6fbmethodologies.com'
+        subject: '📊 Business Alert - {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          {{ if eq .Labels.component "inventory" }}
+          Inventory Alert: {{ .Annotations.summary }}
+          {{ else if eq .Labels.component "sales" }}
+          Sales Alert: {{ .Annotations.summary }}
+          {{ else }}
+          Business Alert: {{ .Annotations.summary }}
+          {{ end }}
+
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/business'
+        send_resolved: true
+
+  # SMS notification alerts
+  - name: 'sms-alerts'
+    email_configs:
+      - to: 'devops@6fbmethodologies.com'
+        subject: '📱 SMS Service Alert'
+        body: |
+          {{ range .Alerts }}
+          SMS Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/sms'
+        send_resolved: true
+
+  # Security alerts
+  - name: 'security-alerts'
+    email_configs:
+      - to: 'security@6fbmethodologies.com,devops@6fbmethodologies.com'
+        subject: '🛡️ SECURITY ALERT - {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Security Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+
+          This requires immediate security review.
+          {{ end }}
+
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/security'
+        send_resolved: true
+
+  # Info alerts - low priority
+  - name: 'info-alerts'
+    webhook_configs:
+      - url: 'http://app:3000/api/webhooks/alerts/info'
+        send_resolved: true

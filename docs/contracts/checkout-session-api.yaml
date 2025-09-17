@@ -1,0 +1,415 @@
+openapi: 3.0.3
+info:
+  title: Workshop Checkout Session API
+  description: API for creating and managing Stripe checkout sessions for workshop registration
+  version: 1.0.0
+  contact:
+    name: 6FB Methodologies Support
+    email: support@6fbmethodologies.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://workshop.6fbmethodologies.com/api
+    description: Production server
+
+paths:
+  /create-checkout-session:
+    post:
+      summary: Create Stripe checkout session
+      description: |
+        Creates a new Stripe checkout session for workshop registration with dynamic pricing
+        based on ticket type, quantity, and 6FB member status.
+      operationId: createCheckoutSession
+      tags:
+        - Checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+            examples:
+              ga_member:
+                summary: GA ticket for 6FB member
+                value:
+                  ticketType: "GA"
+                  quantity: 1
+                  customerEmail: "member@example.com"
+                  customerName: "John Smith"
+                  isSixFBMember: true
+                  registrationData:
+                    firstName: "John"
+                    lastName: "Smith"
+                    email: "member@example.com"
+                    phone: "(555) 123-4567"
+                    businessType: "shop_owner"
+                    yearsExperience: "5-10"
+              vip_bulk:
+                summary: VIP bulk order
+                value:
+                  ticketType: "VIP"
+                  quantity: 3
+                  customerEmail: "bulk@example.com"
+                  customerName: "Business Owner"
+                  isSixFBMember: false
+                  registrationData:
+                    firstName: "Business"
+                    lastName: "Owner"
+                    email: "bulk@example.com"
+                    phone: "(555) 987-6543"
+                    businessType: "enterprise"
+                    yearsExperience: "more-than-10"
+      responses:
+        '200':
+          description: Checkout session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSessionResponse'
+              examples:
+                ga_member_discount:
+                  summary: GA ticket with member discount
+                  value:
+                    success: true
+                    sessionId: "cs_test_1234567890"
+                    checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_1234567890"
+                    pricing:
+                      originalAmount: 1000
+                      finalAmount: 800
+                      discountAmount: 200
+                      discountPercentage: 20
+                      discountReason: "6FB Member Discount"
+                vip_no_discount:
+                  summary: VIP ticket with no discount
+                  value:
+                    success: true
+                    sessionId: "cs_test_0987654321"
+                    checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_0987654321"
+                    pricing:
+                      originalAmount: 1500
+                      finalAmount: 1500
+                      discountAmount: 0
+                      discountPercentage: 0
+                      discountReason: ""
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_ticket_type:
+                  summary: Invalid ticket type
+                  value:
+                    success: false
+                    error: "Valid ticket type is required (GA or VIP)"
+                invalid_quantity:
+                  summary: Invalid quantity
+                  value:
+                    success: false
+                    error: "Quantity must be between 1 and 10"
+                invalid_email:
+                  summary: Invalid customer email
+                  value:
+                    success: false
+                    error: "Valid customer email is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stripe_error:
+                  summary: Stripe API error
+                  value:
+                    success: false
+                    error: "Payment system configuration error"
+                general_error:
+                  summary: General server error
+                  value:
+                    success: false
+                    error: "Failed to create checkout session"
+
+    get:
+      summary: Retrieve checkout session details
+      description: |
+        Retrieves details of a completed checkout session, typically used on the success page
+        to display order confirmation information.
+      operationId: getCheckoutSession
+      tags:
+        - Checkout
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          description: Stripe checkout session ID
+          schema:
+            type: string
+            example: "cs_test_1234567890"
+      responses:
+        '200':
+          description: Session details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetailsResponse'
+              example:
+                success: true
+                session:
+                  id: "cs_test_1234567890"
+                  paymentStatus: "paid"
+                  customerEmail: "customer@example.com"
+                  amountTotal: 800
+                  currency: "usd"
+                  metadata:
+                    ticketType: "GA"
+                    quantity: "1"
+                    isSixFBMember: "true"
+                    firstName: "John"
+                    lastName: "Smith"
+        '400':
+          description: Invalid or missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "Session ID is required"
+        '500':
+          description: Failed to retrieve session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "Failed to retrieve session"
+
+components:
+  schemas:
+    CheckoutSessionRequest:
+      type: object
+      required:
+        - ticketType
+        - quantity
+        - customerEmail
+        - customerName
+        - isSixFBMember
+        - registrationData
+      properties:
+        ticketType:
+          type: string
+          enum: [GA, VIP]
+          description: Type of workshop ticket
+          example: "GA"
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Number of tickets to purchase
+          example: 1
+        customerEmail:
+          type: string
+          format: email
+          description: Customer's email address
+          example: "customer@example.com"
+          maxLength: 255
+        customerName:
+          type: string
+          description: Customer's full name
+          example: "John Smith"
+          maxLength: 255
+        isSixFBMember:
+          type: boolean
+          description: Whether customer is a verified 6FB member
+          example: true
+        registrationData:
+          $ref: '#/components/schemas/RegistrationData'
+
+    RegistrationData:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - phone
+        - businessType
+        - yearsExperience
+      properties:
+        firstName:
+          type: string
+          description: Customer's first name
+          example: "John"
+          maxLength: 50
+        lastName:
+          type: string
+          description: Customer's last name
+          example: "Smith"
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          description: Customer's email address
+          example: "john.smith@example.com"
+        phone:
+          type: string
+          description: Customer's phone number (formatted)
+          example: "(555) 123-4567"
+        businessName:
+          type: string
+          description: Optional business name
+          example: "Smith's Barbershop"
+          maxLength: 255
+        businessType:
+          type: string
+          enum: [individual, shop_owner, enterprise]
+          description: Type of business
+          example: "shop_owner"
+        yearsExperience:
+          type: string
+          enum: [less-than-1, 1-2, 3-5, 6-10, more-than-10]
+          description: Years of barbering experience
+          example: "5-10"
+        dietaryRestrictions:
+          type: string
+          description: Optional dietary restrictions
+          example: "Vegetarian"
+          maxLength: 500
+        specialRequests:
+          type: string
+          description: Optional special requests
+          example: "Wheelchair accessible seating"
+          maxLength: 500
+
+    CheckoutSessionResponse:
+      type: object
+      required:
+        - success
+        - sessionId
+        - checkoutUrl
+        - pricing
+      properties:
+        success:
+          type: boolean
+          description: Whether the session was created successfully
+          example: true
+        sessionId:
+          type: string
+          description: Stripe checkout session ID
+          example: "cs_test_1234567890"
+        checkoutUrl:
+          type: string
+          format: uri
+          description: URL to redirect user to Stripe checkout
+          example: "https://checkout.stripe.com/c/pay/cs_test_1234567890"
+        pricing:
+          $ref: '#/components/schemas/PricingDetails'
+
+    PricingDetails:
+      type: object
+      required:
+        - originalAmount
+        - finalAmount
+        - discountAmount
+        - discountPercentage
+        - discountReason
+      properties:
+        originalAmount:
+          type: number
+          description: Original price before discounts (in dollars)
+          example: 1000
+        finalAmount:
+          type: number
+          description: Final price after discounts (in dollars)
+          example: 800
+        discountAmount:
+          type: number
+          description: Total discount applied (in dollars)
+          example: 200
+        discountPercentage:
+          type: number
+          description: Discount percentage applied
+          example: 20
+        discountReason:
+          type: string
+          description: Reason for the discount
+          example: "6FB Member Discount"
+
+    SessionDetailsResponse:
+      type: object
+      required:
+        - success
+        - session
+      properties:
+        success:
+          type: boolean
+          description: Whether the session details were retrieved successfully
+          example: true
+        session:
+          $ref: '#/components/schemas/SessionDetails'
+
+    SessionDetails:
+      type: object
+      required:
+        - id
+        - paymentStatus
+        - amountTotal
+        - currency
+      properties:
+        id:
+          type: string
+          description: Stripe session ID
+          example: "cs_test_1234567890"
+        paymentStatus:
+          type: string
+          description: Payment status from Stripe
+          example: "paid"
+        customerEmail:
+          type: string
+          format: email
+          description: Customer's email address
+          example: "customer@example.com"
+        amountTotal:
+          type: number
+          description: Total amount paid (in dollars)
+          example: 800
+        currency:
+          type: string
+          description: Currency used for payment
+          example: "usd"
+        metadata:
+          type: object
+          description: Additional metadata from the checkout session
+          additionalProperties:
+            type: string
+          example:
+            ticketType: "GA"
+            quantity: "1"
+            firstName: "John"
+            lastName: "Smith"
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          description: Always false for error responses
+          example: false
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Valid ticket type is required (GA or VIP)"
+
+tags:
+  - name: Checkout
+    description: Operations for managing checkout sessions and payments
+
+externalDocs:
+  description: Stripe Checkout Documentation
+  url: https://stripe.com/docs/checkout

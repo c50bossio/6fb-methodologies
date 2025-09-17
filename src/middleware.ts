@@ -1,0 +1,220 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+
+// Rate limiting store (in production, use Redis or database)
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
+
+// CSRF token store (in production, use encrypted cookies or session storage)
+const csrfTokenStore = new Map<string, string>()
+
+// Security configuration
+const SECURITY_CONFIG = {
+  rateLimiting: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 100, // Limit each IP to 100 requests per windowMs
+    blockDuration: 60 * 60 * 1000, // Block for 1 hour after exceeding limit
+  },
+  blockedPaths: [
+    '/api/admin',
+    '/.env',
+    '/config',
+    '/backup',
+    '/phpmyadmin',
+    '/wp-admin',
+    '/admin',
+    '/.git',
+  ]
+}
+
+function getClientIP(request: NextRequest): string {
+  // Try various headers to get real IP
+  const forwarded = request.headers.get('x-forwarded-for')
+  const realIP = request.headers.get('x-real-ip')
+  const remoteAddr = request.headers.get('remote-addr')
+
+  if (forwarded) {
+    return forwarded.split(',')[0].trim()
+  }
+
+  return realIP || remoteAddr || 'unknown'
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const record = rateLimitStore.get(ip)
+
+  if (!record || now > record.resetTime) {
+    // Reset or create new record
+    rateLimitStore.set(ip, {
+      count: 1,
+      resetTime: now + SECURITY_CONFIG.rateLimiting.windowMs
+    })
+    return false
+  }
+
+  if (record.count >= SECURITY_CONFIG.rateLimiting.maxRequests) {
+    return true
+  }
+
+  record.count += 1
+  return false
+}
+
+function isBlockedPath(pathname: string): boolean {
+  return SECURITY_CONFIG.blockedPaths.some(blocked =>
+    pathname.toLowerCase().includes(blocked.toLowerCase())
+  )
+}
+
+function generateCSRFToken(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function validateCSRFToken(token: string, sessionId: string): boolean {
+  if (!token || !sessionId) return false
+  const storedToken = csrfTokenStore.get(sessionId)
+  return storedToken === token
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const response = NextResponse.next()
+  const clientIP = getClientIP(request)
+
+  // Block suspicious paths immediately
+  if (isBlockedPath(pathname)) {
+    console.warn(`Blocked suspicious path attempt: ${pathname} from IP: ${clientIP}`)
+    return new NextResponse('Forbidden', { status: 403 })
+  }
+
+  // Apply rate limiting
+  if (isRateLimited(clientIP)) {
+    console.warn(`Rate limit exceeded for IP: ${clientIP}`)
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: {
+        'Retry-After': '3600', // 1 hour
+        'X-RateLimit-Limit': SECURITY_CONFIG.rateLimiting.maxRequests.toString(),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': new Date(Date.now() + SECURITY_CONFIG.rateLimiting.blockDuration).toISOString()
+      }
+    })
+  }
+
+  // Set comprehensive security headers
+  const securityHeaders = {
+    // Prevent clickjacking
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy':
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https: blob:; " +
+      "connect-src 'self' https://api.stripe.com https://hooks.zapier.com https://analytics.google.com; " +
+      "frame-src https://js.stripe.com https://hooks.stripe.com; " +
+      "object-src 'none'; " +
+      "base-uri 'self'; " +
+      "form-action 'self' https://checkout.stripe.com; " +
+      "upgrade-insecure-requests; " +
+      "block-all-mixed-content",
+
+    // MIME type sniffing protection
+    'X-Content-Type-Options': 'nosniff',
+
+    // XSS Protection
+    'X-XSS-Protection': '1; mode=block',
+
+    // Referrer Policy
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+
+    // HSTS (HTTP Strict Transport Security)
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+
+    // Remove server information
+    'X-Powered-By': '',
+    'Server': '',
+
+    // Permissions Policy (formerly Feature Policy)
+    'Permissions-Policy':
+      'camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.stripe.com"), ' +
+      'accelerometer=(), autoplay=(), encrypted-media=(), fullscreen=(), gyroscope=(), ' +
+      'magnetometer=(), midi=(), notifications=(), push=(), sync-xhr=(), usb=(), web-share=()',
+
+    // Cross-Origin policies
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Embedder-Policy': 'require-corp',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+
+    // Additional security headers
+    'X-DNS-Prefetch-Control': 'off',
+    'X-Download-Options': 'noopen',
+    'X-Permitted-Cross-Domain-Policies': 'none'
+  }
+
+  // Apply all security headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  // Handle CSRF protection for state-changing requests
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+    const isAPIRoute = pathname.startsWith('/api/')
+
+    if (isAPIRoute) {
+      const csrfToken = request.headers.get('x-csrf-token')
+      const sessionId = request.headers.get('x-session-id') || clientIP
+
+      // Skip CSRF for webhooks and test endpoints (they use signature verification or are for testing)
+      const skipCSRF = pathname.includes('/webhooks/') ||
+                      pathname.includes('/test-email') ||
+                      pathname.includes('/verify-member') ||
+                      (process.env.NODE_ENV === 'development' && pathname.includes('/api/'))
+
+      if (!skipCSRF) {
+        if (!csrfToken || !validateCSRFToken(csrfToken, sessionId)) {
+          console.warn(`CSRF token validation failed for ${pathname} from IP: ${clientIP}`)
+          return new NextResponse('CSRF Token Invalid', { status: 403 })
+        }
+      }
+    }
+  }
+
+  // Generate and store CSRF token for GET requests
+  if (request.method === 'GET' && !pathname.startsWith('/api/')) {
+    const sessionId = request.headers.get('x-session-id') || clientIP
+    const csrfToken = generateCSRFToken()
+    csrfTokenStore.set(sessionId, csrfToken)
+    response.headers.set('X-CSRF-Token', csrfToken)
+  }
+
+  // Add rate limit headers
+  const record = rateLimitStore.get(clientIP)
+  if (record) {
+    response.headers.set('X-RateLimit-Limit', SECURITY_CONFIG.rateLimiting.maxRequests.toString())
+    response.headers.set('X-RateLimit-Remaining', Math.max(0, SECURITY_CONFIG.rateLimiting.maxRequests - record.count).toString())
+    response.headers.set('X-RateLimit-Reset', new Date(record.resetTime).toISOString())
+  }
+
+  // Log security events
+  if (pathname.startsWith('/api/')) {
+    console.log(`API Request: ${request.method} ${pathname} from IP: ${clientIP}`)
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (public folder)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}

@@ -1,0 +1,576 @@
+import twilio from 'twilio'
+import sgMail from '@sendgrid/mail'
+import { RegistrationData, WorkshopOrder } from '@/types'
+
+// Initialize Twilio client
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID!,
+  process.env.TWILIO_AUTH_TOKEN!
+)
+
+// Initialize SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
+
+// Notification types for the workshop system
+export interface NotificationData {
+  customerEmail: string
+  customerName: string
+  customerPhone?: string
+  ticketType: 'GA' | 'VIP'
+  quantity: number
+  totalAmount: number
+  sessionId: string
+  registrationData?: RegistrationData
+  discountApplied?: string
+  workshopDate?: string
+}
+
+// Discount code email data
+export interface DiscountCodeData {
+  customerEmail: string
+  customerName: string
+  membershipType: string
+  discountCode: string
+  discountAmount: number
+  workshopName: string
+  expiresAt: Date
+}
+
+// Email templates for different notification types
+export const EMAIL_TEMPLATES = {
+  PAYMENT_CONFIRMATION: {
+    subject: '✅ Payment Confirmed - 6FB Methodologies Workshop',
+    template: (data: NotificationData) => `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #ffffff;">
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold;">🎉 Welcome to 6FB Methodologies!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your spot is secured!</p>
+        </div>
+
+        <div style="padding: 40px 20px;">
+          <h2 style="color: #6366f1; margin-bottom: 20px;">Payment Confirmation</h2>
+
+          <div style="background: #16213e; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">Workshop Details</h3>
+            <p><strong>Event:</strong> 6FB Methodologies Workshop</p>
+            <p><strong>Ticket Type:</strong> ${data.ticketType} ${data.ticketType === 'VIP' ? '(includes VIP dinner & perks)' : ''}</p>
+            <p><strong>Quantity:</strong> ${data.quantity} ticket${data.quantity > 1 ? 's' : ''}</p>
+            <p><strong>Total Paid:</strong> $${(data.totalAmount / 100).toFixed(2)}</p>
+            ${data.discountApplied ? `<p><strong>Discount Applied:</strong> ${data.discountApplied}</p>` : ''}
+            <p><strong>Confirmation ID:</strong> ${data.sessionId}</p>
+          </div>
+
+          <div style="background: #16213e; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">What's Next?</h3>
+            <ul style="padding-left: 20px;">
+              <li>Check your email for workshop details and agenda</li>
+              <li>Mark your calendar for the workshop date</li>
+              <li>Join our exclusive WhatsApp group (link coming soon)</li>
+              ${data.ticketType === 'VIP' ? '<li>VIP dinner details will be sent separately</li>' : ''}
+              <li>Download the 6FB methodology workbook</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; padding: 20px; background: #16213e; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #ffffff;">Questions?</h3>
+            <p>Contact us at <a href="mailto:support@em3014.6fbmentorship.com" style="color: #6366f1;">support@em3014.6fbmentorship.com</a></p>
+            <p>Or visit our community at <a href="https://6fbmentorship.com" style="color: #6366f1;">6fbmentorship.com</a></p>
+          </div>
+        </div>
+
+        <div style="background: #0f172a; padding: 20px; text-align: center; font-size: 14px; color: #94a3b8;">
+          <p>© 2024 6FB Methodologies Workshop. All rights reserved.</p>
+          <p>This is an automated confirmation email.</p>
+        </div>
+      </div>
+    `
+  },
+
+  WORKSHOP_REMINDER: {
+    subject: '🚀 Workshop Reminder - 6FB Methodologies Tomorrow!',
+    template: (data: NotificationData) => `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #ffffff;">
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold;">⏰ Workshop Tomorrow!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Get ready to transform your business!</p>
+        </div>
+
+        <div style="padding: 40px 20px;">
+          <h2 style="color: #f59e0b; margin-bottom: 20px;">Final Preparation</h2>
+
+          <div style="background: #16213e; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">Tomorrow's Schedule</h3>
+            <p><strong>Date:</strong> ${data.workshopDate || 'Check your calendar'}</p>
+            <p><strong>Time:</strong> 9:00 AM - 5:00 PM EST</p>
+            <p><strong>Location:</strong> Details sent separately</p>
+            <p><strong>Your Ticket:</strong> ${data.ticketType} (${data.quantity} person${data.quantity > 1 ? 's' : ''})</p>
+          </div>
+
+          <div style="background: #16213e; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">What to Bring</h3>
+            <ul style="padding-left: 20px;">
+              <li>Notebook and pen for taking notes</li>
+              <li>Laptop or tablet (optional but recommended)</li>
+              <li>Business cards for networking</li>
+              <li>Open mind and ready-to-implement attitude</li>
+              <li>Comfortable clothing for all-day workshop</li>
+            </ul>
+          </div>
+
+          ${data.ticketType === 'VIP' ? `
+          <div style="background: #7c3aed; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">🌟 VIP Exclusive</h3>
+            <p>As a VIP attendee, you have access to:</p>
+            <ul style="padding-left: 20px;">
+              <li>VIP dinner tonight (location TBA)</li>
+              <li>Priority seating at the workshop</li>
+              <li>Exclusive Q&A session</li>
+              <li>VIP networking break</li>
+              <li>Bonus implementation materials</li>
+            </ul>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `
+  },
+
+  DISCOUNT_CODE: {
+    subject: '🎉 Your 6FB Member Discount Code is Ready!',
+    template: (data: DiscountCodeData) => `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #ffffff;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold;">🎉 Congratulations, ${data.customerName}!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your 6FB membership has been verified!</p>
+        </div>
+
+        <div style="padding: 40px 20px;">
+          <h2 style="color: #10b981; margin-bottom: 20px;">Your Exclusive Discount</h2>
+
+          <div style="background: #16213e; padding: 30px; border-radius: 12px; margin-bottom: 30px; text-align: center; border: 2px solid #10b981;">
+            <h3 style="margin-top: 0; color: #ffffff; font-size: 24px;">🎫 DISCOUNT CODE</h3>
+            <div style="background: #10b981; color: #ffffff; padding: 15px 25px; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 2px; margin: 15px 0;">
+              ${data.discountCode}
+            </div>
+            <p style="color: #10b981; font-size: 18px; font-weight: bold; margin: 15px 0 5px 0;">${data.discountAmount}% OFF</p>
+            <p style="color: #94a3b8; font-size: 14px; margin: 0;">Valid until ${data.expiresAt.toLocaleDateString()}</p>
+          </div>
+
+          <div style="background: #16213e; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">Workshop Details</h3>
+            <p><strong>Event:</strong> ${data.workshopName}</p>
+            <p><strong>Your Status:</strong> ${data.membershipType} Member (Verified ✅)</p>
+            <p><strong>Discount:</strong> ${data.discountAmount}% off registration</p>
+            <p><strong>Code Expires:</strong> ${data.expiresAt.toLocaleDateString()} at 11:59 PM</p>
+          </div>
+
+          <div style="background: #16213e; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #ffffff;">How to Use Your Code</h3>
+            <ol style="padding-left: 20px;">
+              <li>Return to the workshop registration page</li>
+              <li>Select your ticket type (GA or VIP)</li>
+              <li>Enter code <strong style="color: #10b981;">${data.discountCode}</strong> at checkout</li>
+              <li>Enjoy your exclusive member discount!</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; padding: 20px; background: #16213e; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #ffffff;">Ready to Register?</h3>
+            <p>Use your discount code and secure your spot at the next 6FB Methodologies Workshop!</p>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/#pricing" style="display: inline-block; background: #10b981; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 15px;">Register Now with Discount</a>
+          </div>
+        </div>
+
+        <div style="background: #0f172a; padding: 20px; text-align: center; font-size: 14px; color: #94a3b8;">
+          <p>© 2024 6FB Methodologies Workshop. All rights reserved.</p>
+          <p>This discount code is exclusive to verified 6FB members.</p>
+        </div>
+      </div>
+    `
+  }
+}
+
+// SMS templates for different notification types
+export const SMS_TEMPLATES = {
+  PAYMENT_CONFIRMATION: (data: NotificationData) =>
+    `🎉 Payment confirmed! Welcome to 6FB Methodologies Workshop. ${data.ticketType} ticket (${data.quantity}x) - $${(data.totalAmount / 100).toFixed(2)}. Confirmation: ${data.sessionId.slice(-8)}. Details coming via email!`,
+
+  WORKSHOP_REMINDER: (data: NotificationData) =>
+    `⏰ 6FB Workshop is TOMORROW! Check your email for final details. ${data.ticketType} ticket confirmed. Questions? Reply HELP. Excited to see you there! 🚀`,
+
+  DAY_OF_WORKSHOP: (data: NotificationData) =>
+    `🌟 Today's the day! 6FB Methodologies Workshop starts at 9 AM. Bring notebook, laptop, and your implementation mindset. See you soon! ${data.ticketType === 'VIP' ? 'VIP perks included!' : ''}`
+}
+
+// Enhanced notification service class
+export class NotificationService {
+  private static instance: NotificationService
+
+  public static getInstance(): NotificationService {
+    if (!NotificationService.instance) {
+      NotificationService.instance = new NotificationService()
+    }
+    return NotificationService.instance
+  }
+
+  // Send email notification with enhanced error handling and retry logic
+  async sendEmail(
+    type: keyof typeof EMAIL_TEMPLATES,
+    data: NotificationData,
+    options: {
+      retries?: number
+      delay?: number
+      attachments?: any[]
+    } = {}
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const { retries = 3, delay = 1000, attachments = [] } = options
+
+    if (!process.env.ENABLE_EMAIL_NOTIFICATIONS || process.env.ENABLE_EMAIL_NOTIFICATIONS === 'false') {
+      console.log('Email notifications disabled, skipping...')
+      return { success: true, messageId: 'email-disabled' }
+    }
+
+    const template = EMAIL_TEMPLATES[type]
+    if (!template) {
+      return { success: false, error: `Email template '${type}' not found` }
+    }
+
+    const emailData = {
+      to: data.customerEmail,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL!,
+        name: process.env.SENDGRID_FROM_NAME!
+      },
+      subject: template.subject,
+      html: template.template(data),
+      attachments,
+      // Enhanced tracking and analytics
+      trackingSettings: {
+        clickTracking: { enable: true },
+        openTracking: { enable: true },
+        subscriptionTracking: { enable: false }
+      },
+      mailSettings: {
+        sandboxMode: { enable: process.env.NODE_ENV === 'test' }
+      },
+      // Custom headers for tracking
+      customArgs: {
+        workshopEvent: '6fb-methodologies',
+        ticketType: data.ticketType,
+        sessionId: data.sessionId,
+        notificationType: type
+      }
+    }
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const [response] = await sgMail.send(emailData)
+
+        console.log(`Email sent successfully (attempt ${attempt}):`, {
+          to: data.customerEmail,
+          type,
+          messageId: response.headers['x-message-id']
+        })
+
+        return {
+          success: true,
+          messageId: response.headers['x-message-id'] as string
+        }
+      } catch (error: any) {
+        console.error(`Email send attempt ${attempt} failed:`, error.response?.body || error.message)
+
+        if (attempt === retries) {
+          return {
+            success: false,
+            error: error.response?.body?.errors?.[0]?.message || error.message
+          }
+        }
+
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, delay * attempt))
+      }
+    }
+
+    return { success: false, error: 'Max retries exceeded' }
+  }
+
+  // Send SMS notification with enhanced error handling
+  async sendSMS(
+    type: keyof typeof SMS_TEMPLATES,
+    data: NotificationData,
+    options: {
+      retries?: number
+      delay?: number
+    } = {}
+  ): Promise<{ success: boolean; messageSid?: string; error?: string }> {
+    const { retries = 3, delay = 1000 } = options
+
+    if (!process.env.ENABLE_SMS_NOTIFICATIONS || process.env.ENABLE_SMS_NOTIFICATIONS === 'false') {
+      console.log('SMS notifications disabled, skipping...')
+      return { success: true, messageSid: 'sms-disabled' }
+    }
+
+    if (!data.customerPhone) {
+      return { success: false, error: 'Customer phone number not provided' }
+    }
+
+    const template = SMS_TEMPLATES[type]
+    if (!template) {
+      return { success: false, error: `SMS template '${type}' not found` }
+    }
+
+    const messageBody = template(data)
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const message = await twilioClient.messages.create({
+          to: data.customerPhone,
+          from: process.env.TWILIO_PHONE_NUMBER!,
+          body: messageBody,
+          // Enhanced tracking
+          statusCallback: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio-status`,
+          // Custom parameters for tracking
+          applicationSid: process.env.TWILIO_APPLICATION_SID
+        })
+
+        console.log(`SMS sent successfully (attempt ${attempt}):`, {
+          to: data.customerPhone,
+          type,
+          messageSid: message.sid
+        })
+
+        return {
+          success: true,
+          messageSid: message.sid
+        }
+      } catch (error: any) {
+        console.error(`SMS send attempt ${attempt} failed:`, error.message)
+
+        if (attempt === retries) {
+          return {
+            success: false,
+            error: error.message
+          }
+        }
+
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, delay * attempt))
+      }
+    }
+
+    return { success: false, error: 'Max retries exceeded' }
+  }
+
+  // Send both email and SMS notifications
+  async sendWorkshopNotification(
+    type: 'PAYMENT_CONFIRMATION' | 'WORKSHOP_REMINDER',
+    data: NotificationData,
+    options: {
+      includeEmail?: boolean
+      includeSMS?: boolean
+      retries?: number
+    } = {}
+  ): Promise<{
+    email: { success: boolean; messageId?: string; error?: string }
+    sms: { success: boolean; messageSid?: string; error?: string }
+  }> {
+    const {
+      includeEmail = true,
+      includeSMS = true,
+      retries = 3
+    } = options
+
+    const results = {
+      email: { success: false, error: 'Not attempted' },
+      sms: { success: false, error: 'Not attempted' }
+    }
+
+    // Send email notification
+    if (includeEmail) {
+      results.email = await this.sendEmail(type, data, { retries })
+    }
+
+    // Send SMS notification if phone number available
+    if (includeSMS && data.customerPhone) {
+      results.sms = await this.sendSMS(type, data, { retries })
+    }
+
+    // Log comprehensive results
+    console.log('Notification batch sent:', {
+      type,
+      customer: data.customerEmail,
+      email: results.email.success,
+      sms: results.sms.success,
+      sessionId: data.sessionId
+    })
+
+    return results
+  }
+
+  // Test notification service (useful for development)
+  async testNotifications(
+    testEmail: string,
+    testPhone?: string
+  ): Promise<{ email: boolean; sms: boolean }> {
+    const testData: NotificationData = {
+      customerEmail: testEmail,
+      customerName: 'Test Customer',
+      customerPhone: testPhone,
+      ticketType: 'VIP',
+      quantity: 2,
+      totalAmount: 300000, // $3000
+      sessionId: 'test_session_123456',
+      discountApplied: '20% 6FB Member Discount',
+      workshopDate: 'March 15, 2024'
+    }
+
+    const results = await this.sendWorkshopNotification('PAYMENT_CONFIRMATION', testData, {
+      includeEmail: true,
+      includeSMS: !!testPhone
+    })
+
+    return {
+      email: results.email.success,
+      sms: results.sms.success
+    }
+  }
+
+  // Schedule workshop reminders (would integrate with a job queue in production)
+  async scheduleWorkshopReminder(
+    data: NotificationData,
+    reminderDate: Date
+  ): Promise<{ success: boolean; scheduledId?: string; error?: string }> {
+    // In production, this would integrate with a job queue like Bull, Agenda, or AWS SQS
+    // For now, we'll simulate scheduling
+
+    const timeDiff = reminderDate.getTime() - Date.now()
+
+    if (timeDiff <= 0) {
+      return { success: false, error: 'Reminder date is in the past' }
+    }
+
+    const scheduledId = `reminder_${data.sessionId}_${Date.now()}`
+
+    // Simulate job scheduling (in production, use actual job queue)
+    setTimeout(async () => {
+      await this.sendWorkshopNotification('WORKSHOP_REMINDER', data)
+    }, Math.min(timeDiff, 2147483647)) // setTimeout max value
+
+    console.log(`Workshop reminder scheduled for ${reminderDate} (ID: ${scheduledId})`)
+
+    return {
+      success: true,
+      scheduledId
+    }
+  }
+}
+
+// Export singleton instance
+export const notificationService = NotificationService.getInstance()
+
+// Utility functions for workshop-specific notifications
+export async function sendPaymentConfirmation(
+  sessionData: NotificationData
+): Promise<{ success: boolean; results: any }> {
+  try {
+    const results = await notificationService.sendWorkshopNotification(
+      'PAYMENT_CONFIRMATION',
+      sessionData
+    )
+
+    return {
+      success: results.email.success || results.sms.success,
+      results
+    }
+  } catch (error) {
+    console.error('Payment confirmation error:', error)
+    return {
+      success: false,
+      results: { error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+}
+
+export async function sendWorkshopReminder(
+  sessionData: NotificationData
+): Promise<{ success: boolean; results: any }> {
+  try {
+    const results = await notificationService.sendWorkshopNotification(
+      'WORKSHOP_REMINDER',
+      sessionData
+    )
+
+    return {
+      success: results.email.success || results.sms.success,
+      results
+    }
+  } catch (error) {
+    console.error('Workshop reminder error:', error)
+    return {
+      success: false,
+      results: { error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+}
+
+// Send discount code email to verified members
+export async function sendDiscountCode(
+  discountData: DiscountCodeData
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    if (!process.env.ENABLE_EMAIL_NOTIFICATIONS || process.env.ENABLE_EMAIL_NOTIFICATIONS === 'false') {
+      console.log('Email notifications disabled, skipping discount code email...')
+      return { success: true, messageId: 'email-disabled' }
+    }
+
+    const template = EMAIL_TEMPLATES.DISCOUNT_CODE
+    if (!template) {
+      return { success: false, error: 'Discount code email template not found' }
+    }
+
+    const emailData = {
+      to: discountData.customerEmail,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL!,
+        name: process.env.SENDGRID_FROM_NAME!
+      },
+      subject: template.subject,
+      html: template.template(discountData),
+      // Enhanced tracking and analytics
+      trackingSettings: {
+        clickTracking: { enable: true },
+        openTracking: { enable: true },
+        subscriptionTracking: { enable: false }
+      },
+      mailSettings: {
+        sandboxMode: { enable: process.env.NODE_ENV === 'test' }
+      },
+      // Custom headers for tracking
+      customArgs: {
+        emailType: 'discount_code',
+        membershipType: discountData.membershipType,
+        discountCode: discountData.discountCode,
+        discountAmount: discountData.discountAmount.toString()
+      }
+    }
+
+    const [response] = await sgMail.send(emailData)
+
+    console.log('Discount code email sent successfully:', {
+      to: discountData.customerEmail,
+      discountCode: discountData.discountCode,
+      messageId: response.headers['x-message-id']
+    })
+
+    return {
+      success: true,
+      messageId: response.headers['x-message-id'] as string
+    }
+  } catch (error: any) {
+    console.error('Discount code email error:', error.response?.body || error.message)
+    return {
+      success: false,
+      error: error.response?.body?.errors?.[0]?.message || error.message
+    }
+  }
+}

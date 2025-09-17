@@ -1,0 +1,192 @@
+'use client'
+
+import { useEffect } from 'react'
+import { initializePerformanceMonitoring } from '@/lib/performance'
+
+export function PerformanceMonitor() {
+  useEffect(() => {
+    // Initialize performance monitoring on the client side
+    const monitor = initializePerformanceMonitoring()
+
+    // Report Core Web Vitals to console in development
+    if (process.env.NODE_ENV === 'development') {
+      const checkVitals = () => {
+        const vitals = monitor?.getCoreWebVitals()
+        if (vitals) {
+          console.group('🔍 Core Web Vitals')
+          console.log(`LCP: ${vitals.lcp?.toFixed(2)}ms ${vitals.lcp && vitals.lcp <= 2500 ? '✅' : vitals.lcp && vitals.lcp <= 4000 ? '⚠️' : '❌'}`)
+          console.log(`FID: ${vitals.fid?.toFixed(2)}ms ${vitals.fid && vitals.fid <= 100 ? '✅' : vitals.fid && vitals.fid <= 300 ? '⚠️' : '❌'}`)
+          console.log(`CLS: ${vitals.cls?.toFixed(3)} ${vitals.cls && vitals.cls <= 0.1 ? '✅' : vitals.cls && vitals.cls <= 0.25 ? '⚠️' : '❌'}`)
+          console.log(`Overall Score: ${vitals.score} ${vitals.score === 'good' ? '✅' : vitals.score === 'needs-improvement' ? '⚠️' : '❌'}`)
+          console.groupEnd()
+        }
+      }
+
+      // Check vitals after page load
+      setTimeout(checkVitals, 2000)
+      setTimeout(checkVitals, 5000)
+    }
+
+    // Cleanup on unmount
+    return () => {
+      monitor?.cleanup()
+    }
+  }, [])
+
+  // This component doesn't render anything visible
+  return null
+}
+
+// Component to track specific user interactions
+export function InteractionTracker({
+  children,
+  eventName,
+  metadata = {}
+}: {
+  children: React.ReactNode
+  eventName: string
+  metadata?: Record<string, any>
+}) {
+  const handleClick = () => {
+    if (typeof window !== 'undefined' && 'gtag' in window) {
+      (window as any).gtag('event', eventName, {
+        custom_parameter_1: 'user_interaction',
+        ...metadata
+      })
+    }
+  }
+
+  return (
+    <div onClick={handleClick}>
+      {children}
+    </div>
+  )
+}
+
+// Component to track form interactions
+export function FormTracker({
+  children,
+  formName
+}: {
+  children: React.ReactNode
+  formName: string
+}) {
+  const handleFormStart = () => {
+    if (typeof window !== 'undefined' && 'gtag' in window) {
+      (window as any).gtag('event', 'form_start', {
+        form_name: formName,
+        custom_parameter_1: 'form_interaction'
+      })
+    }
+  }
+
+  const handleFormComplete = () => {
+    if (typeof window !== 'undefined' && 'gtag' in window) {
+      (window as any).gtag('event', 'form_complete', {
+        form_name: formName,
+        custom_parameter_1: 'form_interaction'
+      })
+    }
+  }
+
+  return (
+    <div
+      onFocus={handleFormStart}
+      onSubmit={handleFormComplete}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Component to track scroll milestones
+export function ScrollTracker() {
+  useEffect(() => {
+    let maxScrollDepth = 0
+    const milestones = [25, 50, 75, 90]
+    const tracked = new Set<number>()
+
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+      const scrollPercent = (scrollTop + windowHeight) / documentHeight * 100
+
+      if (scrollPercent > maxScrollDepth) {
+        maxScrollDepth = scrollPercent
+
+        milestones.forEach(milestone => {
+          if (scrollPercent >= milestone && !tracked.has(milestone)) {
+            tracked.add(milestone)
+
+            if (typeof window !== 'undefined' && 'gtag' in window) {
+              (window as any).gtag('event', 'scroll_depth', {
+                scroll_depth: milestone,
+                custom_parameter_1: 'user_engagement'
+              })
+            }
+          }
+        })
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return null
+}
+
+// Component to track time spent on page
+export function TimeSpentTracker() {
+  useEffect(() => {
+    const startTime = Date.now()
+    const milestones = [10, 30, 60, 120, 300] // seconds
+    const tracked = new Set<number>()
+
+    const interval = setInterval(() => {
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000)
+
+      milestones.forEach(milestone => {
+        if (timeSpent >= milestone && !tracked.has(milestone)) {
+          tracked.add(milestone)
+
+          if (typeof window !== 'undefined' && 'gtag' in window) {
+            (window as any).gtag('event', 'time_on_page', {
+              time_spent: milestone,
+              custom_parameter_1: 'user_engagement'
+            })
+          }
+        }
+      })
+    }, 5000) // Check every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return null
+}
+
+// Component to track exit intent
+export function ExitIntentTracker() {
+  useEffect(() => {
+    let hasTriggered = false
+
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 0 && !hasTriggered) {
+        hasTriggered = true
+
+        if (typeof window !== 'undefined' && 'gtag' in window) {
+          (window as any).gtag('event', 'exit_intent', {
+            custom_parameter_1: 'user_behavior'
+          })
+        }
+      }
+    }
+
+    document.addEventListener('mouseleave', handleMouseLeave)
+    return () => document.removeEventListener('mouseleave', handleMouseLeave)
+  }, [])
+
+  return null
+}

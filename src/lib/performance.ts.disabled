@@ -1,0 +1,480 @@
+export interface PerformanceMetrics {
+  // Core Web Vitals
+  lcp?: number // Largest Contentful Paint
+  fid?: number // First Input Delay
+  cls?: number // Cumulative Layout Shift
+  fcp?: number // First Contentful Paint
+  ttfb?: number // Time to First Byte
+
+  // Custom metrics
+  pageLoadTime?: number
+  domContentLoaded?: number
+  firstInteraction?: number
+
+  // User context
+  userAgent: string
+  connectionType?: string
+  deviceMemory?: number
+  hardwareConcurrency?: number
+
+  // Page context
+  url: string
+  referrer: string
+  viewport: { width: number; height: number }
+  timestamp: number
+}
+
+export interface SecurityMetrics {
+  // Security events
+  eventType: 'rate_limit' | 'csrf_fail' | 'input_validation' | 'suspicious_activity'
+  details: Record<string, any>
+  ip: string
+  userAgent: string
+  timestamp: number
+  severity: 'low' | 'medium' | 'high' | 'critical'
+}
+
+class PerformanceMonitor {
+  private metrics: PerformanceMetrics[] = []
+  private securityEvents: SecurityMetrics[] = []
+  private observers: PerformanceObserver[] = []
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      this.initializeObservers()
+      this.collectInitialMetrics()
+    }
+  }
+
+  private initializeObservers() {
+    // Observe Core Web Vitals
+    this.observeWebVitals()
+
+    // Observe navigation timing
+    this.observeNavigation()
+
+    // Observe resource loading
+    this.observeResources()
+
+    // Observe long tasks
+    this.observeLongTasks()
+  }
+
+  private observeWebVitals() {
+    // Largest Contentful Paint
+    if ('PerformanceObserver' in window) {
+      try {
+        const lcpObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries()
+          const lastEntry = entries[entries.length - 1] as any
+          this.updateMetric('lcp', lastEntry.startTime)
+        })
+        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] })
+        this.observers.push(lcpObserver)
+      } catch (e) {
+        console.warn('LCP observer not supported')
+      }
+
+      // First Input Delay
+      try {
+        const fidObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries()
+          entries.forEach((entry: any) => {
+            this.updateMetric('fid', entry.processingStart - entry.startTime)
+          })
+        })
+        fidObserver.observe({ entryTypes: ['first-input'] })
+        this.observers.push(fidObserver)
+      } catch (e) {
+        console.warn('FID observer not supported')
+      }
+
+      // Cumulative Layout Shift
+      try {
+        let clsValue = 0
+        const clsObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries()
+          entries.forEach((entry: any) => {
+            if (!entry.hadRecentInput) {
+              clsValue += entry.value
+              this.updateMetric('cls', clsValue)
+            }
+          })
+        })
+        clsObserver.observe({ entryTypes: ['layout-shift'] })
+        this.observers.push(clsObserver)
+      } catch (e) {
+        console.warn('CLS observer not supported')
+      }
+
+      // First Contentful Paint
+      try {
+        const fcpObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries()
+          entries.forEach((entry: any) => {
+            if (entry.name === 'first-contentful-paint') {
+              this.updateMetric('fcp', entry.startTime)
+            }
+          })
+        })
+        fcpObserver.observe({ entryTypes: ['paint'] })
+        this.observers.push(fcpObserver)
+      } catch (e) {
+        console.warn('FCP observer not supported')
+      }
+    }
+  }
+
+  private observeNavigation() {
+    window.addEventListener('load', () => {
+      if ('performance' in window) {
+        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+
+        this.updateMetric('ttfb', navigation.responseStart - navigation.requestStart)
+        this.updateMetric('domContentLoaded', navigation.domContentLoadedEventEnd - navigation.navigationStart)
+        this.updateMetric('pageLoadTime', navigation.loadEventEnd - navigation.navigationStart)
+      }
+    })
+  }
+
+  private observeResources() {
+    if ('PerformanceObserver' in window) {
+      try {
+        const resourceObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries()
+          entries.forEach((entry: any) => {
+            // Track slow resources
+            if (entry.duration > 1000) { // > 1 second
+              this.reportSlowResource(entry)
+            }
+          })
+        })
+        resourceObserver.observe({ entryTypes: ['resource'] })
+        this.observers.push(resourceObserver)
+      } catch (e) {
+        console.warn('Resource observer not supported')
+      }
+    }
+  }
+
+  private observeLongTasks() {
+    if ('PerformanceObserver' in window) {
+      try {
+        const longTaskObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries()
+          entries.forEach((entry: any) => {
+            this.reportLongTask(entry)
+          })
+        })
+        longTaskObserver.observe({ entryTypes: ['longtask'] })
+        this.observers.push(longTaskObserver)
+      } catch (e) {
+        console.warn('Long task observer not supported')
+      }
+    }
+  }
+
+  private collectInitialMetrics() {
+    const metrics: Partial<PerformanceMetrics> = {
+      url: window.location.href,
+      referrer: document.referrer,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
+      userAgent: navigator.userAgent,
+      timestamp: Date.now()
+    }
+
+    // Collect device information
+    if ('connection' in navigator) {
+      const connection = (navigator as any).connection
+      metrics.connectionType = connection.effectiveType
+    }
+
+    if ('deviceMemory' in navigator) {
+      metrics.deviceMemory = (navigator as any).deviceMemory
+    }
+
+    if ('hardwareConcurrency' in navigator) {
+      metrics.hardwareConcurrency = navigator.hardwareConcurrency
+    }
+
+    this.metrics.push(metrics as PerformanceMetrics)
+  }
+
+  private updateMetric(key: keyof PerformanceMetrics, value: number) {
+    if (this.metrics.length === 0) {
+      this.collectInitialMetrics()
+    }
+
+    const currentMetrics = this.metrics[this.metrics.length - 1]
+    currentMetrics[key] = value as any
+    currentMetrics.timestamp = Date.now()
+  }
+
+  private reportSlowResource(entry: PerformanceResourceTiming) {
+    console.warn('Slow resource detected:', {
+      name: entry.name,
+      duration: entry.duration,
+      size: entry.transferSize
+    })
+
+    // Send to analytics if configured
+    this.sendToAnalytics('slow_resource', {
+      url: entry.name,
+      duration: entry.duration,
+      size: entry.transferSize
+    })
+  }
+
+  private reportLongTask(entry: PerformanceEntry) {
+    console.warn('Long task detected:', {
+      duration: entry.duration,
+      startTime: entry.startTime
+    })
+
+    // Send to analytics if configured
+    this.sendToAnalytics('long_task', {
+      duration: entry.duration,
+      startTime: entry.startTime
+    })
+  }
+
+  public recordSecurityEvent(
+    eventType: SecurityMetrics['eventType'],
+    details: Record<string, any>,
+    severity: SecurityMetrics['severity'] = 'medium'
+  ) {
+    const event: SecurityMetrics = {
+      eventType,
+      details,
+      ip: 'client-side', // Will be determined server-side
+      userAgent: navigator.userAgent,
+      timestamp: Date.now(),
+      severity
+    }
+
+    this.securityEvents.push(event)
+
+    // Send critical events immediately
+    if (severity === 'critical' || severity === 'high') {
+      this.sendSecurityAlert(event)
+    }
+  }
+
+  private sendSecurityAlert(event: SecurityMetrics) {
+    // Send to security monitoring endpoint
+    fetch('/api/security/alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    }).catch(console.error)
+  }
+
+  public getMetrics(): PerformanceMetrics[] {
+    return [...this.metrics]
+  }
+
+  public getLatestMetrics(): PerformanceMetrics | null {
+    return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1] : null
+  }
+
+  public getCoreWebVitals(): {
+    lcp?: number
+    fid?: number
+    cls?: number
+    score: 'good' | 'needs-improvement' | 'poor'
+  } {
+    const latest = this.getLatestMetrics()
+    if (!latest) return { score: 'poor' }
+
+    const { lcp, fid, cls } = latest
+
+    // Score based on Google's thresholds
+    let score: 'good' | 'needs-improvement' | 'poor' = 'good'
+
+    if (lcp && lcp > 4000) score = 'poor'
+    else if (lcp && lcp > 2500) score = 'needs-improvement'
+
+    if (fid && fid > 300) score = 'poor'
+    else if (fid && fid > 100) score = 'needs-improvement'
+
+    if (cls && cls > 0.25) score = 'poor'
+    else if (cls && cls > 0.1) score = 'needs-improvement'
+
+    return { lcp, fid, cls, score }
+  }
+
+  public sendMetrics() {
+    const metrics = this.getLatestMetrics()
+    if (!metrics) return
+
+    // Send to analytics endpoint
+    this.sendToAnalytics('page_metrics', metrics)
+  }
+
+  private sendToAnalytics(event: string, data: any) {
+    // Send to Google Analytics
+    if (typeof gtag !== 'undefined') {
+      gtag('event', event, {
+        custom_parameter_1: 'performance_monitoring',
+        value: JSON.stringify(data)
+      })
+    }
+
+    // Send to custom analytics endpoint
+    fetch('/api/analytics/performance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, data, timestamp: Date.now() })
+    }).catch(console.error)
+  }
+
+  public startUserJourneyTracking() {
+    // Track scroll depth
+    let maxScrollDepth = 0
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.pageYOffset
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+      const scrollPercent = (scrollTop + windowHeight) / documentHeight * 100
+
+      if (scrollPercent > maxScrollDepth) {
+        maxScrollDepth = scrollPercent
+
+        // Send milestone events
+        if (scrollPercent > 25 && scrollPercent < 30) {
+          this.sendToAnalytics('scroll_depth', { percent: 25 })
+        } else if (scrollPercent > 50 && scrollPercent < 55) {
+          this.sendToAnalytics('scroll_depth', { percent: 50 })
+        } else if (scrollPercent > 75 && scrollPercent < 80) {
+          this.sendToAnalytics('scroll_depth', { percent: 75 })
+        } else if (scrollPercent > 90) {
+          this.sendToAnalytics('scroll_depth', { percent: 100 })
+        }
+      }
+    })
+
+    // Track button clicks
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement
+      if (target.tagName === 'BUTTON' || target.closest('button')) {
+        const button = target.tagName === 'BUTTON' ? target : target.closest('button')!
+        this.sendToAnalytics('button_click', {
+          text: button.textContent?.trim(),
+          id: button.id,
+          className: button.className
+        })
+      }
+    })
+
+    // Track form interactions
+    document.addEventListener('focus', (event) => {
+      const target = event.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        this.sendToAnalytics('form_field_focus', {
+          type: (target as HTMLInputElement).type,
+          name: (target as HTMLInputElement).name,
+          id: target.id
+        })
+      }
+    })
+  }
+
+  public cleanup() {
+    this.observers.forEach(observer => observer.disconnect())
+    this.observers = []
+  }
+}
+
+// Performance budgets and thresholds
+export const PERFORMANCE_BUDGETS = {
+  // Core Web Vitals (Google's recommendations)
+  lcp: { good: 2500, poor: 4000 }, // Largest Contentful Paint (ms)
+  fid: { good: 100, poor: 300 },   // First Input Delay (ms)
+  cls: { good: 0.1, poor: 0.25 },  // Cumulative Layout Shift
+
+  // Additional metrics
+  fcp: { good: 1800, poor: 3000 }, // First Contentful Paint (ms)
+  ttfb: { good: 800, poor: 1800 }, // Time to First Byte (ms)
+  pageLoad: { good: 3000, poor: 5000 }, // Total page load time (ms)
+
+  // Resource sizes (bytes)
+  totalPageSize: { good: 1000000, poor: 3000000 }, // 1MB good, 3MB poor
+  imageSize: { good: 500000, poor: 1000000 },      // 500KB good, 1MB poor
+  jsSize: { good: 300000, poor: 600000 },          // 300KB good, 600KB poor
+  cssSize: { good: 100000, poor: 200000 },         // 100KB good, 200KB poor
+}
+
+// Real User Monitoring
+export class RealUserMonitoring {
+  private monitor: PerformanceMonitor
+
+  constructor() {
+    this.monitor = new PerformanceMonitor()
+  }
+
+  public init() {
+    // Send metrics when page becomes hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        this.monitor.sendMetrics()
+      }
+    })
+
+    // Send metrics before page unload
+    window.addEventListener('beforeunload', () => {
+      this.monitor.sendMetrics()
+    })
+
+    // Start user journey tracking
+    this.monitor.startUserJourneyTracking()
+
+    // Send metrics periodically
+    setInterval(() => {
+      this.monitor.sendMetrics()
+    }, 30000) // Every 30 seconds
+
+    console.log('Real User Monitoring initialized')
+  }
+
+  public getCoreWebVitals() {
+    return this.monitor.getCoreWebVitals()
+  }
+
+  public recordSecurityEvent(
+    eventType: SecurityMetrics['eventType'],
+    details: Record<string, any>,
+    severity: SecurityMetrics['severity'] = 'medium'
+  ) {
+    this.monitor.recordSecurityEvent(eventType, details, severity)
+  }
+
+  public cleanup() {
+    this.monitor.cleanup()
+  }
+}
+
+// Global performance monitor instance
+let performanceMonitor: RealUserMonitoring | null = null
+
+export function initializePerformanceMonitoring() {
+  if (typeof window !== 'undefined' && !performanceMonitor) {
+    performanceMonitor = new RealUserMonitoring()
+    performanceMonitor.init()
+  }
+  return performanceMonitor
+}
+
+export function getPerformanceMonitor() {
+  return performanceMonitor
+}
+
+// Hook for React components
+export function usePerformanceMonitoring() {
+  if (typeof window !== 'undefined') {
+    return performanceMonitor || initializePerformanceMonitoring()
+  }
+  return null
+}

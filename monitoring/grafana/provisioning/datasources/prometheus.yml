@@ -1,0 +1,52 @@
+# 6FB Methodologies Workshop - Grafana Datasource Configuration
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: POST
+      queryTimeout: 60s
+      timeInterval: 15s
+      manageAlerts: true
+      alertmanagerUid: alertmanager
+      prometheusType: Prometheus
+      prometheusVersion: 2.47.0
+      cacheLevel: High
+      disableMetricsLookup: false
+      customQueryParameters: ''
+      httpHeaderName1: 'X-Grafana-Org-Id'
+    secureJsonData:
+      httpHeaderValue1: '1'
+
+  - name: Alertmanager
+    type: alertmanager
+    uid: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    version: 1
+    editable: true
+    jsonData:
+      implementation: prometheus
+      handleGrafanaManagedAlerts: false
+
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: 6fb_methodologies
+    user: readonly_user
+    version: 1
+    editable: true
+    jsonData:
+      sslmode: disable
+      postgresVersion: 16
+      timescaledb: false
+    secureJsonData:
+      password: readonly_password_change_in_production
