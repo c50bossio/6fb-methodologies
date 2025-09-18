@@ -1,7 +1,7 @@
 import type { CityWorkshop } from '@/types'
 import { getPublicAvailableSpots, getActualAvailableSpots, checkInventoryStatus } from './inventory'
 
-// 6FB Methodologies Multi-City Tour Data
+// 6FB Methodologies Multi-City Tour Data - Chronological Order
 export const CITY_WORKSHOPS: CityWorkshop[] = [
   {
     id: 'dallas-jan-2026',
@@ -11,7 +11,7 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     year: 2026,
     dates: ['January 26-27'],
     location: 'Location TBA',
-    climateAppeal: 'Escape winter weather - Perfect 65°F',
+    climateAppeal: 'Mild Texas winter - comfortable 45-65°F range',
     status: 'upcoming',
     availableSpots: {
       ga: 35,
@@ -34,7 +34,7 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     year: 2026,
     dates: ['February 23-24'],
     location: 'Location TBA',
-    climateAppeal: 'Perfect February weather - 68°F ideal',
+    climateAppeal: 'Early spring warmth - pleasant 50-70°F days',
     status: 'upcoming',
     availableSpots: {
       ga: 35,
@@ -57,7 +57,7 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     year: 2026,
     dates: ['March 1-2'],
     location: 'Location TBA',
-    climateAppeal: 'Beautiful LA spring weather - 72°F',
+    climateAppeal: 'Perfect LA spring - sunny 60-75°F weather',
     status: 'upcoming',
     availableSpots: {
       ga: 35,
@@ -73,14 +73,14 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     }
   },
   {
-    id: 'sf-jun-2026',
-    city: 'San Francisco',
-    state: 'CA',
-    month: 'June 2026',
+    id: 'nyc-apr-2026',
+    city: 'New York City',
+    state: 'NY',
+    month: 'April 2026',
     year: 2026,
-    dates: ['June 22-23'],
+    dates: ['April 27-28'],
     location: 'Location TBA',
-    climateAppeal: 'Ideal SF spring climate - 66°F',
+    climateAppeal: 'Beautiful NYC spring - mild 55-70°F with blooms',
     status: 'upcoming',
     availableSpots: {
       ga: 35,
@@ -91,8 +91,8 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
       vip: 0
     },
     stripe: {
-      gaPriceId: 'price_1S8SbuEzoIvSRPoDkH4q9yEx',
-      vipPriceId: 'price_1S8Sc0EzoIvSRPoDEfGUMMSn'
+      gaPriceId: 'price_1S8ScUEzoIvSRPoDuWFvWWba',
+      vipPriceId: 'price_1S8ScZEzoIvSRPoDhV6sRleF'
     }
   },
   {
@@ -103,7 +103,7 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     year: 2026,
     dates: ['May 18-19'],
     location: 'Location TBA',
-    climateAppeal: 'Perfect Chicago spring - 70°F',
+    climateAppeal: 'Late spring perfection - warm 60-75°F lakefront',
     status: 'upcoming',
     availableSpots: {
       ga: 35,
@@ -119,14 +119,14 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     }
   },
   {
-    id: 'nyc-apr-2026',
-    city: 'New York City',
-    state: 'NY',
-    month: 'April 2026',
+    id: 'sf-jun-2026',
+    city: 'San Francisco',
+    state: 'CA',
+    month: 'June 2026',
     year: 2026,
-    dates: ['April 27-28'],
+    dates: ['June 22-23'],
     location: 'Location TBA',
-    climateAppeal: 'Amazing NYC summer - 75°F',
+    climateAppeal: 'Early summer charm - crisp 60-70°F bay weather',
     status: 'upcoming',
     availableSpots: {
       ga: 35,
@@ -137,8 +137,8 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
       vip: 0
     },
     stripe: {
-      gaPriceId: 'price_1S8ScUEzoIvSRPoDuWFvWWba',
-      vipPriceId: 'price_1S8ScZEzoIvSRPoDhV6sRleF'
+      gaPriceId: 'price_1S8SbuEzoIvSRPoDkH4q9yEx',
+      vipPriceId: 'price_1S8Sc0EzoIvSRPoDEfGUMMSn'
     }
   }
 ]
