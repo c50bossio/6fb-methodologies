@@ -50,15 +50,29 @@ This guide will help you set up **automatic 6FB member verification** using Skoo
 - **Data Format**: JSON
 
 ### **3.4: Configure Webhook Data**
-```json
-{
-  "firstName": "{{first_name}}",
-  "lastName": "{{last_name}}",
-  "email": "{{email}}",
-  "transactionId": "{{transaction_id}}",
-  "subscriptionDate": "{{subscription_date}}"
-}
-```
+
+**⚠️ IMPORTANT: Use Individual Field Mapping (Not Raw JSON)**
+
+Instead of using raw JSON, add each field separately in Zapier:
+
+**Settings:**
+- `payload_type`: `json`
+- `wrap_in_array`: `false`
+- `unflatten`: `yes`
+
+**Data Fields (add individually):**
+- `firstName`: `{{first_name}}`
+- `lastName`: `{{last_name}}`
+- `email`: `{{email}}`
+- `transactionId`: `{{transaction_id}}`
+- `subscriptionDate`: `{{subscription_date}}`
+
+**For Testing (use actual values):**
+- `firstName`: `Matthew`
+- `lastName`: `Odom`
+- `email`: `doc@docschopshopbs.com`
+- `transactionId`: `fe3b65ba297949c29227a80327a5959e`
+- `subscriptionDate`: `2024-09-16`
 
 ## 🧪 **Step 4: Test the Integration**
 
@@ -126,7 +140,25 @@ curl "https://6fbmethodologies.com/api/verify-member?email=member@example.com"
 - Monitor total member count increases
 - Watch for webhook processing errors
 
-### **Common Issues**
+### **Common Issues & Solutions**
+
+**Issue: "Missing required fields"**
+- **Cause**: Empty strings or incorrect JSON format in Zapier
+- **Solution**: Use individual field mapping instead of raw JSON
+- **Fix**: Add each field separately in Zapier data section:
+  - `firstName`: Matthew
+  - `lastName`: Odom
+  - `email`: doc@docschopshopbs.com
+  - `transactionId`: fe3b65ba297949c29227a80327a5959e
+  - `subscriptionDate`: 2024-09-16
+
+**Issue: "Internal server error"**
+- **Cause**: Wrong payload_type (using 'form' instead of 'json')
+- **Solution**: Set `payload_type: json` in Zapier webhook
+
+**Issue: "Data concatenated without field names"**
+- **Cause**: Zapier not parsing JSON structure correctly
+- **Solution**: Use key-value pairs instead of raw JSON block
 
 **Issue: "Member not found after webhook"**
 - **Cause**: Zapier data format mismatch
@@ -172,8 +204,25 @@ Make sure to update Zapier with the production URL when deploying!
 
 - ✅ **Webhook Endpoint**: Active and processing
 - ✅ **Member Added**: `info@fwbarbersupply.com` verified
+- ✅ **Member Added**: `doc@docschopshopbs.com` verified ✅ (Latest)
 - ✅ **Verification Working**: Returns Skool member status
+- ✅ **Zapier Integration**: Successfully configured and tested
 - ✅ **System Ready**: For production deployment
+
+**Latest Test (2025-09-18):**
+```json
+{
+  "success": true,
+  "message": "Member verified successfully",
+  "member": {
+    "email": "doc@docschopshopbs.com",
+    "name": "Matthew Odom",
+    "membershipType": "Skool-Member",
+    "isActive": true,
+    "verifiedAt": "2025-09-18T04:12:52.985Z"
+  }
+}
+```
 
 **The integration is working perfectly! 🚀**
 
