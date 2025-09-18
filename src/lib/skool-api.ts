@@ -329,7 +329,7 @@ export class SkoolAPIClient {
       username: rawMember.username || rawMember.handle,
       avatarUrl: rawMember.avatarUrl || rawMember.avatar_url || rawMember.profile_image,
       joinedAt: rawMember.joinedAt || rawMember.joined_at || rawMember.created_at || new Date().toISOString(),
-      isActive: rawMember.isActive ?? rawMember.is_active ?? rawMember.status === 'active' ?? true,
+      isActive: rawMember.isActive ?? rawMember.is_active ?? (rawMember.status === 'active') ?? true,
       subscriptionStatus: rawMember.subscriptionStatus || rawMember.subscription_status || 'active',
       lastPaymentDate: rawMember.lastPaymentDate || rawMember.last_payment_date,
       membershipLevel: rawMember.membershipLevel || rawMember.membership_level || 'basic'
