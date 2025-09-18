@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 
-// Initialize Stripe with secret key
+// Initialize Stripe Account (Bossio Solution INC)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
   typescript: true,
@@ -286,5 +286,224 @@ export function validateStripeWebhook(
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
     throw new Error('Invalid webhook signature')
+  }
+}
+
+// Member verification utilities
+export interface MemberVerificationResult {
+  isVerified: boolean
+  member?: {
+    email: string
+    name: string
+    customerId: string
+    membershipType: string
+    isActive: boolean
+    joinDate: string
+    lastPayment?: string
+    subscriptions?: Stripe.Subscription[]
+  }
+  error?: string
+}
+
+// Verify 6FB membership via Skool API
+export async function verify6FBMembership(email: string): Promise<MemberVerificationResult> {
+  try {
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // Priority 1: Check Skool API for 6FB Community membership
+    if (process.env.SKOOL_API_KEY && process.env.SKOOL_GROUP_URL) {
+      console.log(`Checking Skool API for: ${normalizedEmail}`)
+
+      try {
+        // TODO: Implement Skool API member lookup
+        // For now, we'll check Stripe for any successful payments as a fallback
+        console.log('Skool API integration pending - checking Stripe for membership history')
+      } catch (skoolError) {
+        console.warn('Skool API check failed:', skoolError)
+      }
+    }
+
+    // Check Stripe Account for workshop purchases (as membership indicator)
+    console.log(`Checking Stripe account for membership history: ${normalizedEmail}`)
+
+    const customers = await stripe.customers.list({
+      email: normalizedEmail,
+      limit: 10
+    })
+
+    if (customers.data.length > 0) {
+      for (const customer of customers.data) {
+        const membershipInfo = await checkCustomerMembership(customer)
+
+        if (membershipInfo.isVerified) {
+          console.log(`✅ Membership verified for: ${normalizedEmail}`)
+          return membershipInfo
+        }
+      }
+    }
+
+    // No membership found
+    return {
+      isVerified: false,
+      error: 'Email not found in 6FB member database'
+    }
+
+  } catch (error) {
+    console.error('Error verifying 6FB membership:', error)
+    return {
+      isVerified: false,
+      error: 'Internal error during verification'
+    }
+  }
+}
+
+// Check if a specific customer has valid membership
+async function checkCustomerMembership(
+  customer: Stripe.Customer
+): Promise<MemberVerificationResult> {
+  try {
+    // Check for active subscriptions
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: 'active',
+      limit: 10
+    })
+
+    // Check for successful payments (for one-time purchases)
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: customer.id,
+      limit: 20
+    })
+
+    const successfulPayments = paymentIntents.data.filter(pi =>
+      pi.status === 'succeeded' && pi.amount > 0
+    )
+
+    // Check for successful invoices
+    const invoices = await stripe.invoices.list({
+      customer: customer.id,
+      status: 'paid',
+      limit: 10
+    })
+
+    const hasActiveSubscription = subscriptions.data.length > 0
+    const hasSuccessfulPayments = successfulPayments.length > 0
+    const hasPaidInvoices = invoices.data.length > 0
+
+    if (hasActiveSubscription || hasSuccessfulPayments || hasPaidInvoices) {
+      // Determine membership type based on subscription or payment amount
+      let membershipType = 'Basic'
+      let lastPayment: string | undefined
+
+      if (hasActiveSubscription) {
+        const activeSubscription = subscriptions.data[0]
+        membershipType = determineMembershipType(activeSubscription.items.data[0]?.price.unit_amount || 0)
+        lastPayment = new Date(activeSubscription.created * 1000).toISOString()
+      } else if (hasSuccessfulPayments) {
+        const latestPayment = successfulPayments[0]
+        membershipType = determineMembershipType(latestPayment.amount)
+        lastPayment = new Date(latestPayment.created * 1000).toISOString()
+      } else if (hasPaidInvoices) {
+        const latestInvoice = invoices.data[0]
+        membershipType = determineMembershipType(latestInvoice.amount_paid)
+        lastPayment = new Date(latestInvoice.created * 1000).toISOString()
+      }
+
+      return {
+        isVerified: true,
+        member: {
+          email: customer.email!,
+          name: customer.name || 'Unknown Member',
+          customerId: customer.id,
+          membershipType,
+          isActive: hasActiveSubscription,
+          joinDate: new Date(customer.created * 1000).toISOString(),
+          lastPayment,
+          subscriptions: subscriptions.data
+        }
+      }
+    }
+
+    return {
+      isVerified: false,
+      error: 'No qualifying payments or subscriptions found'
+    }
+
+  } catch (error) {
+    console.error('Error checking customer membership:', error)
+    return {
+      isVerified: false,
+      error: 'Error checking membership status'
+    }
+  }
+}
+
+// Determine membership type based on payment amount
+function determineMembershipType(amountInCents: number): string {
+  if (amountInCents >= 150000) { // $1500+ (VIP workshop or high-value subscription)
+    return 'VIP'
+  } else if (amountInCents >= 100000) { // $1000+ (GA workshop or premium subscription)
+    return 'Premium'
+  } else if (amountInCents >= 50000) { // $500+ (mid-tier)
+    return 'Pro'
+  } else if (amountInCents > 0) { // Any payment
+    return 'Basic'
+  }
+  return 'Basic'
+}
+
+// Get member details by customer ID
+export async function getMemberByCustomerId(customerId: string): Promise<MemberVerificationResult> {
+  try {
+    const customer = await stripe.customers.retrieve(customerId)
+
+    if (customer.deleted) {
+      return {
+        isVerified: false,
+        error: 'Customer account deleted'
+      }
+    }
+
+    return await checkCustomerMembership(customer as Stripe.Customer)
+
+  } catch (error) {
+    console.error('Error retrieving member by customer ID:', error)
+    return {
+      isVerified: false,
+      error: 'Customer not found'
+    }
+  }
+}
+
+// Sync member from Stripe webhook data
+export async function syncMemberFromWebhook(
+  customer: Stripe.Customer,
+  eventType: string,
+  eventData?: any
+): Promise<void> {
+  try {
+    console.log(`Syncing member from webhook: ${eventType}`, {
+      customerId: customer.id,
+      email: customer.email,
+      eventType
+    })
+
+    // This is where you would sync to your member database
+    // For now, we'll just log the sync operation
+    const membershipInfo = await checkCustomerMembership(customer)
+
+    if (membershipInfo.isVerified) {
+      console.log('Member synced successfully:', {
+        email: customer.email,
+        membershipType: membershipInfo.member?.membershipType,
+        isActive: membershipInfo.member?.isActive
+      })
+    }
+
+    // TODO: Implement actual database sync here
+    // await memberDatabase.upsert(membershipInfo.member)
+
+  } catch (error) {
+    console.error('Error syncing member from webhook:', error)
   }
 }

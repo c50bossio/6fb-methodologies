@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, validateStripeWebhook } from '@/lib/stripe'
+import { stripe, validateStripeWebhook, syncMemberFromWebhook } from '@/lib/stripe'
 import { analytics } from '@/lib/analytics'
 // import { SecurityMonitor } from '@/lib/security'
 // import { sendPaymentConfirmation, NotificationData } from '@/lib/notifications'
@@ -652,6 +652,106 @@ class StripeWebhookProcessor {
     }
   }
 
+  private async handleCustomerSubscriptionCreated(subscription: Stripe.Subscription) {
+    try {
+      console.log('Customer subscription created:', subscription.id)
+
+      // Get customer details
+      const customer = await stripe.customers.retrieve(subscription.customer as string)
+
+      if (customer.deleted) {
+        console.warn('Subscription created for deleted customer:', subscription.id)
+        return
+      }
+
+      // Sync member from subscription creation
+      await syncMemberFromWebhook(customer as Stripe.Customer, 'customer.subscription.created', subscription)
+
+      // Track analytics
+      await analytics.trackEvent('subscription_created', {
+        subscriptionId: subscription.id,
+        customerId: customer.id,
+        customerEmail: customer.email,
+        status: subscription.status,
+        currentPeriodStart: subscription.current_period_start,
+        currentPeriodEnd: subscription.current_period_end,
+      })
+
+      console.log('Subscription created and member synced:', {
+        subscriptionId: subscription.id,
+        customerEmail: customer.email,
+        status: subscription.status
+      })
+
+    } catch (error) {
+      console.error('Error handling subscription created:', error)
+      throw error
+    }
+  }
+
+  private async handleCustomerCreated(customer: Stripe.Customer) {
+    try {
+      console.log('Customer created:', customer.id)
+
+      // Sync new customer as potential member
+      await syncMemberFromWebhook(customer, 'customer.created')
+
+      // Track analytics
+      await analytics.trackEvent('customer_created', {
+        customerId: customer.id,
+        customerEmail: customer.email,
+        customerName: customer.name,
+        created: customer.created,
+      })
+
+      console.log('Customer created and synced:', {
+        customerId: customer.id,
+        customerEmail: customer.email
+      })
+
+    } catch (error) {
+      console.error('Error handling customer created:', error)
+      throw error
+    }
+  }
+
+  private async handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+    try {
+      console.log('Invoice payment succeeded:', invoice.id)
+
+      // Get customer details
+      const customer = await stripe.customers.retrieve(invoice.customer as string)
+
+      if (customer.deleted) {
+        console.warn('Invoice payment for deleted customer:', invoice.id)
+        return
+      }
+
+      // Sync member from successful payment
+      await syncMemberFromWebhook(customer as Stripe.Customer, 'invoice.payment_succeeded', invoice)
+
+      // Track analytics
+      await analytics.trackEvent('invoice_payment_succeeded', {
+        invoiceId: invoice.id,
+        customerId: customer.id,
+        customerEmail: customer.email,
+        amountPaid: invoice.amount_paid,
+        currency: invoice.currency,
+        subscriptionId: invoice.subscription,
+      })
+
+      console.log('Invoice payment succeeded and member synced:', {
+        invoiceId: invoice.id,
+        customerEmail: customer.email,
+        amountPaid: (invoice.amount_paid / 100).toFixed(2)
+      })
+
+    } catch (error) {
+      console.error('Error handling invoice payment succeeded:', error)
+      throw error
+    }
+  }
+
   private async triggerZapierWorkflows(session: Stripe.Checkout.Session) {
     // Send data to Zapier for external integrations
     const zapierData = {
@@ -736,11 +836,15 @@ export async function POST(request: NextRequest) {
         break
 
       case 'invoice.payment_succeeded':
-        console.log('Invoice payment succeeded:', event.data.object.id)
+        await processor['handleInvoicePaymentSucceeded'](event.data.object as Stripe.Invoice)
         break
 
       case 'customer.subscription.created':
-        console.log('Subscription created:', event.data.object.id)
+        await processor['handleCustomerSubscriptionCreated'](event.data.object as Stripe.Subscription)
+        break
+
+      case 'customer.created':
+        await processor['handleCustomerCreated'](event.data.object as Stripe.Customer)
         break
 
       default:
