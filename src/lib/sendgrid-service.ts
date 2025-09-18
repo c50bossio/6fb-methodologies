@@ -194,7 +194,7 @@ class SendGridService {
         </ul>
 
         <h3>❗ Cancellation Policy</h3>
-        <p>Full refunds available within 30 days of purchase AND up to 7 days before the event (whichever comes first). After that, tickets are non-refundable but transferable to another person or future workshop date. Contact us if you need to make changes.</p>
+        <p>Full refunds available within 7 days of purchase. No refunds available after 7 days from purchase date. Tickets are transferable to another person or future workshop date subject to availability. Contact us if you need to make changes.</p>
 
         <h3>🎯 What's Next?</h3>
         <ul>
@@ -399,8 +399,29 @@ export async function sendPaymentConfirmationViaSendGrid(data: {
   quantity: number
   totalAmount: number
   sessionId: string
+  workshopDate?: string
+  city?: string
 }) {
   const [firstName] = data.customerName.split(' ')
+
+  // Get workshop date based on city or use provided date
+  const getWorkshopDateForCity = (city: string): string => {
+    const workshopSchedule: Record<string, string> = {
+      'Dallas': 'January 26-27, 2026',
+      'Atlanta': 'February 23-24, 2026',
+      'Los Angeles': 'March 1-2, 2026',
+      'NYC': 'April 27-28, 2026',
+      'New York': 'April 27-28, 2026',
+      'Chicago': 'May 18-19, 2026',
+      'San Francisco': 'June 22-23, 2026'
+    };
+    return workshopSchedule[city] || 'January 26-27, 2026';
+  };
+
+  const workshopDate = data.workshopDate ||
+                      (data.city ? getWorkshopDateForCity(data.city) : null) ||
+                      process.env.WORKSHOP_DATE_1 ||
+                      'TBA';
 
   return await sendGridService.sendPaymentConfirmation({
     email: data.customerEmail,
@@ -409,6 +430,6 @@ export async function sendPaymentConfirmationViaSendGrid(data: {
     quantity: data.quantity,
     totalAmount: data.totalAmount,
     sessionId: data.sessionId,
-    workshopDate: process.env.WORKSHOP_DATE_1 || 'March 15, 2024'
+    workshopDate
   })
 }

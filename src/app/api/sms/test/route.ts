@@ -19,15 +19,15 @@ export async function POST(request: NextRequest) {
       case 'mock-sale':
         // Send a mock ticket sale notification for testing
         const mockSaleResult = await smsService.sendTicketSaleNotification({
-          city: 'Dallas',
-          ticketType: 'GA',
-          quantity: 2,
+          city: 'Atlanta',
+          ticketType: 'VIP',
+          quantity: 1,
           customerEmail: 'test@example.com',
-          totalAmount: 200000, // $2,000.00
+          totalAmount: 150000, // $1,500.00
           customerName: 'Test Customer',
           sessionId: 'test_session_' + Date.now(),
-          gaTicketsRemaining: 31,
-          vipTicketsRemaining: 15
+          gaTicketsRemaining: 28,
+          vipTicketsRemaining: 12
         })
 
         return NextResponse.json({

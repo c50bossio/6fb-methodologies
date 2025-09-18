@@ -79,7 +79,7 @@ export const EMAIL_TEMPLATES = {
         </div>
 
         <div style="background: #0f172a; padding: 20px; text-align: center; font-size: 14px; color: #94a3b8;">
-          <p>© 2024 6FB Methodologies Workshop. All rights reserved.</p>
+          <p>© 2026 6FB Methodologies Workshop. All rights reserved.</p>
           <p>This is an automated confirmation email.</p>
         </div>
       </div>
@@ -182,7 +182,7 @@ export const EMAIL_TEMPLATES = {
         </div>
 
         <div style="background: #0f172a; padding: 20px; text-align: center; font-size: 14px; color: #94a3b8;">
-          <p>© 2024 6FB Methodologies Workshop. All rights reserved.</p>
+          <p>© 2026 6FB Methodologies Workshop. All rights reserved.</p>
           <p>This discount code is exclusive to verified 6FB members.</p>
         </div>
       </div>
@@ -421,7 +421,7 @@ export class NotificationService {
       totalAmount: 300000, // $3000
       sessionId: 'test_session_123456',
       discountApplied: '20% 6FB Member Discount',
-      workshopDate: 'March 15, 2024'
+      workshopDate: process.env.WORKSHOP_DATE_1 || 'TBA'
     }
 
     const results = await this.sendWorkshopNotification('PAYMENT_CONFIRMATION', testData, {

@@ -11,7 +11,7 @@ const csrfTokenStore = new Map<string, string>()
 const SECURITY_CONFIG = {
   rateLimiting: {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100, // Limit each IP to 100 requests per windowMs
+    maxRequests: process.env.NODE_ENV === 'development' ? 1000 : 100, // Higher limit in development
     blockDuration: 60 * 60 * 1000, // Block for 1 hour after exceeding limit
   },
   blockedPaths: [
@@ -89,8 +89,11 @@ export function middleware(request: NextRequest) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 
-  // Apply rate limiting
-  if (isRateLimited(clientIP)) {
+  // Apply rate limiting (bypass for localhost in development)
+  const isLocalhost = clientIP === '::1' || clientIP === '127.0.0.1' || clientIP === 'unknown'
+  const shouldApplyRateLimit = !(process.env.NODE_ENV === 'development' && isLocalhost)
+
+  if (shouldApplyRateLimit && isRateLimited(clientIP)) {
     console.warn(`Rate limit exceeded for IP: ${clientIP}`)
     return new NextResponse('Too Many Requests', {
       status: 429,

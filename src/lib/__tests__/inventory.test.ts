@@ -238,7 +238,7 @@ if (require.main === module) {
 
       // Example checkout
       await exampleCheckoutFlow(
-        'nyc-jun-2026',
+        'nyc-apr-2026',
         'VIP',
         2,
         'customer@example.com'

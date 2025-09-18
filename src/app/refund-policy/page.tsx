@@ -33,12 +33,16 @@ export default function RefundPolicy() {
 
           <section>
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-6">
-              <h2 className="text-2xl font-semibold mb-4 text-red-400">🚨 Important: 7-Day No-Refund Policy</h2>
+              <h2 className="text-2xl font-semibold mb-4 text-red-400">🚨 Important: Hybrid Refund Policy</h2>
               <p className="text-lg leading-relaxed">
-                <strong>All workshop registrations become FINAL and NON-REFUNDABLE 7 days prior to the scheduled workshop date.</strong>
+                <strong>All workshop registrations become FINAL and NON-REFUNDABLE after whichever comes FIRST:</strong>
               </p>
-              <p className="mt-3 leading-relaxed">
-                This policy ensures we can maintain workshop quality, manage venue logistics, and provide the best possible experience for all attendees.
+              <ul className="mt-3 space-y-2 text-lg">
+                <li><strong>• 30 days after your purchase date</strong>, OR</li>
+                <li><strong>• 7 days before the scheduled workshop date</strong></li>
+              </ul>
+              <p className="mt-4 leading-relaxed">
+                This hybrid system ensures fair refund windows while allowing us to maintain workshop quality and manage venue logistics effectively.
               </p>
             </div>
           </section>
@@ -48,30 +52,68 @@ export default function RefundPolicy() {
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3 text-green-400">✅ More than 7 Days Before Workshop</h3>
-                <ul className="space-y-2">
-                  <li>• <strong>Full refund available</strong></li>
-                  <li>• Minus 5% payment processing fee</li>
-                  <li>• Processed within 5-7 business days</li>
-                  <li>• Must submit cancellation request online</li>
+                <h3 className="text-xl font-semibold mb-3 text-green-400">✅ Refunds Available</h3>
+                <p className="mb-3 font-semibold">BEFORE the cutoff date (whichever comes first):</p>
+                <ul className="space-y-2 mb-4">
+                  <li>• Within 30 days of purchase</li>
+                  <li>• More than 7 days before workshop</li>
                 </ul>
+                <div className="border-t border-green-500/20 pt-3">
+                  <p className="text-sm font-semibold mb-2">Refund Details:</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Full refund minus 5% processing fee</li>
+                    <li>• Processed within 5-7 business days</li>
+                    <li>• Must submit cancellation request online</li>
+                  </ul>
+                </div>
               </div>
 
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3 text-red-400">❌ 7 Days or Less Before Workshop</h3>
-                <ul className="space-y-2">
-                  <li>• <strong>No refunds available</strong></li>
-                  <li>• Registration is final</li>
-                  <li>• Transfer options may be available (see below)</li>
-                  <li>• Medical emergency exceptions may apply</li>
+                <h3 className="text-xl font-semibold mb-3 text-red-400">❌ No Refunds Available</h3>
+                <p className="mb-3 font-semibold">AFTER the cutoff date (whichever comes first):</p>
+                <ul className="space-y-2 mb-4">
+                  <li>• More than 30 days after purchase</li>
+                  <li>• 7 days or less before workshop</li>
                 </ul>
+                <div className="border-t border-red-500/20 pt-3">
+                  <p className="text-sm font-semibold mb-2">Your Options:</p>
+                  <ul className="space-y-1 text-sm">
+                    <li>• Registration is final</li>
+                    <li>• Transfer options may be available</li>
+                    <li>• Medical emergency exceptions may apply</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-              <p className="text-sm leading-relaxed">
-                <strong>Example:</strong> If your workshop is scheduled for Saturday, February 20th, the no-refund period begins at 11:59 PM on Saturday, February 13th (exactly 7 days prior).
-              </p>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
+              <h4 className="font-semibold mb-3 text-blue-400">📋 Hybrid Policy Examples</h4>
+
+              <div className="space-y-3 text-sm">
+                <div className="bg-background-primary/20 p-3 rounded">
+                  <p className="font-semibold mb-1">Scenario A: Early Purchase</p>
+                  <p>• Workshop: Atlanta (Feb 23-24, 2026)</p>
+                  <p>• Purchase Date: Oct 15, 2025</p>
+                  <p>• Refund Deadline: <strong>Nov 14, 2025</strong> (30 days after purchase)</p>
+                  <p className="text-xs text-blue-300 mt-1">30-day limit comes first since purchase was made early</p>
+                </div>
+
+                <div className="bg-background-primary/20 p-3 rounded">
+                  <p className="font-semibold mb-1">Scenario B: Late Purchase</p>
+                  <p>• Workshop: Dallas (Jan 25-26, 2026)</p>
+                  <p>• Purchase Date: Jan 10, 2026</p>
+                  <p>• Refund Deadline: <strong>Jan 18, 2026</strong> (7 days before workshop)</p>
+                  <p className="text-xs text-blue-300 mt-1">7-day workshop limit comes first since purchase was made close to date</p>
+                </div>
+
+                <div className="bg-background-primary/20 p-3 rounded">
+                  <p className="font-semibold mb-1">Scenario C: Your Example</p>
+                  <p>• Workshop: March 1-2, 2026</p>
+                  <p>• Purchase Date: Feb 5, 2026 (24 days before)</p>
+                  <p>• Refund Deadline: <strong>Feb 22, 2026</strong> (7 days before workshop)</p>
+                  <p className="text-xs text-blue-300 mt-1">7-day limit comes first - customer gets 17 days, not the full 30</p>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -108,7 +150,7 @@ export default function RefundPolicy() {
 
             <h3 className="text-xl font-semibold mb-3">Transfer to Another Person</h3>
             <ul className="list-disc pl-6 mb-4 space-y-2">
-              <li><strong>Eligibility:</strong> Available if more than 7 days before workshop</li>
+              <li><strong>Eligibility:</strong> Available anytime more than 7 days before workshop (regardless of purchase date or 30-day limit)</li>
               <li><strong>Fee:</strong> $50 administrative fee</li>
               <li><strong>Requirements:</strong> New attendee must meet workshop prerequisites</li>
               <li><strong>Process:</strong> Submit transfer request with new attendee information</li>
@@ -122,9 +164,9 @@ export default function RefundPolicy() {
               <li><strong>Limitations:</strong> Maximum one transfer per registration</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3">Emergency Transfers (Within 7 Days)</h3>
+            <h3 className="text-xl font-semibold mb-3">Emergency Transfers (Within 7 Days of Workshop)</h3>
             <p className="mb-4 leading-relaxed">
-              While refunds are not available within 7 days, we may allow transfers in specific circumstances:
+              While refunds are not available within 7 days of the workshop, we may allow transfers in specific circumstances:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Documented medical emergencies (hospitalization, surgery)</li>
@@ -253,9 +295,9 @@ export default function RefundPolicy() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-tomb45-green">10. Why This Policy Exists</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-tomb45-green">10. Why This Hybrid Policy Exists</h2>
             <p className="mb-4 leading-relaxed">
-              Our 7-day no-refund policy exists to ensure we can deliver the highest quality workshop experience:
+              Our hybrid refund policy (30 days from purchase OR 7 days before workshop - whichever comes first) exists to balance customer fairness with operational requirements:
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">

@@ -271,13 +271,7 @@ export async function validateMemberDiscountEligibility(
       }
     }
 
-    // Member discount only applies to GA tickets
-    if (ticketType.toUpperCase() !== 'GA') {
-      return {
-        eligible: false,
-        reason: 'Member discount only applies to GA tickets, not VIP'
-      }
-    }
+    // Member discount applies to both GA (20%) and VIP (10%) tickets
 
     return { eligible: true }
 

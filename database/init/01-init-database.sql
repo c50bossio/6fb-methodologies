@@ -183,6 +183,31 @@ CREATE TABLE sms_notifications (
 );
 
 -- ==============================================
+-- Table: member_discount_usage
+-- Tracking 6FB member discount usage to enforce one-time use
+-- ==============================================
+CREATE TABLE member_discount_usage (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) NOT NULL,
+    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+    session_id VARCHAR(100) NOT NULL,
+    payment_intent_id VARCHAR(100),
+    city_id VARCHAR(50) REFERENCES cities(id) ON DELETE CASCADE,
+    ticket_type ticket_tier NOT NULL,
+    quantity INTEGER NOT NULL,
+    discount_amount_cents INTEGER NOT NULL,
+    original_amount_cents INTEGER NOT NULL,
+    final_amount_cents INTEGER NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB,
+
+    CONSTRAINT member_discount_usage_email_unique UNIQUE (email),
+    CONSTRAINT member_discount_usage_quantity_check CHECK (quantity > 0),
+    CONSTRAINT member_discount_usage_discount_check CHECK (discount_amount_cents > 0),
+    CONSTRAINT member_discount_usage_amounts_check CHECK (original_amount_cents > final_amount_cents)
+);
+
+-- ==============================================
 -- Table: sessions
 -- User session management
 -- ==============================================
@@ -254,6 +279,13 @@ CREATE INDEX idx_sms_notifications_status ON sms_notifications(status);
 CREATE INDEX idx_sms_notifications_created_at ON sms_notifications(created_at);
 CREATE INDEX idx_sms_notifications_payment ON sms_notifications(payment_id);
 CREATE INDEX idx_sms_notifications_retry ON sms_notifications(retry_count, status);
+
+-- Member Discount Usage
+CREATE INDEX idx_member_discount_usage_email ON member_discount_usage(email);
+CREATE INDEX idx_member_discount_usage_customer ON member_discount_usage(customer_id);
+CREATE INDEX idx_member_discount_usage_session ON member_discount_usage(session_id);
+CREATE INDEX idx_member_discount_usage_city ON member_discount_usage(city_id);
+CREATE INDEX idx_member_discount_usage_used_at ON member_discount_usage(used_at);
 
 -- Sessions
 CREATE INDEX idx_sessions_token ON sessions(session_token);
@@ -360,9 +392,9 @@ INSERT INTO cities (id, name, state, workshop_date, timezone, venue_capacity_ga,
 ('dallas-jan-2026', 'Dallas', 'TX', '2026-01-15', 'America/Chicago', 35, 15),
 ('atlanta-feb-2026', 'Atlanta', 'GA', '2026-02-15', 'America/New_York', 35, 15),
 ('la-mar-2026', 'Los Angeles', 'CA', '2026-03-15', 'America/Los_Angeles', 35, 15),
-('sf-apr-2026', 'San Francisco', 'CA', '2026-04-15', 'America/Los_Angeles', 35, 15),
+('sf-jun-2026', 'San Francisco', 'CA', '2026-06-15', 'America/Los_Angeles', 35, 15),
 ('chicago-may-2026', 'Chicago', 'IL', '2026-05-15', 'America/Chicago', 35, 15),
-('nyc-jun-2026', 'New York City', 'NY', '2026-06-15', 'America/New_York', 35, 15);
+('nyc-apr-2026', 'New York City', 'NY', '2026-04-15', 'America/New_York', 35, 15);
 
 -- Initialize inventory for all cities
 INSERT INTO inventory (city_id, tier, public_limit, actual_limit, sold, reserved)
@@ -389,6 +421,10 @@ GRANT USAGE ON SCHEMA public TO app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_user;
+
+-- Grant permissions on new tables created after this script
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_user;
 
 -- Create read-only user (for monitoring/reporting)
 CREATE USER readonly_user WITH PASSWORD 'readonly_password_change_in_production';

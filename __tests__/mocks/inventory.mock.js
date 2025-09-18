@@ -6,9 +6,9 @@ let mockInventoryState = {
   'dallas-jan-2026': { ga: 35, vip: 15 },
   'atlanta-feb-2026': { ga: 35, vip: 15 },
   'la-mar-2026': { ga: 35, vip: 15 },
-  'sf-apr-2026': { ga: 35, vip: 15 },
+  'sf-jun-2026': { ga: 35, vip: 15 },
   'chicago-may-2026': { ga: 35, vip: 15 },
-  'nyc-jun-2026': { ga: 35, vip: 15 },
+  'nyc-apr-2026': { ga: 35, vip: 15 },
 }
 
 // Mock hidden inventory (for overselling protection)
@@ -16,9 +16,9 @@ let mockHiddenInventory = {
   'dallas-jan-2026': { ga: 10, vip: 0 },
   'atlanta-feb-2026': { ga: 15, vip: 0 },
   'la-mar-2026': { ga: 15, vip: 0 },
-  'sf-apr-2026': { ga: 10, vip: 0 },
+  'sf-jun-2026': { ga: 10, vip: 0 },
   'chicago-may-2026': { ga: 15, vip: 0 },
-  'nyc-jun-2026': { ga: 15, vip: 0 },
+  'nyc-apr-2026': { ga: 15, vip: 0 },
 }
 
 // Mock concurrent purchase tracking
@@ -215,18 +215,18 @@ export const resetMockInventory = () => {
     'dallas-jan-2026': { ga: 35, vip: 15 },
     'atlanta-feb-2026': { ga: 35, vip: 15 },
     'la-mar-2026': { ga: 35, vip: 15 },
-    'sf-apr-2026': { ga: 35, vip: 15 },
+    'sf-jun-2026': { ga: 35, vip: 15 },
     'chicago-may-2026': { ga: 35, vip: 15 },
-    'nyc-jun-2026': { ga: 35, vip: 15 },
+    'nyc-apr-2026': { ga: 35, vip: 15 },
   }
 
   mockHiddenInventory = {
     'dallas-jan-2026': { ga: 10, vip: 0 },
     'atlanta-feb-2026': { ga: 15, vip: 0 },
     'la-mar-2026': { ga: 15, vip: 0 },
-    'sf-apr-2026': { ga: 10, vip: 0 },
+    'sf-jun-2026': { ga: 10, vip: 0 },
     'chicago-may-2026': { ga: 15, vip: 0 },
-    'nyc-jun-2026': { ga: 15, vip: 0 },
+    'nyc-apr-2026': { ga: 15, vip: 0 },
   }
 
   mockPendingReservations.clear()

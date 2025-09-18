@@ -23,7 +23,7 @@ import {
   MapPin
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import { calculatePricing, calculateBulkDiscount } from '@/lib/stripe'
+import { calculatePricing, calculateBulkDiscount, getSixFBDiscount } from '@/lib/stripe'
 import { getCityById } from '@/lib/cities'
 import type { CityWorkshop } from '@/types'
 
@@ -50,6 +50,8 @@ function PricingPageContent() {
   const [quantities, setQuantities] = useState({ ga: 1, vip: 1 })
   const [promoCodes, setPromoCodes] = useState({ ga: '', vip: '' })
   const [promoValidation, setPromoValidation] = useState<{ ga: boolean | null, vip: boolean | null }>({ ga: null, vip: null })
+  const [pricing, setPricing] = useState<{ ga: any, vip: any }>({ ga: null, vip: null })
+  const [isCalculatingPrices, setIsCalculatingPrices] = useState(false)
 
   const tiers: PricingTier[] = [
     {
@@ -153,29 +155,85 @@ function PricingPageContent() {
     }
   }
 
-  const calculatePrice = (tier: PricingTier, quantity: number) => {
-    return calculatePricing(
-      tier.id.toUpperCase() as 'GA' | 'VIP',
-      quantity,
-      verificationResult?.isVerified || false,
-      promoCodes[tier.id] || '',
-      promoValidation[tier.id] === true
-    )
+  // Calculate prices with proper async handling
+  useEffect(() => {
+    const calculatePrices = async () => {
+      if (!selectedCity) return
+
+      setIsCalculatingPrices(true)
+      try {
+        const gaResult = await calculatePricing(
+          'GA',
+          quantities.ga,
+          verificationResult?.isVerified || false,
+          verificationResult?.isVerified ? email : undefined,
+          promoCodes.ga || '',
+          promoValidation.ga === true
+        )
+
+        const vipResult = await calculatePricing(
+          'VIP',
+          quantities.vip,
+          verificationResult?.isVerified || false,
+          verificationResult?.isVerified ? email : undefined,
+          promoCodes.vip || '',
+          promoValidation.vip === true
+        )
+
+        setPricing({ ga: gaResult, vip: vipResult })
+      } catch (error) {
+        console.error('Pricing calculation error:', error)
+        // Fallback to default prices
+        setPricing({
+          ga: {
+            originalPrice: 1000,
+            finalPrice: 1000,
+            discount: 0,
+            discountReason: '',
+            savings: 0,
+            discountEligible: true
+          },
+          vip: {
+            originalPrice: 1500,
+            finalPrice: 1500,
+            discount: 0,
+            discountReason: '',
+            savings: 0,
+            discountEligible: true
+          }
+        })
+      } finally {
+        setIsCalculatingPrices(false)
+      }
+    }
+
+    calculatePrices()
+  }, [selectedCity, quantities, verificationResult, promoCodes, promoValidation, email])
+
+  const getPricing = (tierId: 'ga' | 'vip') => {
+    return pricing[tierId] || {
+      originalPrice: tierId === 'ga' ? 1000 : 1500,
+      finalPrice: tierId === 'ga' ? 1000 : 1500,
+      discount: 0,
+      discountReason: '',
+      savings: 0,
+      discountEligible: true
+    }
   }
 
   const handleRegister = (tierId: 'ga' | 'vip') => {
     const tier = tiers.find(t => t.id === tierId)!
     const quantity = quantities[tierId]
-    const pricing = calculatePrice(tier, quantity)
+    const currentPricing = getPricing(tierId)
 
     // Store registration data
     const registrationData = {
       pricing: {
-        originalPrice: pricing.originalPrice,
-        finalPrice: pricing.finalPrice,
-        discount: pricing.discount,
-        discountReason: pricing.discountReason,
-        savings: pricing.savings
+        originalPrice: currentPricing.originalPrice,
+        finalPrice: currentPricing.finalPrice,
+        discount: currentPricing.discount,
+        discountReason: currentPricing.discountReason,
+        savings: currentPricing.savings
       },
       ticketInfo: {
         type: tierId,
@@ -362,7 +420,7 @@ function PricingPageContent() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {tiers.map((tier, index) => {
             const quantity = quantities[tier.id]
-            const pricing = calculatePrice(tier, quantity)
+            const currentPricing = getPricing(tier.id)
 
             return (
               <motion.div
@@ -389,24 +447,31 @@ function PricingPageContent() {
                     </div>
 
                     <div className="space-y-2">
-                      {pricing.savings > 0 && (
+                      {currentPricing.savings > 0 && (
                         <div className="text-sm">
                           <span className="text-text-muted line-through">
-                            {formatCurrency(pricing.originalPrice)}
+                            {formatCurrency(currentPricing.originalPrice)}
                           </span>
                           <Badge variant="success" className="ml-2 text-xs">
-                            Save {formatCurrency(pricing.savings)}
+                            Save {formatCurrency(currentPricing.savings)}
                           </Badge>
                         </div>
                       )}
 
                       <div className="text-4xl font-bold text-tomb45-green">
-                        {formatCurrency(pricing.finalPrice)}
+                        {isCalculatingPrices ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                            <span>Loading...</span>
+                          </div>
+                        ) : (
+                          formatCurrency(currentPricing.finalPrice)
+                        )}
                       </div>
 
-                      {pricing.discountReason && (
+                      {currentPricing.discountReason && (
                         <div className="text-xs text-tomb45-green">
-                          {pricing.discountReason} ({pricing.discount}% off)
+                          {currentPricing.discountReason} ({currentPricing.discount}% off)
                         </div>
                       )}
                     </div>
@@ -452,7 +517,7 @@ function PricingPageContent() {
                           <div className="mt-2 text-xs text-tomb45-green">
                             {verificationResult?.isVerified ? (
                               <span>
-                                1 Member ticket (20% off) + {quantity - 1} Bulk tickets ({calculateBulkDiscount(quantity) * 100}% off)
+                                1 Member ticket ({getSixFBDiscount(tier.id.toUpperCase() as 'GA' | 'VIP') * 100}% off) + {quantity - 1} Bulk tickets ({calculateBulkDiscount(quantity) * 100}% off)
                               </span>
                             ) : (
                               <span>
@@ -508,11 +573,20 @@ function PricingPageContent() {
                     {/* CTA Button */}
                     <Button
                       onClick={() => handleRegister(tier.id)}
-                      className="w-full"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white h-16 px-12 text-lg font-semibold transition-colors"
                       size="lg"
-                      variant={tier.popular ? 'primary' : 'secondary'}
+                      disabled={isCalculatingPrices || !currentPricing.discountEligible}
                     >
-                      Secure Your {selectedCity.city} {tier.name} Spot
+                      {isCalculatingPrices ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                          Calculating...
+                        </>
+                      ) : !currentPricing.discountEligible ? (
+                        "Discount Not Available"
+                      ) : (
+                        `Secure Your ${selectedCity.city} ${tier.name} Spot`
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
@@ -545,7 +619,7 @@ function PricingPageContent() {
 
           <p className="text-xs text-text-muted max-w-2xl mx-auto">
             Secure payment processing by Stripe. All major credit cards accepted.
-            Refund policy: Full refund available up to 30 days before {selectedCity.city} workshop.
+            Refund policy: Full refund available within 30 days of purchase AND more than 7 days before {selectedCity.city} workshop.
           </p>
 
           {/* Payment Plans Section */}

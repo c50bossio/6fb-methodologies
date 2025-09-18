@@ -7,6 +7,7 @@ import { analyticsService } from '@/lib/analytics-service'
 // import { sendGridService } from '@/lib/sendgrid-service'
 import { smsService } from '@/lib/sms-service'
 import { decrementInventory, validateInventoryForCheckout, checkInventoryStatus } from '@/lib/inventory'
+import { recordMemberDiscountUsage } from '@/lib/member-discount-tracking'
 import Stripe from 'stripe'
 
 // Webhook event processor
@@ -112,6 +113,11 @@ class StripeWebhookProcessor {
         await this.sendTicketSaleNotification(session)
       }
 
+      // Record member discount usage for successful payments
+      if (session.payment_status === 'paid') {
+        await this.recordMemberDiscountUsage(session)
+      }
+
       // Update CRM/Database
       await this.updateCustomerDatabase(session)
 
@@ -148,7 +154,7 @@ class StripeWebhookProcessor {
           isSixFBMember: session.metadata.isSixFBMember === 'true'
         } : undefined,
         discountApplied: session.metadata?.discountReason || undefined,
-        workshopDate: process.env.WORKSHOP_DATE_1 || 'March 15, 2024'
+        workshopDate: this.getWorkshopDateString(session.metadata?.city || 'Dallas')
       }
 
       // Track analytics conversion
@@ -174,7 +180,7 @@ class StripeWebhookProcessor {
         quantity: notificationData.quantity,
         totalAmount: notificationData.totalAmount,
         sessionId: session.id,
-        workshopDate: notificationData.workshopDate || process.env.WORKSHOP_DATE_1 || 'March 15, 2024'
+        workshopDate: notificationData.workshopDate
       })
 
       // Send welcome email (disabled for deployment)
@@ -184,7 +190,7 @@ class StripeWebhookProcessor {
         firstName,
         ticketType: notificationData.ticketType,
         amountPaid: (notificationData.totalAmount / 100).toFixed(2),
-        workshopDate: notificationData.workshopDate || process.env.WORKSHOP_DATE_1 || 'March 15, 2024',
+        workshopDate: notificationData.workshopDate,
         workshopLocation: process.env.WORKSHOP_LOCATION || 'Virtual Live Training'
       })
 
@@ -269,8 +275,8 @@ class StripeWebhookProcessor {
         },
         calendarInvite: {
           title: '6FB Methodologies Workshop',
-          start: '2024-02-15T09:00:00Z', // Workshop date
-          end: '2024-02-15T17:00:00Z',
+          start: this.getWorkshopStartDate(session.metadata?.city || 'Dallas'),
+          end: this.getWorkshopEndDate(session.metadata?.city || 'Dallas'),
           location: 'Workshop Venue',
           description: 'Your spot is secured! See you at the workshop.',
         }
@@ -379,6 +385,57 @@ class StripeWebhookProcessor {
 
     // For now, return a default or extract from available data
     return session.metadata?.workshopLocation || 'Dallas'
+  }
+
+  /**
+   * Get workshop start date for a specific city
+   */
+  private getWorkshopStartDate(city: string): string {
+    const workshopSchedule: Record<string, string> = {
+      'Dallas': '2026-01-26T14:00:00Z',
+      'Atlanta': '2026-02-23T14:00:00Z',
+      'Los Angeles': '2026-03-01T15:00:00Z', // PST adjustment
+      'NYC': '2026-04-27T13:00:00Z', // EST adjustment
+      'New York': '2026-04-27T13:00:00Z',
+      'Chicago': '2026-05-18T14:00:00Z', // CST adjustment
+      'San Francisco': '2026-06-22T15:00:00Z' // PST adjustment
+    };
+
+    return workshopSchedule[city] || '2026-01-26T14:00:00Z'; // Default to Dallas
+  }
+
+  /**
+   * Get workshop end date for a specific city
+   */
+  private getWorkshopEndDate(city: string): string {
+    const workshopSchedule: Record<string, string> = {
+      'Dallas': '2026-01-27T22:00:00Z',
+      'Atlanta': '2026-02-24T22:00:00Z',
+      'Los Angeles': '2026-03-02T23:00:00Z', // PST adjustment
+      'NYC': '2026-04-28T21:00:00Z', // EST adjustment
+      'New York': '2026-04-28T21:00:00Z',
+      'Chicago': '2026-05-19T22:00:00Z', // CST adjustment
+      'San Francisco': '2026-06-23T23:00:00Z' // PST adjustment
+    };
+
+    return workshopSchedule[city] || '2026-01-27T22:00:00Z'; // Default to Dallas
+  }
+
+  /**
+   * Get workshop date string for a specific city
+   */
+  private getWorkshopDateString(city: string): string {
+    const workshopSchedule: Record<string, string> = {
+      'Dallas': 'January 26-27, 2026',
+      'Atlanta': 'February 23-24, 2026',
+      'Los Angeles': 'March 1-2, 2026',
+      'NYC': 'April 27-28, 2026',
+      'New York': 'April 27-28, 2026', // Alternative name for NYC
+      'Chicago': 'May 18-19, 2026',
+      'San Francisco': 'June 22-23, 2026'
+    };
+
+    return workshopSchedule[city] || 'January 26-27, 2026'; // Default to Dallas
   }
 
   private async getRemainingTicketCounts(cityId?: string): Promise<{ gaRemaining: number; vipRemaining: number }> {
@@ -749,6 +806,71 @@ class StripeWebhookProcessor {
     } catch (error) {
       console.error('Error handling invoice payment succeeded:', error)
       throw error
+    }
+  }
+
+  private async recordMemberDiscountUsage(session: Stripe.Checkout.Session) {
+    try {
+      // Only record if this was a 6FB member with a discount
+      const isSixFBMember = session.metadata?.isSixFBMember === 'true'
+      const discountAmount = parseInt(session.metadata?.discountAmount || '0')
+      const discountReason = session.metadata?.discountReason
+
+      if (!isSixFBMember || discountAmount === 0 || !discountReason?.includes('Member')) {
+        console.log('No member discount to record:', {
+          isSixFBMember,
+          discountAmount,
+          discountReason,
+          sessionId: session.id
+        })
+        return
+      }
+
+      const customerEmail = session.customer_details?.email
+      if (!customerEmail) {
+        console.warn('Cannot record member discount usage: no customer email')
+        return
+      }
+
+      // Record the discount usage
+      const result = await recordMemberDiscountUsage({
+        email: customerEmail,
+        customerId: session.customer as string,
+        sessionId: session.id,
+        paymentIntentId: session.payment_intent as string,
+        cityId: session.metadata?.cityId || 'unknown',
+        ticketType: (session.metadata?.ticketType?.toLowerCase() as 'ga' | 'vip') || 'ga',
+        quantity: parseInt(session.metadata?.quantity || '1'),
+        discountAmountCents: discountAmount,
+        originalAmountCents: parseInt(session.metadata?.originalAmount || '0'),
+        finalAmountCents: parseInt(session.metadata?.finalAmount || '0'),
+        metadata: {
+          discountReason,
+          cityName: session.metadata?.cityName,
+          workshopMonth: session.metadata?.workshopMonth,
+          workshopDates: session.metadata?.workshopDates,
+          registrationSource: 'website',
+          timestamp: new Date().toISOString()
+        }
+      })
+
+      if (result.success) {
+        console.log('✅ Member discount usage recorded:', {
+          email: customerEmail,
+          sessionId: session.id,
+          discountAmount: discountAmount / 100,
+          usageId: result.usageId
+        })
+      } else {
+        console.error('❌ Failed to record member discount usage:', {
+          email: customerEmail,
+          sessionId: session.id,
+          error: result.error
+        })
+      }
+
+    } catch (error) {
+      console.error('Error recording member discount usage:', error)
     }
   }
 

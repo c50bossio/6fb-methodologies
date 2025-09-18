@@ -62,8 +62,8 @@ export default function TermsOfService() {
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 mb-6">
               <h3 className="text-xl font-semibold mb-3 text-yellow-400">⚠️ Important Refund Policy</h3>
               <p className="leading-relaxed">
-                <strong>All workshop registrations are FINAL and NON-REFUNDABLE 30 days prior to the workshop date.</strong>
-                This policy ensures we can maintain workshop quality and manage venue capacity effectively.
+                <strong>All workshop registrations are FINAL and NON-REFUNDABLE after 30 days of purchase OR 7 days or less before the workshop date.</strong>
+                This dual-condition policy ensures we can maintain workshop quality and manage venue capacity effectively while providing fair refund windows.
               </p>
             </div>
 

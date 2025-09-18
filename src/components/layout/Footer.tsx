@@ -30,7 +30,6 @@ export function Footer() {
             {/* Contact Info */}
             <div className="text-sm text-text-muted space-y-2">
               <p>Questions? Email us at: <a href="mailto:dre@tomb45.com" className="text-tomb45-green hover:underline">dre@tomb45.com</a></p>
-              <p>Workshop Support: <a href="mailto:support@6fbmethodologies.com" className="text-tomb45-green hover:underline">support@6fbmethodologies.com</a></p>
             </div>
 
             {/* Legal Links */}

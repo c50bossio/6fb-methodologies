@@ -312,6 +312,6 @@ export async function sendPaymentConfirmationViaSendGrid(data: {
     quantity: data.quantity,
     totalAmount: data.totalAmount,
     sessionId: data.sessionId,
-    workshopDate: process.env.WORKSHOP_DATE_1 || 'March 15, 2024'
+    workshopDate: data.workshopDate || process.env.WORKSHOP_DATE_1 || 'TBA'
   })
 }

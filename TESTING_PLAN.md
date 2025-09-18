@@ -130,9 +130,9 @@ node test-full-flow-integration.js --city=atlanta-feb-2026
 - `dallas-jan-2026`: Primary test city with full Stripe price IDs
 - `atlanta-feb-2026`: Secondary test city
 - `la-mar-2026`: West Coast test city
-- `sf-apr-2026`: Bay Area test city
+- `sf-jun-2026`: Bay Area test city
 - `chicago-may-2026`: Midwest test city
-- `nyc-jun-2026`: East Coast test city
+- `nyc-apr-2026`: East Coast test city
 
 ### Stripe Price IDs (Production)
 Each city has unique GA and VIP price IDs configured in `src/lib/cities.ts`:

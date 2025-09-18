@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createCheckoutSession } from '@/lib/stripe'
 import { validateEmail } from '@/lib/utils'
+import { validateMemberDiscountEligibility } from '@/lib/member-discount-tracking'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,10 @@ export async function POST(request: NextRequest) {
       customerName,
       isSixFBMember,
       registrationData,
+      cityId: initialCityId,
     } = requestBody
+
+    let cityId = initialCityId
 
     console.log('🔍 Checkout API - Extracted fields:', {
       ticketType,
@@ -22,7 +26,8 @@ export async function POST(request: NextRequest) {
       customerEmail,
       customerName,
       isSixFBMember,
-      registrationData: registrationData ? 'present' : 'missing'
+      registrationData: registrationData ? 'present' : 'missing',
+      cityId
     })
 
     // Validate required fields
@@ -50,7 +55,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Log cityId status for debugging
+    console.log('🔍 CityId extraction result:', {
+      directCityId: requestBody.cityId,
+      fromRegistrationData: registrationData?.citySelection?.cityId,
+      finalCityId: cityId || 'undefined'
+    })
+
     console.log('✅ All validation checks passed, proceeding to create checkout session')
+
+    // Validate member discount eligibility if 6FB member
+    if (isSixFBMember && customerEmail) {
+      const eligibility = await validateMemberDiscountEligibility(customerEmail, ticketType.toUpperCase() as 'GA' | 'VIP')
+      if (!eligibility.eligible) {
+        console.warn(`❌ Member discount blocked for ${customerEmail}: ${eligibility.reason}`)
+        return NextResponse.json({
+          success: false,
+          error: 'Member discount not available',
+          details: eligibility.reason,
+          discountBlocked: true
+        }, { status: 400 })
+      }
+    }
 
     // Normalize ticket type to uppercase for consistency
     const normalizedTicketType = ticketType.toUpperCase()
@@ -70,6 +96,29 @@ export async function POST(request: NextRequest) {
       if (registrationData.businessType) metadata.businessType = registrationData.businessType
       if (registrationData.yearsExperience) metadata.yearsExperience = registrationData.yearsExperience
       if (registrationData.phone) metadata.phone = registrationData.phone
+
+      // Extract cityId from registrationData if not provided directly
+      if (!cityId && registrationData.citySelection?.cityId) {
+        // Use cityId from registration data as fallback
+        cityId = registrationData.citySelection.cityId
+        console.log('🔍 Using cityId from registrationData:', cityId)
+      }
+
+      // Add pricing and city selection data to metadata
+      if (registrationData.pricing) {
+        metadata.originalPrice = registrationData.pricing.originalPrice?.toString() || ''
+        metadata.finalPrice = registrationData.pricing.finalPrice?.toString() || ''
+        metadata.discountAmount = registrationData.pricing.discountAmount?.toString() || ''
+        metadata.discountReason = registrationData.pricing.discountReason || ''
+        metadata.savings = registrationData.pricing.savings?.toString() || ''
+      }
+
+      if (registrationData.citySelection) {
+        metadata.cityName = registrationData.citySelection.cityName || ''
+        metadata.workshopMonth = registrationData.citySelection.month || ''
+        metadata.workshopDates = registrationData.citySelection.dates?.join(', ') || ''
+        metadata.workshopLocation = registrationData.citySelection.location || ''
+      }
     }
 
     // Add customer name to metadata
@@ -81,6 +130,8 @@ export async function POST(request: NextRequest) {
       quantity,
       isSixFBMember: Boolean(isSixFBMember),
       customerEmail,
+      cityId,
+      directCheckout: true,
       metadataKeys: Object.keys(metadata)
     })
 
@@ -89,6 +140,7 @@ export async function POST(request: NextRequest) {
       quantity,
       isSixFBMember: Boolean(isSixFBMember),
       customerEmail,
+      cityId,
       metadata,
     })
 

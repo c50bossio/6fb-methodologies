@@ -88,9 +88,9 @@ class InventoryStore {
       'dallas-jan-2026',
       'atlanta-feb-2026',
       'la-mar-2026',
-      'sf-apr-2026',
+      'sf-jun-2026',
       'chicago-may-2026',
-      'nyc-jun-2026'
+      'nyc-apr-2026'
     ]
 
     defaultCities.forEach(cityId => {
@@ -408,9 +408,9 @@ export async function getAllInventoryStatuses(): Promise<InventoryStatus[]> {
     'dallas-jan-2026',
     'atlanta-feb-2026',
     'la-mar-2026',
-    'sf-apr-2026',
+    'sf-jun-2026',
     'chicago-may-2026',
-    'nyc-jun-2026'
+    'nyc-apr-2026'
   ]
 
   const statuses: InventoryStatus[] = []

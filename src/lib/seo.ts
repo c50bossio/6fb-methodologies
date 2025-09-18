@@ -42,7 +42,7 @@ export const WORKSHOP_SEO_DATA: WorkshopSEOData = {
     'barber success strategies'
   ],
   location: 'Professional Conference Center, Atlanta, GA',
-  date: '2024-03-15',
+  date: '2026-01-26',
   instructors: ['Dre Baldwin', 'Nate Green', 'Bossio Martinez'],
   price: {
     currency: 'USD',
@@ -173,7 +173,7 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
           '@type': 'Organization',
           '@id': `${baseUrl}#organization`
         },
-        courseCode: '6FB-METH-2024',
+        courseCode: '6FB-METH-2026',
         educationalCredentialAwarded: 'Certificate of Completion',
         timeRequired: 'P2D',
         coursePrerequisites: 'Active barber license or barbershop ownership',
@@ -208,7 +208,7 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
             name: 'Is there a refund policy?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes, we offer a 100% money-back guarantee within 30 days of the workshop if you are not satisfied.'
+              text: 'Yes, we offer refunds within 30 days of purchase AND more than 7 days before the workshop. No refunds available after 30 days of purchase OR 7 days or less before the workshop.'
             }
           },
           {
@@ -351,9 +351,9 @@ export function generateLocalBusinessStructuredData() {
 // SEO-optimized meta tags for different pages
 export const PAGE_METADATA = {
   home: {
-    title: '6FB Methodologies Workshop 2024 | Transform Your Barber Business',
-    description: 'Join 200+ successful barbers at the premier business growth workshop. Learn systems, marketing, and wealth-building strategies. Atlanta, GA - March 15-16, 2024.',
-    keywords: 'barbering workshop 2024, barber business training, barbershop growth, 6 figure barber, business coaching barbers'
+    title: '6FB Methodologies Workshop 2026 | Transform Your Barber Business',
+    description: 'Join 200+ successful barbers at the premier business growth workshop. Learn systems, marketing, and wealth-building strategies. Multiple cities - 2026 tour dates available.',
+    keywords: 'barbering workshop 2026, barber business training, barbershop growth, 6 figure barber, business coaching barbers'
   },
 
   register: {

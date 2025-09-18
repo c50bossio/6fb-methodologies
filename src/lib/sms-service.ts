@@ -154,10 +154,31 @@ class SMSService {
       remainingText = `\nRemaining: ${data.gaTicketsRemaining} GA, ${data.vipTicketsRemaining} VIP`;
     }
 
+    // Get workshop dates for the city
+    const workshopDate = this.getWorkshopDateForCity(data.city);
+    const dateText = workshopDate ? `\n📅 ${workshopDate}` : '';
+
     return `🎫 6FB TICKET SALE
-${data.city} Workshop
+${data.city} Workshop${dateText}
 ${totalText}
 Customer: ${data.customerEmail}${remainingText}`;
+  }
+
+  /**
+   * Get workshop dates for a specific city
+   */
+  private getWorkshopDateForCity(city: string): string {
+    const workshopSchedule: Record<string, string> = {
+      'Dallas': 'January 26-27, 2026',
+      'Atlanta': 'February 23-24, 2026',
+      'Los Angeles': 'March 1-2, 2026',
+      'NYC': 'April 27-28, 2026',
+      'New York': 'April 27-28, 2026', // Alternative name for NYC
+      'Chicago': 'May 18-19, 2026',
+      'San Francisco': 'June 22-23, 2026'
+    };
+
+    return workshopSchedule[city] || '';
   }
 
   /**

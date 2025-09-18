@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
-import { PerformanceMonitor } from '@/components/PerformanceMonitor'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -56,7 +55,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-background-primary text-text-primary antialiased`}>
         <ServiceWorkerRegistration />
-        <PerformanceMonitor />
         <div className="min-h-screen">
           {children}
         </div>

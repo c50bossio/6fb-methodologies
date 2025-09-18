@@ -3,6 +3,7 @@ import { validateEmail } from '@/lib/utils'
 import { verify6FBMembership } from '@/lib/stripe'
 import { verifySkoolMember } from '@/lib/skool-members'
 import { verifyCSVMember } from '@/lib/csv-members'
+import { checkMemberDiscountUsage } from '@/lib/member-discount-tracking'
 
 // Legacy fallback member list (kept for backward compatibility during transition)
 const fallbackMembers = new Set([
@@ -43,6 +44,9 @@ export async function POST(request: NextRequest) {
     if (csvVerification.isVerified && csvVerification.member) {
       console.log(`✅ CSV membership verified for: ${normalizedEmail}`)
 
+      // Check if member has already used their discount
+      const discountUsage = await checkMemberDiscountUsage(normalizedEmail)
+
       return NextResponse.json({
         success: true,
         isVerified: true,
@@ -55,7 +59,9 @@ export async function POST(request: NextRequest) {
           invitedBy: csvVerification.member.invitedBy
         },
         memberName: csvVerification.member.name,
-        source: 'csv'
+        source: 'csv',
+        hasUsedDiscount: discountUsage.hasUsedDiscount,
+        discountUsage: discountUsage.usageRecord
       })
     }
 
@@ -66,6 +72,9 @@ export async function POST(request: NextRequest) {
 
     if (skoolVerification.isVerified && skoolVerification.member) {
       console.log(`✅ Skool membership verified for: ${normalizedEmail}`)
+
+      // Check if member has already used their discount
+      const discountUsage = await checkMemberDiscountUsage(normalizedEmail)
 
       return NextResponse.json({
         success: true,
@@ -79,7 +88,9 @@ export async function POST(request: NextRequest) {
           transactionId: skoolVerification.member.transactionId
         },
         memberName: skoolVerification.member.name,
-        source: 'skool'
+        source: 'skool',
+        hasUsedDiscount: discountUsage.hasUsedDiscount,
+        discountUsage: discountUsage.usageRecord
       })
     }
 
@@ -91,6 +102,9 @@ export async function POST(request: NextRequest) {
 
       if (stripeVerification.isVerified && stripeVerification.member) {
         console.log(`✅ Stripe verification successful for: ${normalizedEmail}`)
+
+        // Check if member has already used their discount
+        const discountUsage = await checkMemberDiscountUsage(normalizedEmail)
 
         return NextResponse.json({
           success: true,
@@ -105,7 +119,9 @@ export async function POST(request: NextRequest) {
             lastPayment: stripeVerification.member.lastPayment
           },
           memberName: stripeVerification.member.name,
-          source: 'stripe'
+          source: 'stripe',
+          hasUsedDiscount: discountUsage.hasUsedDiscount,
+          discountUsage: discountUsage.usageRecord
         })
       }
 
@@ -122,6 +138,9 @@ export async function POST(request: NextRequest) {
 
       console.log(`Fallback verification successful for: ${normalizedEmail}`)
 
+      // Check if member has already used their discount
+      const discountUsage = await checkMemberDiscountUsage(normalizedEmail)
+
       return NextResponse.json({
         success: true,
         isVerified: true,
@@ -133,7 +152,9 @@ export async function POST(request: NextRequest) {
           joinDate: member.joinDate
         },
         memberName: member.name,
-        source: 'fallback'
+        source: 'fallback',
+        hasUsedDiscount: discountUsage.hasUsedDiscount,
+        discountUsage: discountUsage.usageRecord
       })
     }
 
