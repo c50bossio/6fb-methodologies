@@ -5,8 +5,8 @@ import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
 
 export function Header() {
-  const goToRegistration = () => {
-    window.location.href = '/register'
+  const scrollToCities = () => {
+    document.getElementById('cities')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const scrollToTop = () => {
@@ -34,7 +34,7 @@ export function Header() {
           {/* CTA Button */}
           <Button
             size="sm"
-            onClick={goToRegistration}
+            onClick={scrollToCities}
             className="hidden sm:flex shadow-green-glow"
           >
             Get Tickets
@@ -43,7 +43,7 @@ export function Header() {
           {/* Mobile CTA */}
           <Button
             size="sm"
-            onClick={goToRegistration}
+            onClick={scrollToCities}
             className="sm:hidden text-xs px-3"
           >
             Tickets
