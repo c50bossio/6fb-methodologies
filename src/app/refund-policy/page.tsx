@@ -24,7 +24,7 @@ export default function RefundPolicy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-tomb45-green">1. Overview</h2>
             <p className="mb-4 leading-relaxed">
-              This Refund Policy governs the terms and conditions for refunds, cancellations, and transfers related to the 6FB Methodologies Workshop offered by 6 Figure Barber LLC ("6FB," "we," "our," or "us").
+              This Refund Policy governs the terms and conditions for refunds, cancellations, and transfers related to the 6FB Methodologies Workshop offered by Bossio Solution Inc. ("6FB," "we," "our," or "us").
             </p>
             <p className="leading-relaxed">
               By registering for our Workshop and making payment, you acknowledge and agree to the terms outlined in this policy. This policy is designed to balance fairness to our customers with the operational requirements of hosting high-quality workshops.
@@ -33,9 +33,9 @@ export default function RefundPolicy() {
 
           <section>
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-6">
-              <h2 className="text-2xl font-semibold mb-4 text-red-400">🚨 Important: 30-Day No-Refund Policy</h2>
+              <h2 className="text-2xl font-semibold mb-4 text-red-400">🚨 Important: 7-Day No-Refund Policy</h2>
               <p className="text-lg leading-relaxed">
-                <strong>All workshop registrations become FINAL and NON-REFUNDABLE 30 days prior to the scheduled workshop date.</strong>
+                <strong>All workshop registrations become FINAL and NON-REFUNDABLE 7 days prior to the scheduled workshop date.</strong>
               </p>
               <p className="mt-3 leading-relaxed">
                 This policy ensures we can maintain workshop quality, manage venue logistics, and provide the best possible experience for all attendees.
@@ -48,7 +48,7 @@ export default function RefundPolicy() {
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3 text-green-400">✅ More than 30 Days Before Workshop</h3>
+                <h3 className="text-xl font-semibold mb-3 text-green-400">✅ More than 7 Days Before Workshop</h3>
                 <ul className="space-y-2">
                   <li>• <strong>Full refund available</strong></li>
                   <li>• Minus 5% payment processing fee</li>
@@ -58,7 +58,7 @@ export default function RefundPolicy() {
               </div>
 
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3 text-red-400">❌ 30 Days or Less Before Workshop</h3>
+                <h3 className="text-xl font-semibold mb-3 text-red-400">❌ 7 Days or Less Before Workshop</h3>
                 <ul className="space-y-2">
                   <li>• <strong>No refunds available</strong></li>
                   <li>• Registration is final</li>
@@ -70,7 +70,7 @@ export default function RefundPolicy() {
 
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
               <p className="text-sm leading-relaxed">
-                <strong>Example:</strong> If your workshop is scheduled for Saturday, February 20th, the no-refund period begins at 11:59 PM on Monday, January 21st (exactly 30 days prior).
+                <strong>Example:</strong> If your workshop is scheduled for Saturday, February 20th, the no-refund period begins at 11:59 PM on Saturday, February 13th (exactly 7 days prior).
               </p>
             </div>
           </section>
@@ -108,7 +108,7 @@ export default function RefundPolicy() {
 
             <h3 className="text-xl font-semibold mb-3">Transfer to Another Person</h3>
             <ul className="list-disc pl-6 mb-4 space-y-2">
-              <li><strong>Eligibility:</strong> Available if more than 30 days before workshop</li>
+              <li><strong>Eligibility:</strong> Available if more than 7 days before workshop</li>
               <li><strong>Fee:</strong> $50 administrative fee</li>
               <li><strong>Requirements:</strong> New attendee must meet workshop prerequisites</li>
               <li><strong>Process:</strong> Submit transfer request with new attendee information</li>
@@ -122,9 +122,9 @@ export default function RefundPolicy() {
               <li><strong>Limitations:</strong> Maximum one transfer per registration</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3">Emergency Transfers (Within 30 Days)</h3>
+            <h3 className="text-xl font-semibold mb-3">Emergency Transfers (Within 7 Days)</h3>
             <p className="mb-4 leading-relaxed">
-              While refunds are not available within 30 days, we may allow transfers in specific circumstances:
+              While refunds are not available within 7 days, we may allow transfers in specific circumstances:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Documented medical emergencies (hospitalization, surgery)</li>
@@ -255,7 +255,7 @@ export default function RefundPolicy() {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-tomb45-green">10. Why This Policy Exists</h2>
             <p className="mb-4 leading-relaxed">
-              Our 30-day no-refund policy exists to ensure we can deliver the highest quality workshop experience:
+              Our 7-day no-refund policy exists to ensure we can deliver the highest quality workshop experience:
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -309,7 +309,7 @@ export default function RefundPolicy() {
           <section className="border-t border-border-primary pt-8">
             <h2 className="text-2xl font-semibold mb-4 text-tomb45-green">12. Policy Updates</h2>
             <p className="mb-4 leading-relaxed">
-              This Refund Policy may be updated periodically to reflect changes in our operations or legal requirements. Material changes will be communicated to registered attendees via email at least 30 days before taking effect.
+              This Refund Policy may be updated periodically to reflect changes in our operations or legal requirements. Material changes will be communicated to registered attendees via email at least 7 days before taking effect.
             </p>
             <p className="text-sm text-text-muted leading-relaxed">
               This policy is part of our Terms of Service and is binding upon registration. By completing workshop registration and payment, you acknowledge that you have read, understood, and agree to this Refund Policy.
