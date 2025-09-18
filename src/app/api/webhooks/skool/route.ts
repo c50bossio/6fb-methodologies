@@ -115,8 +115,8 @@ export async function GET(request: NextRequest) {
       })),
       endpoints: {
         POST: '/api/webhooks/skool - Receive new member data from Zapier',
-        GET: '/api/webhooks/skool?email=test@example.com - Check specific member',
-        GET: '/api/webhooks/skool - List all verified members'
+        'GET (with email)': '/api/webhooks/skool?email=test@example.com - Check specific member',
+        'GET (list all)': '/api/webhooks/skool - List all verified members'
       }
     })
 
