@@ -421,6 +421,17 @@ function RegisterPageContent() {
               </CardContent>
             </Card>
 
+            {/* Responsible Spending Notice */}
+            <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl mb-4">
+              <div className="text-orange-600 text-lg font-bold mt-0.5">⚠️</div>
+              <div className="text-sm">
+                <div className="font-medium text-orange-800 mb-1">Please spend responsibly</div>
+                <div className="text-orange-700">
+                  Only register if you can afford to complete your payment plan. Be smart about your money.
+                </div>
+              </div>
+            </div>
+
             {/* Security Notice */}
             <div className="flex items-center gap-3 p-4 bg-background-secondary rounded-xl">
               <Shield className="w-5 h-5 text-tomb45-green" />
@@ -511,6 +522,9 @@ function RegisterPageContent() {
             <p className="text-sm text-text-muted">
               {FORM_STEPS[currentStep - 1].description}
             </p>
+            <p className="text-xs text-text-muted mt-2 opacity-75">
+              2-3 minutes to complete • Step {currentStep} of {FORM_STEPS.length}
+            </p>
           </div>
         </motion.div>
 
@@ -539,7 +553,7 @@ function RegisterPageContent() {
             <Button
               variant="secondary"
               onClick={handlePrevious}
-              className="flex-1"
+              className="flex-1 min-h-[48px] touch-manipulation text-base"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
@@ -550,7 +564,7 @@ function RegisterPageContent() {
             <Button
               onClick={handleNext}
               disabled={!validateStep(currentStep)}
-              className="flex-1"
+              className="flex-1 min-h-[48px] touch-manipulation text-base font-semibold"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -559,7 +573,7 @@ function RegisterPageContent() {
             <Button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 min-h-[48px] touch-manipulation text-base font-semibold"
               isLoading={isLoading}
             >
               {isLoading ? (

@@ -74,9 +74,9 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   {
     id: 'affirm',
     name: 'Affirm',
-    description: 'Buy now, pay later in monthly installments',
+    description: 'Payment plans available',
     icon: Calendar,
-    badge: 'BNPL',
+    badge: 'Payment Plans',
     badgeVariant: 'warning',
     processingTime: '1-2 min',
     fees: 'From 0% APR',
@@ -84,9 +84,19 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   {
     id: 'klarna',
     name: 'Klarna',
-    description: 'Split into 4 interest-free payments',
+    description: 'Payment plans available',
     icon: Calendar,
-    badge: 'BNPL',
+    badge: 'Payment Plans',
+    badgeVariant: 'warning',
+    processingTime: '1-2 min',
+    fees: '0% interest',
+  },
+  {
+    id: 'afterpay',
+    name: 'Afterpay',
+    description: 'Payment plans available',
+    icon: Calendar,
+    badge: 'Payment Plans',
     badgeVariant: 'warning',
     processingTime: '1-2 min',
     fees: '0% interest',
@@ -114,9 +124,9 @@ export default function PaymentMethodSelector({
   const getAvailableMethods = () => {
     let methods = [...PAYMENT_METHODS]
 
-    // Hide BNPL for small amounts
+    // Hide payment plans for small amounts
     if (amount < 50000) { // Less than $500
-      methods = methods.filter(m => !['affirm', 'klarna'].includes(m.id))
+      methods = methods.filter(m => !['affirm', 'klarna', 'afterpay'].includes(m.id))
     }
 
     // Prioritize mobile payments on mobile devices

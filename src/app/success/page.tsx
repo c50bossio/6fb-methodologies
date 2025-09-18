@@ -205,7 +205,7 @@ function SuccessPageContent() {
 
           {/* Support Contact */}
           <div className="text-center text-sm text-text-muted">
-            <p>Questions? Contact us at <a href="mailto:support@6fbmethodologies.com" className="text-tomb45-green hover:underline">support@6fbmethodologies.com</a></p>
+            <p>Questions? Contact us at <a href="mailto:dre@tomb45.com" className="text-tomb45-green hover:underline">dre@tomb45.com</a></p>
           </div>
         </motion.div>
       </div>

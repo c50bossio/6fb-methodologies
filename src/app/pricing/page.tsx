@@ -88,17 +88,27 @@ function PricingPageContent() {
 
   useEffect(() => {
     const cityId = searchParams.get('city')
+    console.log('Pricing page - City ID from URL:', cityId)
+
     if (cityId) {
       const city = getCityById(cityId)
+      console.log('Found city data:', city)
+
       if (city) {
         setSelectedCity(city)
       } else {
-        // Invalid city, redirect back to homepage
-        router.push('/')
+        console.warn(`Invalid city ID: ${cityId}`)
+        // Add a delay before redirect to avoid immediate bounce
+        setTimeout(() => {
+          router.push('/')
+        }, 1000)
       }
     } else {
-      // No city selected, redirect back to homepage
-      router.push('/')
+      console.warn('No city selected')
+      // Add a delay before redirect to avoid immediate bounce
+      setTimeout(() => {
+        router.push('/')
+      }, 1000)
     }
   }, [searchParams, router])
 
@@ -525,7 +535,7 @@ function PricingPageContent() {
             </div>
             <div className="flex items-center gap-2">
               <Coffee className="w-4 h-4" />
-              <span>Meals Included</span>
+              <span>Snacks and refreshments included</span>
             </div>
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4" />
@@ -537,6 +547,36 @@ function PricingPageContent() {
             Secure payment processing by Stripe. All major credit cards accepted.
             Refund policy: Full refund available up to 30 days before {selectedCity.city} workshop.
           </p>
+
+          {/* Payment Plans Section */}
+          <div className="mt-8 space-y-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">
+                Payment plans available
+              </h3>
+              <div className="flex items-center justify-center gap-6 mb-6">
+                {/* Klarna Logo */}
+                <div className="flex items-center gap-2 px-4 py-2 border border-border-primary rounded-lg">
+                  <div className="text-2xl font-bold text-pink-500">klarna</div>
+                </div>
+                {/* Afterpay Logo */}
+                <div className="flex items-center gap-2 px-4 py-2 border border-border-primary rounded-lg">
+                  <div className="text-xl font-bold text-green-600">afterpay</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Responsible Spending Warning */}
+            <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg max-w-md mx-auto">
+              <div className="text-orange-600 text-xl mt-0.5">⚠️</div>
+              <div className="text-sm">
+                <div className="font-semibold text-orange-800 mb-2">Please spend responsibly</div>
+                <div className="text-orange-700">
+                  Only register if you can afford to complete your payment plan. Be smart about your money.
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

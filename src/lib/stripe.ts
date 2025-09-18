@@ -11,7 +11,7 @@ export { stripe }
 // Stripe configuration constants - only include valid parameters
 export const STRIPE_CONFIG = {
   currency: 'usd',
-  payment_method_types: ['card'],
+  payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'affirm'],
   billing_address_collection: 'required' as const,
   // Don't include shipping_address_collection if not needed (it's for physical products)
   allow_promotion_codes: false, // We handle discounts internally
@@ -222,7 +222,7 @@ export async function createCheckoutSession({
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     currency: 'usd',
-    payment_method_types: ['card'],
+    payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'affirm'],
     billing_address_collection: 'required',
     allow_promotion_codes: false,
     automatic_tax: { enabled: false },

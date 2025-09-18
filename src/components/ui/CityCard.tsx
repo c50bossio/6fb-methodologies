@@ -28,6 +28,7 @@ interface CityCardProps {
 
 export function CityCard({ city, index, className }: CityCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   // Performance optimization: Reduce re-renders
@@ -59,12 +60,21 @@ export function CityCard({ city, index, className }: CityCardProps) {
     return <Badge variant="secondary">Available</Badge>
   }, [availability, city.status, index])
 
-  const handleSelectCity = useCallback(() => {
-    if (availability.isBooked) return
+  const handleSelectCity = useCallback(async () => {
+    if (availability.isBooked || isLoading) return
 
-    // Navigate to city-specific pricing page
-    router.push(`/pricing?city=${city.id}`)
-  }, [availability.isBooked, router, city.id])
+    setIsLoading(true)
+
+    try {
+      // Add slight delay for better UX feedback
+      await new Promise(resolve => setTimeout(resolve, 300))
+      // Navigate to city-specific pricing page
+      router.push(`/pricing?city=${city.id}`)
+    } catch (error) {
+      console.error('Navigation error:', error)
+      setIsLoading(false)
+    }
+  }, [availability.isBooked, isLoading, router, city.id])
 
   const toggleExpanded = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -87,10 +97,10 @@ export function CityCard({ city, index, className }: CityCardProps) {
       className={className}
     >
       <Card
-        className={`transition-all duration-300 overflow-hidden ${
+        className={`transition-all duration-300 overflow-hidden transform hover:scale-[1.02] ${
           availability.isBooked
             ? 'opacity-60 cursor-not-allowed'
-            : 'hover:border-tomb45-green hover:shadow-green-glow'
+            : 'hover:border-tomb45-green hover:shadow-green-glow hover:shadow-lg cursor-pointer'
         }`}
       >
         {/* Status Badge */}
@@ -100,7 +110,7 @@ export function CityCard({ city, index, className }: CityCardProps) {
 
         {/* Compact Header - Always Visible */}
         <CardHeader
-          className="text-center pb-3 pt-6 cursor-pointer"
+          className="text-center pb-3 pt-6 cursor-pointer min-h-[44px] touch-manipulation"
           onClick={toggleExpanded}
           onKeyDown={handleKeyDown}
           tabIndex={0}
@@ -116,13 +126,13 @@ export function CityCard({ city, index, className }: CityCardProps) {
             </CardTitle>
             <button
               type="button"
-              className="ml-2 p-1 rounded-full hover:bg-background-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-tomb45-green focus:ring-offset-2"
+              className="ml-2 p-2 rounded-full hover:bg-tomb45-green hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-tomb45-green focus:ring-offset-2 group"
               aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
             >
               {isExpanded ? (
-                <ChevronUp className="w-5 h-5 text-text-secondary" />
+                <ChevronUp className="w-5 h-5 text-text-secondary group-hover:text-white transition-colors" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-text-secondary" />
+                <ChevronDown className="w-5 h-5 text-text-secondary group-hover:text-white transition-colors" />
               )}
             </button>
           </div>
@@ -221,9 +231,9 @@ export function CityCard({ city, index, className }: CityCardProps) {
 
                   {/* CTA Button */}
                   <Button
-                    className="w-full mb-4"
+                    className="w-full mb-4 min-h-[48px] touch-manipulation text-base font-semibold transition-all duration-200"
                     variant="primary"
-                    disabled={availability.isBooked}
+                    disabled={availability.isBooked || isLoading}
                     onClick={(e) => {
                       e.stopPropagation()
                       handleSelectCity()
@@ -233,6 +243,11 @@ export function CityCard({ city, index, className }: CityCardProps) {
                       <>
                         <Clock className="w-4 h-4 mr-2" />
                         Join Waitlist
+                      </>
+                    ) : isLoading ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Loading...
                       </>
                     ) : (
                       <>

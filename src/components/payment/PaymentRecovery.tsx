@@ -92,7 +92,7 @@ export default function PaymentRecovery({
 
         Thank you!
       `)
-      window.open(`mailto:support@6fbmethodologies.com?subject=${subject}&body=${body}`)
+      window.open(`mailto:dre@tomb45.com?subject=${subject}&body=${body}`)
     }
   }
 
@@ -318,7 +318,7 @@ export default function PaymentRecovery({
                   <div>
                     <div className="text-sm font-medium">Email Support</div>
                     <div className="text-xs text-text-muted">
-                      support@6fbmethodologies.com
+                      dre@tomb45.com
                     </div>
                   </div>
                 </div>

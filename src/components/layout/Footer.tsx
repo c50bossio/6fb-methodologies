@@ -29,8 +29,8 @@ export function Footer() {
 
             {/* Contact Info */}
             <div className="text-sm text-text-muted space-y-2">
-              <p>Questions? Email us at: info@6fbmethodologies.com</p>
-              <p>Workshop Support: support@6fbmethodologies.com</p>
+              <p>Questions? Email us at: <a href="mailto:dre@tomb45.com" className="text-tomb45-green hover:underline">dre@tomb45.com</a></p>
+              <p>Workshop Support: <a href="mailto:support@6fbmethodologies.com" className="text-tomb45-green hover:underline">support@6fbmethodologies.com</a></p>
             </div>
 
             {/* Legal Links */}
@@ -41,7 +41,7 @@ export function Footer() {
               <a href="/terms" className="hover:text-tomb45-green transition-colors">
                 Terms of Service
               </a>
-              <a href="/refund" className="hover:text-tomb45-green transition-colors">
+              <a href="/refund-policy" className="hover:text-tomb45-green transition-colors">
                 Refund Policy
               </a>
             </div>

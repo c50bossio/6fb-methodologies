@@ -96,7 +96,7 @@ export function CityGrid({ className }: CityGridProps) {
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-tomb45-green rounded-full mt-2 flex-shrink-0"></div>
-                <span>Meals, refreshments, and exclusive networking opportunities</span>
+                <span>Snacks, refreshments, and exclusive networking opportunities</span>
               </div>
             </div>
           </div>

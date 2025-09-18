@@ -52,7 +52,7 @@ export function TestimonialsSection() {
   ]
 
   const stats = [
-    { number: '5,000+', label: 'Barbers Trained' },
+    { number: '2,000+', label: 'Barbers Trained' },
     { number: '95%', label: 'Report Increased Revenue' },
     { number: '$2.3M+', label: 'Additional Revenue Generated' },
     { number: '4.9/5', label: 'Average Rating' }
