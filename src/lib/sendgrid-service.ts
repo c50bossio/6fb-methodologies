@@ -407,15 +407,15 @@ export async function sendPaymentConfirmationViaSendGrid(data: {
   // Get workshop date based on city or use provided date
   const getWorkshopDateForCity = (city: string): string => {
     const workshopSchedule: Record<string, string> = {
-      'Dallas': 'January 26-27, 2026',
-      'Atlanta': 'February 23-24, 2026',
+      'Dallas': 'January 25-26, 2026',
+      'Atlanta': 'February 22-23, 2026',
       'Los Angeles': 'March 1-2, 2026',
-      'NYC': 'April 27-28, 2026',
-      'New York': 'April 27-28, 2026',
-      'Chicago': 'May 18-19, 2026',
-      'San Francisco': 'June 22-23, 2026'
+      'NYC': 'April 26-27, 2026',
+      'New York': 'April 26-27, 2026',
+      'Chicago': 'May 31-June 1, 2026',
+      'San Francisco': 'June 21-22, 2026'
     };
-    return workshopSchedule[city] || 'January 26-27, 2026';
+    return workshopSchedule[city] || 'January 25-26, 2026';
   };
 
   const workshopDate = data.workshopDate ||

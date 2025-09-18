@@ -392,16 +392,16 @@ class StripeWebhookProcessor {
    */
   private getWorkshopStartDate(city: string): string {
     const workshopSchedule: Record<string, string> = {
-      'Dallas': '2026-01-26T14:00:00Z',
-      'Atlanta': '2026-02-23T14:00:00Z',
+      'Dallas': '2026-01-25T14:00:00Z',
+      'Atlanta': '2026-02-22T14:00:00Z',
       'Los Angeles': '2026-03-01T15:00:00Z', // PST adjustment
-      'NYC': '2026-04-27T13:00:00Z', // EST adjustment
-      'New York': '2026-04-27T13:00:00Z',
-      'Chicago': '2026-05-18T14:00:00Z', // CST adjustment
-      'San Francisco': '2026-06-22T15:00:00Z' // PST adjustment
+      'NYC': '2026-04-26T13:00:00Z', // EST adjustment
+      'New York': '2026-04-26T13:00:00Z',
+      'Chicago': '2026-05-31T14:00:00Z', // CST adjustment
+      'San Francisco': '2026-06-21T15:00:00Z' // PST adjustment
     };
 
-    return workshopSchedule[city] || '2026-01-26T14:00:00Z'; // Default to Dallas
+    return workshopSchedule[city] || '2026-01-25T14:00:00Z'; // Default to Dallas
   }
 
   /**
@@ -409,16 +409,16 @@ class StripeWebhookProcessor {
    */
   private getWorkshopEndDate(city: string): string {
     const workshopSchedule: Record<string, string> = {
-      'Dallas': '2026-01-27T22:00:00Z',
-      'Atlanta': '2026-02-24T22:00:00Z',
+      'Dallas': '2026-01-26T22:00:00Z',
+      'Atlanta': '2026-02-23T22:00:00Z',
       'Los Angeles': '2026-03-02T23:00:00Z', // PST adjustment
-      'NYC': '2026-04-28T21:00:00Z', // EST adjustment
-      'New York': '2026-04-28T21:00:00Z',
-      'Chicago': '2026-05-19T22:00:00Z', // CST adjustment
-      'San Francisco': '2026-06-23T23:00:00Z' // PST adjustment
+      'NYC': '2026-04-27T21:00:00Z', // EST adjustment
+      'New York': '2026-04-27T21:00:00Z',
+      'Chicago': '2026-06-01T22:00:00Z', // CST adjustment
+      'San Francisco': '2026-06-22T23:00:00Z' // PST adjustment
     };
 
-    return workshopSchedule[city] || '2026-01-27T22:00:00Z'; // Default to Dallas
+    return workshopSchedule[city] || '2026-01-26T22:00:00Z'; // Default to Dallas
   }
 
   /**
@@ -426,16 +426,16 @@ class StripeWebhookProcessor {
    */
   private getWorkshopDateString(city: string): string {
     const workshopSchedule: Record<string, string> = {
-      'Dallas': 'January 26-27, 2026',
-      'Atlanta': 'February 23-24, 2026',
+      'Dallas': 'January 25-26, 2026',
+      'Atlanta': 'February 22-23, 2026',
       'Los Angeles': 'March 1-2, 2026',
-      'NYC': 'April 27-28, 2026',
-      'New York': 'April 27-28, 2026', // Alternative name for NYC
-      'Chicago': 'May 18-19, 2026',
-      'San Francisco': 'June 22-23, 2026'
+      'NYC': 'April 26-27, 2026',
+      'New York': 'April 26-27, 2026', // Alternative name for NYC
+      'Chicago': 'May 31-June 1, 2026',
+      'San Francisco': 'June 21-22, 2026'
     };
 
-    return workshopSchedule[city] || 'January 26-27, 2026'; // Default to Dallas
+    return workshopSchedule[city] || 'January 25-26, 2026'; // Default to Dallas
   }
 
   private async getRemainingTicketCounts(cityId?: string): Promise<{ gaRemaining: number; vipRemaining: number }> {

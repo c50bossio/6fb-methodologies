@@ -103,7 +103,7 @@ describe('SMS Notification System', () => {
       const firstCall = mockTwilioClient.messages.create.mock.calls[0][0];
       expect(firstCall.body).toContain('🎫 6FB TICKET SALE');
       expect(firstCall.body).toContain('Dallas Workshop');
-      expect(firstCall.body).toContain('📅 January 26-27, 2026');
+      expect(firstCall.body).toContain('📅 January 25-26, 2026');
       expect(firstCall.body).toContain('2x GA tickets ($2000.00)');
       expect(firstCall.body).toContain('test@example.com');
       expect(firstCall.body).toContain('Remaining: 33 GA, 15 VIP');
