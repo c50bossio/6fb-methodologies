@@ -26,6 +26,7 @@ import {
 import { formatCurrency, validateEmail, formatPhoneNumber } from '@/lib/utils'
 import { RegistrationData, TicketType } from '@/types'
 import { useFormTracking, useConversionTracking, useUserBehavior, usePerformanceTracking } from '@/hooks/useAnalytics'
+import { useCSRF } from '@/hooks/useCSRF'
 
 interface FormStep {
   id: number
@@ -54,6 +55,9 @@ export function AnalyticsRegistrationForm({ searchParams }: AnalyticsRegistratio
   const { trackPriceCalculation, trackMemberVerification, trackCheckoutInitiation } = useConversionTracking()
   const { trackButtonClick, trackSectionView } = useUserBehavior()
   const { trackCustomTiming, trackError } = usePerformanceTracking()
+
+  // CSRF hook for secure API requests
+  const { authenticatedFetch, isReady: csrfReady, error: csrfError } = useCSRF()
 
   const [formData, setFormData] = useState<RegistrationData>({
     firstName: '',
@@ -218,8 +222,13 @@ export function AnalyticsRegistrationForm({ searchParams }: AnalyticsRegistratio
 
       trackButtonClick('Proceed to Payment', 'step_2')
 
-      // Create checkout session
-      const response = await fetch('/api/create-checkout-session', {
+      // Check CSRF readiness
+      if (!csrfReady) {
+        throw new Error('Security token not ready. Please refresh the page and try again.')
+      }
+
+      // Create checkout session with CSRF protection
+      const response = await authenticatedFetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -512,14 +521,19 @@ export function AnalyticsRegistrationForm({ searchParams }: AnalyticsRegistratio
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={isLoading}
+              disabled={isLoading || !csrfReady}
               className="flex-1"
-              isLoading={isLoading}
+              isLoading={isLoading || !csrfReady}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...
+                </>
+              ) : !csrfReady ? (
+                <>
+                  <Shield className="w-4 h-4 mr-2 animate-pulse" />
+                  Initializing Security...
                 </>
               ) : (
                 <>

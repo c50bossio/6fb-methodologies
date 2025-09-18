@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, validateEmail, formatPhoneNumber } from '@/lib/utils'
 import { RegistrationData, TicketType } from '@/types'
+import { useCSRF } from '@/hooks/useCSRF'
 
 interface FormStep {
   id: number
@@ -36,6 +37,9 @@ function RegisterPageContent() {
   const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+
+  // CSRF hook for secure API requests
+  const { authenticatedFetch, isReady: csrfReady, error: csrfError } = useCSRF()
   const [formData, setFormData] = useState<RegistrationData>({
     firstName: '',
     lastName: '',
@@ -205,8 +209,13 @@ function RegisterPageContent() {
     setIsLoading(true)
 
     try {
-      // Create checkout session
-      const response = await fetch('/api/create-checkout-session', {
+      // Check CSRF readiness
+      if (!csrfReady) {
+        throw new Error('Security token not ready. Please refresh the page and try again.')
+      }
+
+      // Create checkout session with CSRF protection
+      const response = await authenticatedFetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -572,14 +581,19 @@ function RegisterPageContent() {
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={isLoading}
+              disabled={isLoading || !csrfReady}
               className="flex-1 min-h-[48px] touch-manipulation text-base font-semibold"
-              isLoading={isLoading}
+              isLoading={isLoading || !csrfReady}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...
+                </>
+              ) : !csrfReady ? (
+                <>
+                  <Shield className="w-4 h-4 mr-2 animate-pulse" />
+                  Initializing Security...
                 </>
               ) : (
                 <>

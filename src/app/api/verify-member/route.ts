@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateEmail } from '@/lib/utils'
 import { verify6FBMembership } from '@/lib/stripe'
 import { verifySkoolMember } from '@/lib/skool-members'
+import { verifyCSVMember } from '@/lib/csv-members'
 
 // Legacy fallback member list (kept for backward compatibility during transition)
 const fallbackMembers = new Set([
@@ -36,7 +37,31 @@ export async function POST(request: NextRequest) {
 
     console.log(`Verifying 6FB membership for: ${normalizedEmail}`)
 
-    // Priority 1: Check Skool webhook verified members (active subscribers)
+    // Priority 1: Check CSV file members (monthly export from Skool)
+    const csvVerification = verifyCSVMember(normalizedEmail)
+
+    if (csvVerification.isVerified && csvVerification.member) {
+      console.log(`✅ CSV membership verified for: ${normalizedEmail}`)
+
+      return NextResponse.json({
+        success: true,
+        isVerified: true,
+        member: {
+          email: csvVerification.member.email,
+          name: csvVerification.member.name,
+          membershipType: csvVerification.member.membershipType,
+          isActive: csvVerification.member.isActive,
+          joinDate: csvVerification.member.joinDate,
+          invitedBy: csvVerification.member.invitedBy
+        },
+        memberName: csvVerification.member.name,
+        source: 'csv'
+      })
+    }
+
+    console.log(`CSV verification result for: ${normalizedEmail} - not found in CSV members`)
+
+    // Priority 2: Check Skool webhook verified members (new members via Zapier)
     const skoolVerification = verifySkoolMember(normalizedEmail)
 
     if (skoolVerification.isVerified && skoolVerification.member) {
@@ -60,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`Skool verification result for: ${normalizedEmail} - not found in Skool members`)
 
-    // Priority 2: Try Stripe customer lookup for workshop purchases, etc.
+    // Priority 3: Try Stripe customer lookup for workshop purchases, etc.
     try {
       const stripeVerification = await verify6FBMembership(normalizedEmail)
 
@@ -185,19 +210,22 @@ export async function GET(request: NextRequest) {
     if (email) {
       // Test specific email verification
       const normalizedEmail = email.toLowerCase().trim()
+      const csvVerification = verifyCSVMember(normalizedEmail)
       const skoolVerification = verifySkoolMember(normalizedEmail)
       const stripeVerification = await verify6FBMembership(normalizedEmail)
       const fallbackVerification = fallbackMembers.has(normalizedEmail)
 
       return NextResponse.json({
         email: normalizedEmail,
+        csv: csvVerification,
         skool: skoolVerification,
         stripe: stripeVerification,
         fallback: {
           isVerified: fallbackVerification,
           data: fallbackVerification ? fallbackMemberData[normalizedEmail] : null
         },
-        priority: skoolVerification.isVerified ? 'skool' :
+        priority: csvVerification.isVerified ? 'csv' :
+                 skoolVerification.isVerified ? 'skool' :
                  stripeVerification.isVerified ? 'stripe' :
                  fallbackVerification ? 'fallback' : 'none'
       })

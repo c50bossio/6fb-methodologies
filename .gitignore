@@ -78,6 +78,11 @@ deployment-manifest.json
 performance-metrics.json
 performance-report-*.json
 
+# Member data (contains sensitive emails)
+data/
+data/*.csv
+data/*.json
+
 # OS generated files
 .Thumbs.db
 .DS_Store
