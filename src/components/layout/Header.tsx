@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 
 export function Header() {
   const scrollToPricing = () => {
-    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+    document.getElementById('cities')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const scrollToTop = () => {
