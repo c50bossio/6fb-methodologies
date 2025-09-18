@@ -211,3 +211,69 @@ export const isCityAvailableSync = (cityId: string): boolean => {
 
   return gaAvailable || vipAvailable
 }
+
+/**
+ * Get real registered counts from inventory system
+ * This provides accurate data that reflects actual sales
+ */
+export const getRegisteredCountFromInventory = async (cityId: string): Promise<{ ga: number; vip: number }> => {
+  try {
+    const status = await checkInventoryStatus(cityId)
+    if (!status) {
+      console.warn(`Could not get inventory status for city: ${cityId}`)
+      return { ga: 0, vip: 0 }
+    }
+
+    return {
+      ga: status.sold.ga,
+      vip: status.sold.vip
+    }
+  } catch (error) {
+    console.error(`Error getting registered count for ${cityId}:`, error)
+    return { ga: 0, vip: 0 }
+  }
+}
+
+/**
+ * Synchronous version that gets registered counts from inventory
+ * Uses the inventory store directly for immediate access
+ */
+export const getRegisteredCountFromInventorySync = (cityId: string): { ga: number; vip: number } => {
+  try {
+    // Access the inventory store directly for sync operation
+    // This is a simplified version that works with the current in-memory store
+    const city = getCityById(cityId)
+    if (!city) {
+      return { ga: 0, vip: 0 }
+    }
+
+    // For now, we'll use the static data but this will be replaced
+    // when we have real-time inventory tracking in place
+    return {
+      ga: city.registeredCount.ga,
+      vip: city.registeredCount.vip
+    }
+  } catch (error) {
+    console.error(`Error getting registered count sync for ${cityId}:`, error)
+    return { ga: 0, vip: 0 }
+  }
+}
+
+/**
+ * Get total registered count across all cities from real inventory data
+ */
+export const getTotalRegisteredCountFromInventory = async (): Promise<number> => {
+  try {
+    let total = 0
+
+    for (const city of CITY_WORKSHOPS) {
+      const registered = await getRegisteredCountFromInventory(city.id)
+      total += registered.ga + registered.vip
+    }
+
+    return total
+  } catch (error) {
+    console.error('Error getting total registered count:', error)
+    return 0
+  }
+}

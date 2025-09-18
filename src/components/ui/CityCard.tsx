@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { CityWorkshop } from '@/types'
-import { getTotalAvailableSpotsSync } from '@/lib/cities'
+import { getTotalAvailableSpotsSync, getRegisteredCountFromInventory } from '@/lib/cities'
 
 interface CityCardProps {
   city: CityWorkshop
@@ -29,10 +29,34 @@ interface CityCardProps {
 export function CityCard({ city, index, className }: CityCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [registeredCount, setRegisteredCount] = useState({ ga: 0, vip: 0 })
+  const [isLoadingRegistered, setIsLoadingRegistered] = useState(true)
   const router = useRouter()
 
   // Performance optimization: Reduce re-renders
   const expandedId = `city-details-${city.id}`
+
+  // Fetch real registered count from inventory system
+  useEffect(() => {
+    const fetchRegisteredCount = async () => {
+      try {
+        setIsLoadingRegistered(true)
+        const realRegisteredCount = await getRegisteredCountFromInventory(city.id)
+        setRegisteredCount(realRegisteredCount)
+      } catch (error) {
+        console.error('Error fetching registered count for city:', city.id, error)
+        // Fallback to static data
+        setRegisteredCount({
+          ga: city.registeredCount.ga,
+          vip: city.registeredCount.vip
+        })
+      } finally {
+        setIsLoadingRegistered(false)
+      }
+    }
+
+    fetchRegisteredCount()
+  }, [city.id, city.registeredCount])
 
   // Memoize expensive calculations using sync version for UI performance
   const availability = useMemo(() => {
@@ -104,13 +128,13 @@ export function CityCard({ city, index, className }: CityCardProps) {
         }`}
       >
         {/* Status Badge */}
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
           {statusBadge}
         </div>
 
         {/* Compact Header - Always Visible */}
         <CardHeader
-          className="text-center pb-3 pt-6 cursor-pointer min-h-[44px] touch-manipulation"
+          className="text-center pb-3 pt-12 cursor-pointer min-h-[44px] touch-manipulation"
           onClick={toggleExpanded}
           onKeyDown={handleKeyDown}
           tabIndex={0}
@@ -225,7 +249,13 @@ export function CityCard({ city, index, className }: CityCardProps) {
                   <div className="flex items-center justify-center gap-2 text-sm text-text-muted mb-4">
                     <Users className="w-4 h-4" />
                     <span>
-                      {city.registeredCount.ga + city.registeredCount.vip} barbers already registered
+                      {isLoadingRegistered ? (
+                        <>
+                          <span className="inline-block w-6 h-4 bg-gray-200 animate-pulse rounded"></span> barbers already registered
+                        </>
+                      ) : (
+                        `${registeredCount.ga + registeredCount.vip} barbers already registered`
+                      )}
                     </span>
                   </div>
 

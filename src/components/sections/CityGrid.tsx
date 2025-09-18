@@ -4,17 +4,38 @@ import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/Badge'
 import { CityCard } from '@/components/ui/CityCard'
 import { Clock, MapPin, Users } from 'lucide-react'
-import { CITY_WORKSHOPS } from '@/lib/cities'
+import { CITY_WORKSHOPS, getTotalRegisteredCountFromInventory } from '@/lib/cities'
+import { useState, useEffect } from 'react'
 
 interface CityGridProps {
   className?: string
 }
 
 export function CityGrid({ className }: CityGridProps) {
-  const totalRegistered = CITY_WORKSHOPS.reduce(
-    (total, city) => total + city.registeredCount.ga + city.registeredCount.vip,
-    0
-  )
+  const [totalRegistered, setTotalRegistered] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTotalRegistered = async () => {
+      try {
+        setIsLoading(true)
+        const total = await getTotalRegisteredCountFromInventory()
+        setTotalRegistered(total)
+      } catch (error) {
+        console.error('Error fetching total registered count:', error)
+        // Fallback to static calculation
+        const fallbackTotal = CITY_WORKSHOPS.reduce(
+          (total, city) => total + city.registeredCount.ga + city.registeredCount.vip,
+          0
+        )
+        setTotalRegistered(fallbackTotal)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchTotalRegistered()
+  }, [])
 
   return (
     <section id="cities" className={`section-padding bg-background-primary ${className}`}>
@@ -50,7 +71,15 @@ export function CityGrid({ className }: CityGridProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                <span>{totalRegistered} Barbers Already Registered</span>
+                <span>
+                  {isLoading ? (
+                    <>
+                      <span className="inline-block w-8 h-4 bg-gray-200 animate-pulse rounded"></span> Barbers Already Registered
+                    </>
+                  ) : (
+                    `${totalRegistered} Barbers Already Registered`
+                  )}
+                </span>
               </div>
             </div>
           </motion.div>
@@ -113,7 +142,7 @@ export function CityGrid({ className }: CityGridProps) {
           {/* Security & Refund */}
           <p className="text-xs text-text-muted max-w-2xl mx-auto">
             Secure payment processing by Stripe. All major credit cards accepted.
-            Full refund available up to 30 days before your selected workshop date.
+            Full refund available within 30 days of purchase AND more than 7 days before your selected workshop date.
           </p>
         </motion.div>
       </div>
