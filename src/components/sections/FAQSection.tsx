@@ -12,7 +12,7 @@ export function FAQSection() {
   const faqs = [
     {
       question: "What's the difference between GA and VIP tickets?",
-      answer: "Both tickets include complete access to all workshop content, materials, and methodologies. VIP tickets add exclusive perks: priority seating, a private dinner with the coaches, extended Q&A access, and premium networking opportunities."
+      answer: "Both tickets include complete access to all workshop content, materials, and methodologies. VIP tickets add exclusive perks: priority seating, a private dinner with the coaches (end of day one), extended Q&A access, and premium networking opportunities."
     },
     {
       question: "How do I verify my 6FB membership for the discount?",

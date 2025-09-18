@@ -100,6 +100,13 @@ export function WorkshopAgenda() {
       title: 'Open Q&A',
       description: 'Direct access to Dre, Nate & Bossio',
       type: 'session'
+    },
+    {
+      time: '7:00 PM',
+      title: 'VIP Private Dinner',
+      description: 'Private dinner with Dre, Nate & Bossio (VIP Only)',
+      details: ['Intimate mentorship + high-level networking'],
+      type: 'vip'
     }
   ]
 
@@ -145,13 +152,6 @@ export function WorkshopAgenda() {
       description: 'Everyone writes down their top 3 commitments',
       details: ['Certificate of Completion ceremony'],
       type: 'session'
-    },
-    {
-      time: '7:00 PM',
-      title: 'VIP Private Dinner',
-      description: 'Private dinner with Dre, Nate & Bossio (VIP Only)',
-      details: ['Intimate mentorship + high-level networking'],
-      type: 'vip'
     }
   ]
 

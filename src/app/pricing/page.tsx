@@ -76,7 +76,7 @@ function PricingPageContent() {
       popular: true,
       features: [
         'Everything in General Admission',
-        'VIP private dinner with coaches',
+        'VIP private dinner with coaches (end of day one)',
         'Priority seating',
         'Extended Q&A access',
         'Exclusive VIP networking',

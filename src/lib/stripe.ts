@@ -67,8 +67,8 @@ export function calculateStripePriceInCents(
   let finalAmount = originalAmount
   let discountReason = ''
 
-  // Apply 6FB member discount - only ONE ticket gets member discount
-  if (isSixFBMember) {
+  // Apply 6FB member discount - only for GA tickets, only ONE ticket gets member discount
+  if (isSixFBMember && ticketType === 'GA') {
     if (quantity === 1) {
       // Single ticket: member gets 20% off
       const memberDiscount = getSixFBDiscount()
@@ -125,8 +125,8 @@ export function calculatePricing(
   let finalPrice = originalPrice
   let discountReason = ''
 
-  // Apply 6FB member discount - only ONE ticket gets member discount
-  if (isSixFBMember) {
+  // Apply 6FB member discount - only for GA tickets, only ONE ticket gets member discount
+  if (isSixFBMember && ticketType === 'GA') {
     if (quantity === 1) {
       // Single ticket: member gets 20% off
       const memberDiscount = getSixFBDiscount()
@@ -191,7 +191,7 @@ export async function createCheckoutSession({
     : `6FB Methodologies Workshop - ${ticketType} Ticket`
 
   const productDescription = ticketType === 'VIP'
-    ? 'Complete workshop access plus VIP dinner and exclusive perks'
+    ? 'Complete workshop access plus VIP dinner (end of day one) and exclusive perks'
     : 'Complete workshop access with all core content and materials'
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
