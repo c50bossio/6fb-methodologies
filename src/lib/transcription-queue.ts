@@ -8,10 +8,15 @@ import db from './database'
 import { v4 as uuidv4 } from 'uuid'
 import OpenAI from 'openai'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+// Initialize OpenAI client lazily
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable is required')
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+}
 
 // Job status types
 export type JobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'

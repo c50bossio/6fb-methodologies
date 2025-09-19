@@ -4,10 +4,15 @@ import db, { DatabaseError, ValidationError } from '@/lib/database'
 import { v4 as uuidv4 } from 'uuid'
 import OpenAI from 'openai'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+// Initialize OpenAI client lazily
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable is required')
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+}
 
 // Rate limiting store (in production, use Redis)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
@@ -211,6 +216,7 @@ export async function POST(request: NextRequest) {
       const audioData = new File([buffer], audioFile.name, { type: audioFile.type })
 
       // Transcribe audio using OpenAI Whisper
+      const openai = getOpenAIClient()
       const transcriptionResponse = await openai.audio.transcriptions.create({
         file: audioData,
         model: model,
