@@ -359,7 +359,7 @@ export class AudioTranscriptionManager {
     })
 
     // Handle recording errors
-    this.audioRecorder.on('stateChanged', (state) => {
+    this.audioRecorder.on('stateChanged', (state: any) => {
       if (state.state === 'error') {
         this.emit('recordingError', state.error)
       }
