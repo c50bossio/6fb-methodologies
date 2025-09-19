@@ -776,7 +776,7 @@ export function createSessionRecorder(
   })
 
   // Enhanced voice activity detection for workshop sessions
-  recorder.on('voiceActivityChanged', ({ isActive, timestamp }) => {
+  recorder.on('voiceActivityChanged', ({ isActive, timestamp }: { isActive: boolean; timestamp: number }) => {
     if (sessionInfo.speaker && isActive) {
       // Could trigger auto-note capture based on speaker activity
       console.log(`Voice activity detected for ${sessionInfo.speaker} at ${timestamp}`)
