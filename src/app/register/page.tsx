@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,7 +15,8 @@ import {
   CreditCard,
   Shield,
   Users,
-  Star
+  Star,
+  ChevronRight
 } from 'lucide-react'
 import { formatCurrency, validateEmail, formatPhoneNumber } from '@/lib/utils'
 import { RegistrationData, TicketType } from '@/types'
@@ -35,8 +36,11 @@ const FORM_STEPS: FormStep[] = [
 
 function RegisterPageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [showCityChangeModal, setShowCityChangeModal] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   // CSRF hook for secure API requests
   const { authenticatedFetch, isReady: csrfReady, error: csrfError } = useCSRF()
@@ -149,6 +153,9 @@ function RegisterPageContent() {
       }
 
       console.log('Form initialization complete')
+
+      // Try to load saved form progress after initial setup
+      loadFormProgress()
     } catch (error) {
       console.error('Error loading registration data:', error)
       // Fallback to safe defaults
@@ -172,11 +179,128 @@ function RegisterPageContent() {
     }
   }, [searchParams])
 
+  const saveFormProgress = () => {
+    try {
+      sessionStorage.setItem('6fb-registration-form-progress', JSON.stringify({
+        formData,
+        currentStep,
+        timestamp: Date.now()
+      }))
+    } catch (error) {
+      console.error('Failed to save form progress:', error)
+    }
+  }
+
+  const loadFormProgress = () => {
+    try {
+      const saved = sessionStorage.getItem('6fb-registration-form-progress')
+      if (saved) {
+        const { formData: savedFormData, currentStep: savedStep, timestamp } = JSON.parse(saved)
+
+        // Only restore if saved within last 24 hours
+        if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+          setFormData(prev => ({ ...prev, ...savedFormData }))
+          setCurrentStep(savedStep)
+          return true
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load form progress:', error)
+    }
+    return false
+  }
+
+  const handleCityChangeConfirm = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation === 'cities-section') {
+        navigateToCitiesSection()
+      } else {
+        saveFormProgress()
+        router.push(pendingNavigation)
+      }
+      setShowCityChangeModal(false)
+      setPendingNavigation(null)
+    }
+  }
+
+  const handleCityChangeCancel = () => {
+    setShowCityChangeModal(false)
+    setPendingNavigation(null)
+  }
+
+  const handleNavigationWithConfirm = (path: string) => {
+    // If there's form data to save, show confirmation
+    if (formData.firstName || formData.lastName || formData.email || formData.phone) {
+      setPendingNavigation(path)
+      setShowCityChangeModal(true)
+    } else {
+      // No form data, navigate directly
+      router.push(path)
+    }
+  }
+
+  const handleNavigateToCitiesSection = () => {
+    // If there's form data to save, show confirmation
+    if (formData.firstName || formData.lastName || formData.email || formData.phone) {
+      setPendingNavigation('cities-section')
+      setShowCityChangeModal(true)
+    } else {
+      // No form data, navigate directly to cities section
+      navigateToCitiesSection()
+    }
+  }
+
+  const navigateToCitiesSection = () => {
+    saveFormProgress()
+    router.push('/')
+
+    // Enhanced navigation completion detection with fallback timeouts
+    const attemptScroll = (attempts = 0, maxAttempts = 10) => {
+      const citiesElement = document.getElementById('cities')
+
+      if (citiesElement) {
+        // Element found, scroll to it
+        citiesElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+        return
+      }
+
+      if (attempts < maxAttempts) {
+        // Element not found yet, try again after a delay
+        const delay = attempts < 3 ? 100 : 200 // Start with shorter delays, then longer
+        setTimeout(() => attemptScroll(attempts + 1, maxAttempts), delay)
+      } else {
+        // Fallback: if we still can't find the element after max attempts
+        console.warn('Could not find cities section element after navigation')
+      }
+    }
+
+    // Start attempting to scroll
+    attemptScroll()
+  }
+
   const updateFormData = (field: keyof RegistrationData, value: any) => {
     // Ensure we always store clean string values
     const cleanValue = typeof value === 'string' ? value : String(value || '')
     console.log(`Updating form field '${field}' with:`, cleanValue)
-    setFormData(prev => ({ ...prev, [field]: cleanValue }))
+    setFormData(prev => {
+      const newData = { ...prev, [field]: cleanValue }
+      // Auto-save progress when form data changes
+      setTimeout(() => {
+        try {
+          sessionStorage.setItem('6fb-registration-form-progress', JSON.stringify({
+            formData: newData,
+            currentStep,
+            timestamp: Date.now()
+          }))
+        } catch (error) {
+          console.error('Failed to auto-save form progress:', error)
+        }
+      }, 500) // Debounce auto-save
+      return newData
+    })
   }
 
   const validateStep = (step: number): boolean => {
@@ -254,14 +378,14 @@ function RegisterPageContent() {
                 label="First Name"
                 placeholder="Enter your first name"
                 value={formData.firstName || ''}
-                onChange={(e) => updateFormData('firstName', e.target.value)}
+                onChange={(value) => updateFormData('firstName', value)}
                 required
               />
               <Input
                 label="Last Name"
                 placeholder="Enter your last name"
                 value={formData.lastName || ''}
-                onChange={(e) => updateFormData('lastName', e.target.value)}
+                onChange={(value) => updateFormData('lastName', value)}
                 required
               />
             </div>
@@ -271,7 +395,7 @@ function RegisterPageContent() {
               type="email"
               placeholder="your.email@example.com"
               value={formData.email || ''}
-              onChange={(e) => updateFormData('email', e.target.value)}
+              onChange={(value) => updateFormData('email', value)}
               helperText="We'll send your confirmation and workshop details here"
               required
             />
@@ -281,7 +405,7 @@ function RegisterPageContent() {
               type="tel"
               placeholder="(555) 123-4567"
               value={formData.phone || ''}
-              onChange={(e) => updateFormData('phone', formatPhoneNumber(e.target.value))}
+              onChange={(value) => updateFormData('phone', formatPhoneNumber(value))}
               helperText="For emergency contact and workshop updates"
               required
             />
@@ -295,7 +419,7 @@ function RegisterPageContent() {
               label="Business Name (Optional)"
               placeholder="Your barbershop or business name"
               value={formData.businessName || ''}
-              onChange={(e) => updateFormData('businessName', e.target.value)}
+              onChange={(value) => updateFormData('businessName', value)}
             />
 
             <div>
@@ -335,7 +459,7 @@ function RegisterPageContent() {
               <select
                 className="w-full h-12 rounded-xl border border-border-primary bg-background-accent px-4 py-3 text-base text-text-primary focus:border-tomb45-green focus:ring-1 focus:ring-tomb45-green focus:outline-none"
                 value={formData.yearsExperience}
-                onChange={(e) => updateFormData('yearsExperience', e.target.value)}
+                onChange={(value) => updateFormData('yearsExperience', value)}
               >
                 <option value="less-than-1">Less than 1 year</option>
                 <option value="1-2">1-2 years</option>
@@ -350,13 +474,13 @@ function RegisterPageContent() {
                 label="Dietary Restrictions (Optional)"
                 placeholder="Any food allergies or preferences"
                 value={formData.dietaryRestrictions || ''}
-                onChange={(e) => updateFormData('dietaryRestrictions', e.target.value)}
+                onChange={(value) => updateFormData('dietaryRestrictions', value)}
               />
               <Input
                 label="Special Requests (Optional)"
                 placeholder="Accessibility needs, etc."
                 value={formData.specialRequests || ''}
-                onChange={(e) => updateFormData('specialRequests', e.target.value)}
+                onChange={(value) => updateFormData('specialRequests', value)}
               />
             </div>
           </div>
@@ -430,13 +554,20 @@ function RegisterPageContent() {
               </CardContent>
             </Card>
 
-            {/* Responsible Spending Notice */}
-            <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl mb-4">
-              <div className="text-orange-600 text-lg font-bold mt-0.5">⚠️</div>
+
+            {/* Link Warning */}
+            <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="flex-shrink-0">
+                <img
+                  src="/images/link-logo.svg"
+                  alt="Link by Stripe"
+                  className="w-24 h-24"
+                />
+              </div>
               <div className="text-sm">
-                <div className="font-medium text-orange-800 mb-1">Please spend responsibly</div>
-                <div className="text-orange-700">
-                  Only register if you can afford to complete your payment plan. Be smart about your money.
+                <div className="font-medium text-amber-800 mb-1">For payment plans, do not use Link</div>
+                <div className="text-amber-700">
+                  Link does not support payment plans. Please use your card directly or choose Klarna/Afterpay for payment plans.
                 </div>
               </div>
             </div>
@@ -460,6 +591,49 @@ function RegisterPageContent() {
   return (
     <div className="min-h-screen bg-background-primary py-12">
       <div className="container-custom max-w-2xl">
+        {/* Breadcrumb Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mb-6"
+        >
+          <nav className="flex items-center space-x-2 text-sm text-text-muted">
+            <button
+              onClick={handleNavigateToCitiesSection}
+              className="hover:text-text-primary transition-colors"
+            >
+              Cities
+            </button>
+            <ChevronRight className="w-4 h-4" />
+            <button
+              onClick={() => handleNavigationWithConfirm(`/pricing?city=${selectedCity?.cityId || ''}`)}
+              className="hover:text-text-primary transition-colors"
+            >
+              {selectedCity?.cityName || 'Pricing'}
+            </button>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-text-primary font-medium">Registration</span>
+          </nav>
+        </motion.div>
+
+        {/* Smart Back Button */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-6"
+        >
+          <Button
+            variant="ghost"
+            onClick={handleNavigateToCitiesSection}
+            className="text-text-secondary hover:text-text-primary"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Cities
+          </Button>
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -472,9 +646,13 @@ function RegisterPageContent() {
           </h1>
           {selectedCity ? (
             <div className="mb-4">
-              <div className="inline-flex items-center gap-2 bg-tomb45-green/10 border border-tomb45-green/20 rounded-full px-4 py-2 mb-2">
+              <div className="inline-flex items-center gap-2 bg-tomb45-green/10 border border-tomb45-green/20 rounded-full px-4 py-2 mb-2 cursor-pointer hover:bg-tomb45-green/15 transition-colors group"
+                   onClick={handleNavigateToCitiesSection}>
                 <span className="text-sm font-medium text-tomb45-green">
                   {selectedCity.cityName} • {selectedCity.month}
+                </span>
+                <span className="text-xs text-tomb45-green/70 group-hover:text-tomb45-green transition-colors ml-1">
+                  Change
                 </span>
               </div>
               <p className="body-md text-text-secondary">
@@ -604,6 +782,41 @@ function RegisterPageContent() {
             </Button>
           )}
         </motion.div>
+
+        {/* City Change Confirmation Modal */}
+        {showCityChangeModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-background-primary rounded-xl p-6 max-w-md mx-4 shadow-xl"
+            >
+              <h3 className="text-lg font-semibold text-text-primary mb-3">
+                Change City Selection?
+              </h3>
+              <p className="text-text-secondary mb-4">
+                Your registration progress will be saved and you can return to continue where you left off.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={handleCityChangeCancel}
+                  className="flex-1"
+                >
+                  Stay Here
+                </Button>
+                <Button
+                  onClick={handleCityChangeConfirm}
+                  className="flex-1"
+                >
+                  Change City
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   )

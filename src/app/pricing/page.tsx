@@ -221,6 +221,32 @@ function PricingPageContent() {
     }
   }
 
+  const navigateToCitiesSection = () => {
+    router.push('/')
+
+    // Enhanced navigation completion detection with fallback timeouts
+    const attemptScroll = (attempts = 0, maxAttempts = 10) => {
+      const citiesElement = document.getElementById('cities')
+
+      if (citiesElement) {
+        citiesElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+        return
+      }
+
+      if (attempts < maxAttempts) {
+        const delay = attempts < 3 ? 100 : 200
+        setTimeout(() => attemptScroll(attempts + 1, maxAttempts), delay)
+      } else {
+        console.warn('Could not find cities section element after navigation')
+      }
+    }
+
+    attemptScroll()
+  }
+
   const handleRegister = (tierId: 'ga' | 'vip') => {
     const tier = tiers.find(t => t.id === tierId)!
     const quantity = quantities[tierId]
@@ -282,7 +308,7 @@ function PricingPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background-primary py-12">
+    <div id="pricing" className="min-h-screen bg-background-primary py-12">
       <div className="container-custom">
         {/* Back Button */}
         <motion.div
@@ -293,7 +319,7 @@ function PricingPageContent() {
         >
           <Button
             variant="ghost"
-            onClick={() => router.push('/')}
+            onClick={navigateToCitiesSection}
             className="text-text-secondary hover:text-text-primary"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -359,8 +385,7 @@ function PricingPageContent() {
                     type="email"
                     placeholder="Enter your 6FB registered email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && verifyMember()}
+                    onChange={(value) => setEmail(value)}
                   />
                   <Button
                     onClick={verifyMember}
@@ -539,10 +564,9 @@ function PricingPageContent() {
                           <Input
                             placeholder="Enter promo code"
                             value={promoCodes.ga}
-                            onChange={(e) => {
-                              const code = e.target.value
-                              setPromoCodes(prev => ({ ...prev, ga: code }))
-                              validatePromoCode(code, 'ga')
+                            onChange={(value) => {
+                              setPromoCodes(prev => ({ ...prev, ga: value }))
+                              validatePromoCode(value, 'ga')
                             }}
                           />
                           {promoValidation.ga === true && (
@@ -638,18 +662,25 @@ function PricingPageContent() {
                   <div className="text-xl font-bold text-green-600">afterpay</div>
                 </div>
               </div>
-            </div>
 
-            {/* Responsible Spending Warning */}
-            <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg max-w-md mx-auto">
-              <div className="text-orange-600 text-xl mt-0.5">⚠️</div>
-              <div className="text-sm">
-                <div className="font-semibold text-orange-800 mb-2">Please spend responsibly</div>
-                <div className="text-orange-700">
-                  Only register if you can afford to complete your payment plan. Be smart about your money.
+              {/* Link Warning */}
+              <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-md mx-auto mb-4">
+                <div className="flex-shrink-0">
+                  <img
+                    src="/images/link-logo.svg"
+                    alt="Link by Stripe"
+                    className="w-24 h-24"
+                  />
+                </div>
+                <div className="text-sm text-left">
+                  <div className="font-semibold text-amber-800 mb-1">For payment plans, do not use Link</div>
+                  <div className="text-amber-700">
+                    Link does not support payment plans. Use your card directly or select Klarna/Afterpay.
+                  </div>
                 </div>
               </div>
             </div>
+
           </div>
         </motion.div>
       </div>
