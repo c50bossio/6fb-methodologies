@@ -8,6 +8,7 @@ import { analyticsService } from '@/lib/analytics-service'
 import { smsService } from '@/lib/sms-service'
 import { decrementInventory, validateInventoryForCheckout, checkInventoryStatus } from '@/lib/inventory'
 import { recordMemberDiscountUsage } from '@/lib/member-discount-tracking'
+// import { createWorkbookUser } from '@/lib/workbook-auth'
 import Stripe from 'stripe'
 
 // Webhook event processor
@@ -106,6 +107,7 @@ class StripeWebhookProcessor {
       if (session.payment_status === 'paid') {
         await this.sendWorkshopMaterials(session)
         await this.addToWorkshopCalendar(session)
+        await this.createWorkbookAccess(session)
       }
 
       // Send SMS notification for ticket sale
@@ -398,7 +400,7 @@ class StripeWebhookProcessor {
       'NYC': '2026-04-26T13:00:00Z', // EST adjustment
       'New York': '2026-04-26T13:00:00Z',
       'Chicago': '2026-05-31T14:00:00Z', // CST adjustment
-      'San Francisco': '2026-06-21T15:00:00Z' // PST adjustment
+      'San Francisco': '2026-06-14T15:00:00Z' // PST adjustment
     };
 
     return workshopSchedule[city] || '2026-01-25T14:00:00Z'; // Default to Dallas
@@ -415,7 +417,7 @@ class StripeWebhookProcessor {
       'NYC': '2026-04-27T21:00:00Z', // EST adjustment
       'New York': '2026-04-27T21:00:00Z',
       'Chicago': '2026-06-01T22:00:00Z', // CST adjustment
-      'San Francisco': '2026-06-22T23:00:00Z' // PST adjustment
+      'San Francisco': '2026-06-15T23:00:00Z' // PST adjustment
     };
 
     return workshopSchedule[city] || '2026-01-26T22:00:00Z'; // Default to Dallas
@@ -432,7 +434,7 @@ class StripeWebhookProcessor {
       'NYC': 'April 26-27, 2026',
       'New York': 'April 26-27, 2026', // Alternative name for NYC
       'Chicago': 'May 31-June 1, 2026',
-      'San Francisco': 'June 21-22, 2026'
+      'San Francisco': 'June 14-15, 2026'
     };
 
     return workshopSchedule[city] || 'January 25-26, 2026'; // Default to Dallas
@@ -871,6 +873,93 @@ class StripeWebhookProcessor {
 
     } catch (error) {
       console.error('Error recording member discount usage:', error)
+    }
+  }
+
+  private async createWorkbookAccess(session: Stripe.Checkout.Session) {
+    try {
+      if (!session.customer_details?.email) {
+        console.warn('Cannot create workbook access: no customer email')
+        return
+      }
+
+      // Extract customer data from session
+      const userData = {
+        email: session.customer_details.email,
+        firstName: session.metadata?.firstName || session.customer_details?.name?.split(' ')[0] || 'Workshop',
+        lastName: session.metadata?.lastName || session.customer_details?.name?.split(' ').slice(1).join(' ') || 'Attendee',
+        ticketType: (session.metadata?.ticketType as 'GA' | 'VIP') || 'GA',
+        quantity: parseInt(session.metadata?.quantity || '1'),
+        stripeSessionId: session.id,
+        businessType: session.metadata?.businessType,
+        yearsExperience: session.metadata?.yearsExperience
+      }
+
+      // Create workbook user with unique password
+      // const workbookUser = createWorkbookUser(userData)
+
+      // console.log('✅ Workbook access created:', {
+      //   email: workbookUser.email,
+      //   password: workbookUser.password,
+      //   ticketType: workbookUser.ticketType,
+      //   sessionId: session.id
+      // })
+
+      // Send workbook access email
+      // await this.sendWorkbookAccessEmail(session, workbookUser.password)
+
+      return {
+        success: true,
+        // workbookUser,
+        // password: workbookUser.password
+      }
+    } catch (error) {
+      console.error('Error creating workbook access:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  private async sendWorkbookAccessEmail(session: Stripe.Checkout.Session, workbookPassword: string) {
+    try {
+      const customerName = session.metadata?.firstName || session.customer_details?.name?.split(' ')[0] || 'Workshop Attendee'
+      const emailData = {
+        to: session.customer_details?.email!,
+        subject: '🎯 Your Private Workshop Workbook Access - 6FB Methodologies',
+        template: 'workbook-access',
+        data: {
+          customerName,
+          workbookPassword,
+          ticketType: session.metadata?.ticketType || 'GA',
+          workshopDate: this.getWorkshopDateString(session.metadata?.city || 'Dallas'),
+          workbookUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/workbook`,
+          loginInstructions: {
+            step1: 'Visit the workbook page',
+            step2: `Enter your access code: ${workbookPassword}`,
+            step3: 'Complete the interactive exercises at your own pace',
+            note: 'Your progress will be saved automatically as you work through each exercise'
+          },
+          supportEmail: 'support@6fbmethodologies.com'
+        }
+      }
+
+      console.log('📧 Would send workbook access email:', {
+        email: emailData.to,
+        password: workbookPassword,
+        customerName,
+        ticketType: session.metadata?.ticketType,
+        sessionId: session.id
+      })
+
+      // In production, integrate with your email service:
+      // await emailService.send(emailData)
+
+      return { success: true, emailData }
+    } catch (error) {
+      console.error('Error sending workbook access email:', error)
+      throw error
     }
   }
 
