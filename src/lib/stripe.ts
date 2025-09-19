@@ -92,7 +92,7 @@ export async function calculateStripePriceInCents(
       const memberDiscount = getSixFBDiscount(ticketType)
       finalAmount = Math.round(basePrice * (1 - memberDiscount))
       const discountPercent = Math.round(memberDiscount * 100)
-      discountReason = `6FB Member Discount (One-time use) (${discountPercent}% off)`
+      discountReason = `6FB Member Discount (One-time use)`
     } else {
       // Multiple tickets: 1 member ticket (discount based on type) + bulk pricing on remaining
       const memberDiscount = getSixFBDiscount(ticketType)
