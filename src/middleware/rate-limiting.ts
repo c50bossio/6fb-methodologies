@@ -58,6 +58,27 @@ export const RATE_LIMITS = {
     maxRequests: 3,
     message: 'SMS test limit exceeded, please try again later',
   },
+
+  // Workbook authentication endpoints
+  WORKBOOK_AUTH: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 10,
+    message: 'Too many workbook authentication attempts, please try again later',
+  },
+
+  // Workbook audio transcription (strict due to cost)
+  WORKBOOK_AUDIO: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 50, // Generous for VIP users, will be further limited by user role
+    message: 'Audio transcription rate limit exceeded, please try again later',
+  },
+
+  // Workbook general API endpoints
+  WORKBOOK_API: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 100,
+    message: 'Too many workbook API requests, please try again later',
+  },
 } as const
 
 class RateLimiter {
@@ -258,6 +279,9 @@ export const checkoutRateLimit = createRateLimitMiddleware(RATE_LIMITS.CHECKOUT)
 export const webhookRateLimit = createRateLimitMiddleware(RATE_LIMITS.WEBHOOKS)
 export const inventoryRateLimit = createRateLimitMiddleware(RATE_LIMITS.INVENTORY)
 export const smsTestRateLimit = createRateLimitMiddleware(RATE_LIMITS.SMS_TEST)
+export const workbookAuthRateLimit = createRateLimitMiddleware(RATE_LIMITS.WORKBOOK_AUTH)
+export const workbookAudioRateLimit = createRateLimitMiddleware(RATE_LIMITS.WORKBOOK_AUDIO)
+export const workbookApiRateLimit = createRateLimitMiddleware(RATE_LIMITS.WORKBOOK_API)
 
 // Utility function to apply rate limiting in API routes
 export async function applyRateLimit(
@@ -307,3 +331,8 @@ export function withRateLimit(config: RateLimitConfig) {
 
 // Export the rate limiter instance for advanced usage
 export { rateLimiter }
+
+// Simple rate limit function for backwards compatibility
+export function rateLimit(config: RateLimitConfig) {
+  return createRateLimitMiddleware(config)
+}

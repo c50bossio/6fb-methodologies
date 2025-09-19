@@ -159,6 +159,124 @@ class EmailAutomationService {
       category: 'workshop'
     })
 
+    this.templates.set('workbook-access', {
+      id: 'workbook-access',
+      name: 'Interactive Workbook Access',
+      subject: '🎯 Your Private Workshop Workbook Access - 6FB Methodologies',
+      htmlContent: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">🎯 Welcome to Your Private Workbook</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">6FB Methodologies Workshop</p>
+          </div>
+
+          <div style="padding: 30px; background: #ffffff; border: 1px solid #e0e0e0; border-top: none;">
+            <h2 style="color: #28a745; margin-top: 0;">Hi {{firstName}}! 👋</h2>
+
+            <p>Congratulations on securing your spot for the 6FB Methodologies Workshop! We're excited to have you join us for this transformative experience.</p>
+
+            <div style="background: #f8f9fa; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+              <h3 style="color: #28a745; margin-top: 0; display: flex; align-items: center;">
+                📚 Your Interactive Workbook Access
+              </h3>
+              <p style="margin-bottom: 0;">Your personalized workbook is now ready! This interactive digital workbook will help you maximize your workshop experience with hands-on exercises and templates.</p>
+            </div>
+
+            <div style="background: #fff3cd; border: 1px solid #ffd700; padding: 20px; margin: 25px 0; border-radius: 8px;">
+              <h4 style="color: #856404; margin-top: 0; text-align: center;">🔐 Your Private Access Code</h4>
+              <div style="background: white; padding: 15px; border-radius: 6px; text-align: center; font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #28a745; letter-spacing: 2px; border: 2px dashed #28a745;">
+                {{workbookPassword}}
+              </div>
+              <p style="text-align: center; margin: 10px 0 0 0; font-size: 14px; color: #856404;"><strong>Keep this code secure - it's unique to you!</strong></p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="{{workbookUrl}}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; display: inline-block; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);">
+                🚀 Access Your Workbook Now
+              </a>
+            </div>
+
+            <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+              <h4 style="color: #1976d2; margin-top: 0;">📋 How to Get Started:</h4>
+              <ol style="margin: 10px 0; padding-left: 20px;">
+                <li style="margin-bottom: 8px;"><strong>{{step1}}</strong> - Click the button above or visit: <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">{{workbookUrl}}</code></li>
+                <li style="margin-bottom: 8px;"><strong>{{step2}}</strong> - Use your access code: <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">{{workbookPassword}}</code></li>
+                <li style="margin-bottom: 8px;"><strong>{{step3}}</strong> - Work through exercises at your own pace</li>
+              </ol>
+              <p style="margin: 15px 0 0 0; font-style: italic; color: #1976d2;">💡 {{note}}</p>
+            </div>
+
+            <div style="border-top: 2px solid #e0e0e0; padding-top: 25px; margin-top: 30px;">
+              <h4 style="color: #28a745;">🎯 What's Inside Your Workbook:</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #28a745;">
+                  <h5 style="margin: 0 0 8px 0; color: #28a745;">Day 1 - Collect the Data</h5>
+                  <ul style="margin: 0; padding-left: 15px; font-size: 14px;">
+                    <li>Systems Gap Analysis</li>
+                    <li>Campaign Planning Tools</li>
+                    <li>KPI Identification</li>
+                  </ul>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #6f42c1;">
+                  <h5 style="margin: 0 0 8px 0; color: #6f42c1;">Day 2 - Leverage the Data</h5>
+                  <ul style="margin: 0; padding-left: 15px; font-size: 14px;">
+                    <li>Implementation Planning</li>
+                    <li>Action Item Templates</li>
+                    <li>Progress Tracking</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div style="background: #fff8e1; border: 1px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 8px;">
+              <h4 style="color: #f57c00; margin-top: 0;">📅 Workshop Details</h4>
+              <p style="margin: 5px 0;"><strong>Your Ticket:</strong> {{ticketType}}</p>
+              <p style="margin: 5px 0;"><strong>Workshop Dates:</strong> {{workshopDate}}</p>
+              <p style="margin: 5px 0 15px 0;"><strong>Recommendation:</strong> Complete the Day 1 exercises before the workshop for maximum impact!</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <p style="color: #666; font-size: 14px;">Need help? Questions about your workbook access?</p>
+              <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:{{supportEmail}}" style="color: #28a745;">{{supportEmail}}</a></p>
+            </div>
+
+            <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
+              <p>Can't wait to see your progress and meet you at the workshop!</p>
+              <p style="margin: 10px 0 0 0;"><strong>The 6FB Methodologies Team</strong> 🚀</p>
+            </div>
+          </div>
+        </div>
+      `,
+      textContent: `Hi {{firstName}}!
+
+Congratulations on securing your spot for the 6FB Methodologies Workshop!
+
+Your Interactive Workbook Access:
+Access Code: {{workbookPassword}}
+Workbook URL: {{workbookUrl}}
+
+How to Get Started:
+1. {{step1}} - Visit: {{workbookUrl}}
+2. {{step2}} - Enter your access code: {{workbookPassword}}
+3. {{step3}} - Complete exercises at your own pace
+
+Note: {{note}}
+
+Workshop Details:
+- Your Ticket: {{ticketType}}
+- Workshop Dates: {{workshopDate}}
+
+What's Inside:
+Day 1 - Collect the Data: Systems analysis, campaign planning, KPI identification
+Day 2 - Leverage the Data: Implementation planning, action templates, progress tracking
+
+Need help? Email us at {{supportEmail}}
+
+The 6FB Methodologies Team`,
+      variables: ['firstName', 'workbookPassword', 'workbookUrl', 'step1', 'step2', 'step3', 'note', 'ticketType', 'workshopDate', 'supportEmail'],
+      category: 'workshop'
+    })
+
     this.templates.set('post-workshop-followup', {
       id: 'post-workshop-followup',
       name: 'Post-Workshop Follow-up',

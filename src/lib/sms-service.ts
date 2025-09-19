@@ -19,6 +19,27 @@ export interface SMSDeliveryResult {
   retryCount?: number;
 }
 
+export interface AccountabilitySubscription {
+  userId: string;
+  phoneNumber: string;
+  commitments: string[];
+  frequency: 'daily' | 'weekly' | 'bi-weekly';
+  timePreference: string; // e.g., "09:00" for 9 AM
+  timezone: string;
+  active: boolean;
+  startDate: Date;
+  lastContactDate?: Date;
+  responses: AccountabilityResponse[];
+}
+
+export interface AccountabilityResponse {
+  date: Date;
+  messageId: string;
+  response?: string;
+  progress?: number; // 1-10 scale
+  notes?: string;
+}
+
 class SMSService {
   private client: Twilio;
   private phoneNumber: string;
@@ -175,7 +196,7 @@ Customer: ${data.customerEmail}${remainingText}`;
       'NYC': 'April 26-27, 2026',
       'New York': 'April 26-27, 2026', // Alternative name for NYC
       'Chicago': 'May 31-June 1, 2026',
-      'San Francisco': 'June 21-22, 2026'
+      'San Francisco': 'June 14-15, 2026'
     };
 
     return workshopSchedule[city] || '';
@@ -260,6 +281,194 @@ Time: ${new Date().toLocaleString()}`;
       maxRetries: this.maxRetries,
       retryDelay: this.retryDelay
     };
+  }
+
+  /**
+   * Send accountability check-in message
+   */
+  async sendAccountabilityCheckIn(subscription: AccountabilitySubscription): Promise<SMSDeliveryResult> {
+    try {
+      if (!this.isConfigured()) {
+        console.log('SMS service not configured, would send accountability check-in');
+        return {
+          success: false,
+          error: 'SMS service not configured'
+        };
+      }
+
+      const commitmentsList = subscription.commitments
+        .map((commitment, index) => `${index + 1}. ${commitment}`)
+        .join('\n');
+
+      const message = `📋 6FB ACCOUNTABILITY CHECK-IN
+
+Hi! Time for your ${subscription.frequency} check-in.
+
+Your commitments:
+${commitmentsList}
+
+How are you doing? Reply with a number 1-10 (1=struggling, 10=crushing it) and any notes.
+
+Reply STOP to cancel these messages.`;
+
+      const result = await this.sendWithRetry(message, undefined, 0, subscription.phoneNumber);
+
+      if (result.success) {
+        console.log(`Accountability check-in sent to ${subscription.userId}: ${result.messageId}`);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Failed to send accountability check-in:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Process accountability response from user
+   */
+  processAccountabilityResponse(
+    subscription: AccountabilitySubscription,
+    messageBody: string,
+    messageId: string
+  ): AccountabilityResponse {
+    const response: AccountabilityResponse = {
+      date: new Date(),
+      messageId,
+      response: messageBody.trim()
+    };
+
+    // Extract progress score if present (1-10)
+    const progressMatch = messageBody.match(/\b([1-9]|10)\b/);
+    if (progressMatch) {
+      response.progress = parseInt(progressMatch[1]);
+    }
+
+    // Extract notes (everything after the number)
+    if (progressMatch && messageBody.length > progressMatch[0].length) {
+      const notesText = messageBody.replace(progressMatch[0], '').trim();
+      if (notesText.length > 0) {
+        response.notes = notesText;
+      }
+    } else if (!progressMatch) {
+      // If no number found, treat entire message as notes
+      response.notes = messageBody;
+    }
+
+    return response;
+  }
+
+  /**
+   * Send accountability confirmation message
+   */
+  async sendAccountabilityConfirmation(
+    phoneNumber: string,
+    response: AccountabilityResponse
+  ): Promise<SMSDeliveryResult> {
+    try {
+      if (!this.isConfigured()) {
+        return {
+          success: false,
+          error: 'SMS service not configured'
+        };
+      }
+
+      let message = '✅ Thanks for checking in!\n\n';
+
+      if (response.progress) {
+        const encouragement = this.getEncouragementMessage(response.progress);
+        message += `Progress: ${response.progress}/10 ${encouragement}\n\n`;
+      }
+
+      if (response.notes) {
+        message += `Your notes: "${response.notes}"\n\n`;
+      }
+
+      message += 'Keep up the great work! 💪\n\nReply STOP anytime to cancel.';
+
+      return await this.sendWithRetry(message, undefined, 0, phoneNumber);
+    } catch (error) {
+      console.error('Failed to send accountability confirmation:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Handle STOP request with confirmation
+   */
+  async handleStopRequest(phoneNumber: string, userId: string): Promise<SMSDeliveryResult> {
+    try {
+      if (!this.isConfigured()) {
+        return {
+          success: false,
+          error: 'SMS service not configured'
+        };
+      }
+
+      const message = `🛑 STOP CONFIRMATION
+
+Are you sure you want to cancel your 6FB accountability messages?
+
+Reply YES to confirm cancellation
+Reply NO to continue receiving messages
+
+This will stop all future accountability check-ins.`;
+
+      return await this.sendWithRetry(message, userId, 0, phoneNumber);
+    } catch (error) {
+      console.error('Failed to send stop confirmation:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Send cancellation confirmation
+   */
+  async sendCancellationConfirmation(phoneNumber: string): Promise<SMSDeliveryResult> {
+    try {
+      if (!this.isConfigured()) {
+        return {
+          success: false,
+          error: 'SMS service not configured'
+        };
+      }
+
+      const message = `✅ ACCOUNTABILITY CANCELLED
+
+Your 6FB accountability messages have been stopped.
+
+You can restart them anytime in your workbook dashboard.
+
+Thanks for using 6FB! 🙏`;
+
+      return await this.sendWithRetry(message, undefined, 0, phoneNumber);
+    } catch (error) {
+      console.error('Failed to send cancellation confirmation:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get encouragement message based on progress score
+   */
+  private getEncouragementMessage(progress: number): string {
+    if (progress >= 9) return '🔥 Amazing!';
+    if (progress >= 7) return '💪 Strong work!';
+    if (progress >= 5) return '👍 Keep going!';
+    if (progress >= 3) return '💝 Progress is progress!';
+    return '🤗 Tomorrow is a new day!';
   }
 
   /**

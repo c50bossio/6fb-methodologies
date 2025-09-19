@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Link by Stripe logo approximation -->
+  <g fill="#00D924">
+    <!-- Arrow icon (simplified) -->
+    <circle cx="20" cy="20" r="18" fill="#00D924"/>
+    <path d="M12 20L16 16L16 18L24 18L24 22L16 22L16 24L12 20Z" fill="white"/>
+  </g>
+  <!-- Text -->
+  <text x="45" y="26" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#000">link</text>
+</svg>

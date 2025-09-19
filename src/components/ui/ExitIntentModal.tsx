@@ -289,7 +289,7 @@ export function ExitIntentModal() {
                       type="email"
                       placeholder="your.email@example.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(value) => setEmail(value)}
                       required
                     />
 

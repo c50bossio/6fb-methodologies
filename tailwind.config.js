@@ -31,10 +31,26 @@ module.exports = {
           secondary: '#495057',
           accent: '#6c757d',
         },
-        success: '#28a745',
-        warning: '#ffc107',
-        error: '#dc3545',
-        info: '#17a2b8',
+        success: {
+          DEFAULT: '#28a745',
+          light: '#d4edda',
+          dark: '#155724',
+        },
+        warning: {
+          DEFAULT: '#ffc107',
+          light: '#fff3cd',
+          dark: '#856404',
+        },
+        error: {
+          DEFAULT: '#dc3545',
+          light: '#f8d7da',
+          dark: '#721c24',
+        },
+        info: {
+          DEFAULT: '#17a2b8',
+          light: '#d1ecf1',
+          dark: '#0c5460',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

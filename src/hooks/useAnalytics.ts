@@ -16,25 +16,27 @@ export function useAnalytics() {
 
   useEffect(() => {
     if (!initialized.current) {
-      // analytics.initialize()
+      // Analytics service is already initialized as singleton
       initialized.current = true
     }
   }, [])
 
   // Track page changes
   useEffect(() => {
-    // analytics.trackPageView()
+    if (pathname) {
+      analytics.trackEvent('page_view', { path: pathname })
+    }
   }, [pathname])
 
   return {
     trackEvent: (eventName: string, properties?: any) => {
-      console.log('Analytics Event:', eventName, properties)
+      analytics.trackEvent(eventName, properties)
     },
     trackPageView: () => {
-      console.log('Analytics Page View:', pathname)
+      analytics.trackEvent('page_view', { path: pathname })
     },
     setUserProperties: (properties: any) => {
-      console.log('Analytics User Properties:', properties)
+      analytics.trackEvent('user_properties', properties)
     },
   }
 }

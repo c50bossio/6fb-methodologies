@@ -124,7 +124,7 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     state: 'CA',
     month: 'June 2026',
     year: 2026,
-    dates: ['June 21-22'],
+    dates: ['June 14-15'],
     location: 'Location TBA',
     climateAppeal: 'Early summer charm - crisp 60-70°F bay weather',
     status: 'upcoming',

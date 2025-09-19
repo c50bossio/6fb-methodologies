@@ -362,6 +362,69 @@ class SendGridService {
     })
   }
 
+  async sendWorkbookAccessEmail(data: {
+    email: string
+    firstName: string
+    workbookPassword: string
+    ticketType: string
+    workshopDate: string
+  }) {
+    return this.sendTransactionalEmail({
+      to: data.email,
+      from: this.defaultFrom,
+      subject: '🎯 Your Private Workshop Workbook Access - 6FB Methodologies',
+      html: `
+        <h1>Welcome to Your Private Workbook, ${data.firstName}!</h1>
+        <p>Congratulations on your workshop registration! You now have exclusive access to the 6FB Methodologies Workshop Workbook.</p>
+
+        <div style="background: #28a745; color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>🔑 Your Workbook Access Details</h3>
+          <p><strong>Username:</strong> ${data.email}</p>
+          <p><strong>Access Code:</strong> <span style="font-size: 18px; font-weight: bold; letter-spacing: 2px;">${data.workbookPassword}</span></p>
+          <p><strong>Workbook URL:</strong> <a href="${process.env.NEXT_PUBLIC_BASE_URL}/workbook" style="color: white; text-decoration: underline;">${process.env.NEXT_PUBLIC_BASE_URL}/workbook</a></p>
+        </div>
+
+        <h3>📚 What's in Your Workbook</h3>
+        <ul>
+          <li><strong>Interactive Exercises:</strong> Complete at your own pace</li>
+          <li><strong>Audio Recording:</strong> Record your insights and reflections</li>
+          <li><strong>AI-Powered Summaries:</strong> Get intelligent insights from your recordings</li>
+          <li><strong>Progress Tracking:</strong> Monitor your learning journey</li>
+          <li><strong>Session Notes:</strong> Take and organize your workshop notes</li>
+        </ul>
+
+        <h3>🎯 How to Access Your Workbook</h3>
+        <ol>
+          <li>Visit <a href="${process.env.NEXT_PUBLIC_BASE_URL}/workbook">${process.env.NEXT_PUBLIC_BASE_URL}/workbook</a></li>
+          <li>Enter your email: <strong>${data.email}</strong></li>
+          <li>Enter your access code: <strong>${data.workbookPassword}</strong></li>
+          <li>Start completing the interactive exercises!</li>
+        </ol>
+
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4>💡 Pro Tips</h4>
+          <ul>
+            <li>Your progress is automatically saved as you work</li>
+            <li>Use the audio recording feature to capture your key insights</li>
+            <li>Complete exercises before the workshop for maximum impact</li>
+            <li>Access your workbook anytime - it's yours forever!</li>
+          </ul>
+        </div>
+
+        <h3>🚀 Workshop Details</h3>
+        <p><strong>Workshop Date:</strong> ${data.workshopDate}</p>
+        <p><strong>Your Ticket Type:</strong> ${data.ticketType}</p>
+
+        <h3>📞 Need Help?</h3>
+        <p>If you have any questions about accessing your workbook, simply reply to this email and we'll help you within 24 hours.</p>
+
+        <p>Get ready to transform your business with the 6FB methodologies!</p>
+        <p>Best,<br>The 6FB Team</p>
+      `,
+      text: `Welcome to Your Private Workbook, ${data.firstName}! You now have exclusive access to the 6FB Methodologies Workshop Workbook. Username: ${data.email}, Access Code: ${data.workbookPassword}. Visit ${process.env.NEXT_PUBLIC_BASE_URL}/workbook to get started. Your workbook includes interactive exercises, audio recording, AI summaries, and progress tracking. Complete exercises before the workshop for maximum impact!`
+    })
+  }
+
   // Test email functionality
   async sendTestEmail(recipientEmail: string) {
     return this.sendTransactionalEmail({
@@ -413,7 +476,7 @@ export async function sendPaymentConfirmationViaSendGrid(data: {
       'NYC': 'April 26-27, 2026',
       'New York': 'April 26-27, 2026',
       'Chicago': 'May 31-June 1, 2026',
-      'San Francisco': 'June 21-22, 2026'
+      'San Francisco': 'June 14-15, 2026'
     };
     return workshopSchedule[city] || 'January 25-26, 2026';
   };

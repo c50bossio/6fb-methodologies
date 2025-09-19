@@ -485,8 +485,8 @@ export const analyticsService = new AnalyticsIntegrationService({
   debug: process.env.NODE_ENV === 'development'
 })
 
-// React hook for analytics
-export function useAnalytics() {
+// Direct access to analytics service methods (not a React hook)
+export const useAnalyticsService = () => {
   return {
     trackWorkshopRegistration: analyticsService.trackWorkshopRegistration.bind(analyticsService),
     trackCheckoutStart: analyticsService.trackCheckoutStart.bind(analyticsService),

@@ -145,8 +145,8 @@ export class AudioRecorder {
   private chunks: AudioChunk[] = []
   private chunkSequence = 0
   private recordingId: string | null = null
-  private chunkTimer: NodeJS.Timeout | null = null
-  private voiceActivityTimer: NodeJS.Timeout | null = null
+  private chunkTimer: number | null = null
+  private voiceActivityTimer: number | null = null
   private state: AudioRecorderState
   private config: AudioRecordingConfig
   private eventListeners: Map<string, Function[]> = new Map()
@@ -284,7 +284,7 @@ export class AudioRecorder {
 
       this.emit('audioLevel', normalizedLevel)
 
-      this.voiceActivityTimer = setTimeout(checkVoiceActivity, 100)
+      this.voiceActivityTimer = window.setTimeout(checkVoiceActivity, 100)
     }
 
     checkVoiceActivity()
@@ -410,7 +410,7 @@ export class AudioRecorder {
 
   // Chunk Management
   private setupChunkTimer(): void {
-    this.chunkTimer = setInterval(() => {
+    this.chunkTimer = window.setInterval(() => {
       if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
         this.mediaRecorder.requestData()
       }
@@ -677,12 +677,12 @@ export class AudioRecorder {
 
   private cleanup(): void {
     if (this.chunkTimer) {
-      clearInterval(this.chunkTimer)
+      window.clearInterval(this.chunkTimer)
       this.chunkTimer = null
     }
 
     if (this.voiceActivityTimer) {
-      clearTimeout(this.voiceActivityTimer)
+      window.clearTimeout(this.voiceActivityTimer)
       this.voiceActivityTimer = null
     }
 

@@ -110,7 +110,21 @@ export function middleware(request: NextRequest) {
   const securityHeaders = {
     // Prevent clickjacking
     'X-Frame-Options': 'DENY',
-    'Content-Security-Policy':
+    'Content-Security-Policy': pathname.startsWith('/workbook') || pathname.startsWith('/api/workbook') ?
+      // Relaxed CSP for workbook functionality
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.openai.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https: blob:; " +
+      "connect-src 'self' https://api.openai.com https://api.stripe.com; " +
+      "media-src 'self' blob: data:; " +
+      "worker-src 'self' blob:; " +
+      "frame-src 'self'; " +
+      "object-src 'none'; " +
+      "base-uri 'self'; " +
+      "form-action 'self';" :
+      // Standard CSP for regular pages
       "default-src 'self'; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
@@ -146,10 +160,10 @@ export function middleware(request: NextRequest) {
       'accelerometer=(), autoplay=(), encrypted-media=(), fullscreen=(), gyroscope=(), ' +
       'magnetometer=(), midi=(), notifications=(), push=(), sync-xhr=(), usb=(), web-share=()',
 
-    // Cross-Origin policies
-    'Cross-Origin-Opener-Policy': 'same-origin',
-    'Cross-Origin-Embedder-Policy': 'require-corp',
-    'Cross-Origin-Resource-Policy': 'same-origin',
+    // Cross-Origin policies (relaxed for workbook API)
+    'Cross-Origin-Opener-Policy': pathname.startsWith('/api/workbook') ? 'same-origin-allow-popups' : 'same-origin',
+    'Cross-Origin-Embedder-Policy': pathname.startsWith('/api/workbook') ? 'unsafe-none' : 'require-corp',
+    'Cross-Origin-Resource-Policy': pathname.startsWith('/api/workbook') ? 'cross-origin' : 'same-origin',
 
     // Additional security headers
     'X-DNS-Prefetch-Control': 'off',

@@ -312,7 +312,7 @@ export function AnalyticsRegistrationForm({ searchParams }: AnalyticsRegistratio
               type="tel"
               placeholder="(555) 123-4567"
               value={formData.phone}
-              onChange={(e) => updateFormData('phone', formatPhoneNumber(e.target.value))}
+              onChange={(value) => updateFormData('phone', formatPhoneNumber(value))}
               onFocus={() => handleFieldFocus('phone')}
               onBlur={(e) => handleFieldBlur('phone', e.target.value)}
               helperText="For emergency contact and workshop updates"

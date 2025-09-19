@@ -2,7 +2,7 @@
 
 import { useEffect, createContext, useContext, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { analyticsService, useAnalytics } from '@/lib/analytics-service'
+import { analyticsService, useAnalyticsService } from '@/lib/analytics-service'
 
 interface AnalyticsContextType {
   trackWorkshopRegistration: typeof analyticsService.trackWorkshopRegistration
@@ -20,7 +20,7 @@ interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const router = useRouter()
-  const analytics = useAnalytics()
+  const analytics = useAnalyticsService()
   const isEnabled = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== 'false'
 
   useEffect(() => {
@@ -247,7 +247,7 @@ function throttle<T extends (...args: any[]) => any>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | null = null
+  let timeoutId: number | null = null
   let lastExecTime = 0
 
   return (...args: Parameters<T>) => {
@@ -258,9 +258,9 @@ function throttle<T extends (...args: any[]) => any>(
       lastExecTime = currentTime
     } else {
       if (timeoutId) {
-        clearTimeout(timeoutId)
+        window.clearTimeout(timeoutId)
       }
-      timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         func(...args)
         lastExecTime = Date.now()
       }, delay - (currentTime - lastExecTime))

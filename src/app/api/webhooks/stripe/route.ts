@@ -4,11 +4,11 @@ import { analytics } from '@/lib/analytics'
 // import { SecurityMonitor } from '@/lib/security'
 // import { sendPaymentConfirmation, NotificationData } from '@/lib/notifications'
 import { analyticsService } from '@/lib/analytics-service'
-// import { sendGridService } from '@/lib/sendgrid-service'
+import { sendGridService } from '@/lib/sendgrid-service'
 import { smsService } from '@/lib/sms-service'
 import { decrementInventory, validateInventoryForCheckout, checkInventoryStatus } from '@/lib/inventory'
 import { recordMemberDiscountUsage } from '@/lib/member-discount-tracking'
-// import { createWorkbookUser } from '@/lib/workbook-auth'
+import { storeWorkbookUser } from '@/lib/workbook-auth'
 import Stripe from 'stripe'
 
 // Webhook event processor
@@ -895,23 +895,40 @@ class StripeWebhookProcessor {
         yearsExperience: session.metadata?.yearsExperience
       }
 
-      // Create workbook user with unique password
-      // const workbookUser = createWorkbookUser(userData)
+      // Generate secure workbook password
+      const workbookPassword = this.generateWorkbookPassword()
 
-      // console.log('✅ Workbook access created:', {
-      //   email: workbookUser.email,
-      //   password: workbookUser.password,
-      //   ticketType: workbookUser.ticketType,
-      //   sessionId: session.id
-      // })
+      // Create workbook user with unique password
+      const workbookUser = {
+        email: userData.email,
+        password: workbookPassword,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        ticketType: userData.ticketType,
+        quantity: userData.quantity,
+        stripeSessionId: userData.stripeSessionId,
+        businessType: userData.businessType,
+        yearsExperience: userData.yearsExperience,
+        createdAt: new Date().toISOString()
+      }
+
+      // Store workbook user credentials
+      storeWorkbookUser(workbookUser)
+
+      console.log('✅ Workbook access created:', {
+        email: workbookUser.email,
+        password: workbookUser.password,
+        ticketType: workbookUser.ticketType,
+        sessionId: session.id
+      })
 
       // Send workbook access email
-      // await this.sendWorkbookAccessEmail(session, workbookUser.password)
+      await this.sendWorkbookAccessEmail(session, workbookUser.password)
 
       return {
         success: true,
-        // workbookUser,
-        // password: workbookUser.password
+        workbookUser,
+        password: workbookUser.password
       }
     } catch (error) {
       console.error('Error creating workbook access:', error)
@@ -925,38 +942,26 @@ class StripeWebhookProcessor {
   private async sendWorkbookAccessEmail(session: Stripe.Checkout.Session, workbookPassword: string) {
     try {
       const customerName = session.metadata?.firstName || session.customer_details?.name?.split(' ')[0] || 'Workshop Attendee'
-      const emailData = {
-        to: session.customer_details?.email!,
-        subject: '🎯 Your Private Workshop Workbook Access - 6FB Methodologies',
-        template: 'workbook-access',
-        data: {
-          customerName,
-          workbookPassword,
-          ticketType: session.metadata?.ticketType || 'GA',
-          workshopDate: this.getWorkshopDateString(session.metadata?.city || 'Dallas'),
-          workbookUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/workbook`,
-          loginInstructions: {
-            step1: 'Visit the workbook page',
-            step2: `Enter your access code: ${workbookPassword}`,
-            step3: 'Complete the interactive exercises at your own pace',
-            note: 'Your progress will be saved automatically as you work through each exercise'
-          },
-          supportEmail: 'support@6fbmethodologies.com'
-        }
-      }
 
-      console.log('📧 Would send workbook access email:', {
-        email: emailData.to,
+      const emailResult = await sendGridService.sendWorkbookAccessEmail({
+        email: session.customer_details?.email!,
+        firstName: customerName,
+        workbookPassword,
+        ticketType: session.metadata?.ticketType || 'GA',
+        workshopDate: this.getWorkshopDateString(session.metadata?.city || 'Dallas')
+      })
+
+      console.log('📧 Workbook access email sent:', {
+        email: session.customer_details?.email,
         password: workbookPassword,
         customerName,
         ticketType: session.metadata?.ticketType,
-        sessionId: session.id
+        sessionId: session.id,
+        success: emailResult.success,
+        messageId: emailResult.messageId
       })
 
-      // In production, integrate with your email service:
-      // await emailService.send(emailData)
-
-      return { success: true, emailData }
+      return emailResult
     } catch (error) {
       console.error('Error sending workbook access email:', error)
       throw error
@@ -1003,6 +1008,24 @@ class StripeWebhookProcessor {
         console.error('Failed to trigger Zapier workflow:', error)
       }
     }
+  }
+
+  /**
+   * Generate a secure random password for workbook access
+   * Format: 6FB-XXXX-XXXX where X is alphanumeric (uppercase)
+   */
+  private generateWorkbookPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+    const generateSegment = (length: number): string => {
+      let result = ''
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      return result
+    }
+
+    return `6FB-${generateSegment(4)}-${generateSegment(4)}`
   }
 }
 
