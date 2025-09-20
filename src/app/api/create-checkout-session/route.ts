@@ -129,6 +129,18 @@ export async function POST(request: NextRequest) {
         console.log('🔍 Using cityId from registrationData:', cityId);
       }
 
+      // Additional fallback: try to extract from citySelection.cityName if cityId is still missing
+      if (!cityId && registrationData.citySelection?.cityName) {
+        console.log('🔍 Attempting to resolve cityId from cityName:', registrationData.citySelection.cityName);
+        // Import cities here to avoid circular dependencies
+        const { getCityByName } = await import('@/lib/cities');
+        const cityByName = getCityByName(registrationData.citySelection.cityName);
+        if (cityByName) {
+          cityId = cityByName.id;
+          console.log('✅ Resolved cityId from cityName:', { cityName: registrationData.citySelection.cityName, cityId });
+        }
+      }
+
       // Add pricing and city selection data to metadata
       if (registrationData.pricing) {
         metadata.originalPrice =

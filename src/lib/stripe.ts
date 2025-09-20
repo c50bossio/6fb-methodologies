@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { getCityById } from './cities';
+import { getCityById, getCityByName } from './cities';
 import { validateMemberDiscountEligibility } from './member-discount-tracking';
 
 // Initialize Stripe Account (Bossio Solution INC)
@@ -233,16 +233,65 @@ export async function createCheckoutSession({
   let cityPriceId = null;
   let useCityPricing = false;
 
+  console.log('🔍 Stripe createCheckoutSession - City lookup attempt:', {
+    providedCityId: cityId,
+    metadata: Object.keys(metadata),
+  });
+
   if (cityId) {
     city = getCityById(cityId);
     if (city) {
-      console.log(`🏙️ Using city-specific pricing for ${city.city}:`, {
+      console.log(`✅ Successfully found city data for ${city.city}:`, {
         cityId,
-        city: city.city,
+        cityName: city.city,
         gaPriceId: city.stripe.gaPriceId,
         vipPriceId: city.stripe.vipPriceId,
-        environment: isProduction ? 'production' : 'development'
+        environment: isProduction ? 'production' : 'development',
       });
+    } else {
+      console.warn(`❌ City lookup failed for cityId: ${cityId}`);
+
+      // Try fallback resolution from metadata if available
+      if (metadata.cityName) {
+        console.log(`🔍 Attempting fallback city resolution from metadata cityName: ${metadata.cityName}`);
+        city = getCityByName(metadata.cityName);
+        if (city) {
+          console.log(`✅ Fallback resolution successful:`, {
+            resolvedCityId: city.id,
+            cityName: city.city,
+          });
+          // Update cityId for consistency
+          cityId = city.id;
+        } else {
+          console.warn(`❌ Fallback city resolution failed for cityName: ${metadata.cityName}`);
+        }
+      }
+    }
+  } else {
+    console.warn('❌ No cityId provided to createCheckoutSession');
+
+    // Try to extract city from metadata as last resort
+    if (metadata.cityName) {
+      console.log(`🔍 No cityId provided, attempting to resolve from metadata cityName: ${metadata.cityName}`);
+      city = getCityByName(metadata.cityName);
+      if (city) {
+        console.log(`✅ Successfully resolved city from metadata:`, {
+          resolvedCityId: city.id,
+          cityName: city.city,
+        });
+        cityId = city.id;
+      }
+    }
+  }
+
+  if (city) {
+    console.log(`🏙️ Final city data for checkout session:`, {
+      cityId: city.id,
+      cityName: city.city,
+      gaPriceId: city.stripe.gaPriceId,
+      vipPriceId: city.stripe.vipPriceId,
+      environment: isProduction ? 'production' : 'development',
+    });
 
       cityPriceId =
         ticketType === 'GA' ? city.stripe.gaPriceId : city.stripe.vipPriceId;

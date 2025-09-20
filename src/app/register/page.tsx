@@ -99,16 +99,57 @@ function RegisterPageContent() {
       const quantity = parseInt(searchParams.get('quantity') || '1');
       const cityId = searchParams.get('city');
 
-      // Get city selection data from sessionStorage
+      console.log('🔍 Registration page - URL parameters:', {
+        type,
+        quantity,
+        cityIdFromUrl: cityId,
+      });
+
+      // Get city selection data from sessionStorage with fallback to URL
+      let citySelectionData = null;
       try {
         const cityData = sessionStorage.getItem('6fb-city-selection');
         if (cityData) {
-          const parsedCityData = JSON.parse(cityData);
-          setSelectedCity(parsedCityData);
-          console.log('Selected city:', parsedCityData);
+          citySelectionData = JSON.parse(cityData);
+          console.log('✅ Loaded city from sessionStorage:', citySelectionData);
         }
       } catch (error) {
-        console.error('Error loading city selection:', error);
+        console.error('Error loading city selection from sessionStorage:', error);
+      }
+
+      // Fallback: If no sessionStorage city data but we have cityId from URL, try to resolve it
+      if (!citySelectionData && cityId) {
+        console.log('🔍 No sessionStorage city data, attempting to resolve from URL cityId:', cityId);
+
+        // Import cities dynamically to resolve cityId
+        import('@/lib/cities').then(({ getCityById }) => {
+          const cityFromId = getCityById(cityId);
+          if (cityFromId) {
+            const resolvedCityData = {
+              cityId: cityFromId.id,
+              cityName: cityFromId.city,
+              month: cityFromId.month,
+              dates: cityFromId.dates,
+              location: cityFromId.location,
+            };
+
+            console.log('✅ Resolved city from URL cityId:', resolvedCityData);
+            setSelectedCity(resolvedCityData);
+
+            // Save to sessionStorage for persistence
+            try {
+              sessionStorage.setItem('6fb-city-selection', JSON.stringify(resolvedCityData));
+            } catch (error) {
+              console.error('Failed to save resolved city to sessionStorage:', error);
+            }
+          } else {
+            console.warn('❌ Could not resolve cityId from URL:', cityId);
+          }
+        }).catch(error => {
+          console.error('Failed to import cities for URL fallback:', error);
+        });
+      } else if (citySelectionData) {
+        setSelectedCity(citySelectionData);
       }
 
       // Get complex data from sessionStorage (much cleaner!)
@@ -402,18 +443,23 @@ function RegisterPageContent() {
           customerEmail: formData.email,
           customerName: `${formData.firstName} ${formData.lastName}`,
           isSixFBMember: formData.isSixFBMember,
-          cityId: selectedCity?.cityId,
+          cityId: selectedCity.cityId,
           registrationData: {
             ...formData,
-            ...(selectedCity && {
-              citySelection: {
-                cityId: selectedCity.cityId,
-                cityName: selectedCity.cityName,
-                month: selectedCity.month,
-                dates: selectedCity.dates,
-                location: selectedCity.location,
-              },
-            }),
+            pricing: {
+              originalPrice: pricingData.originalPrice,
+              finalPrice: pricingData.finalPrice,
+              discountAmount: pricingData.originalPrice - pricingData.finalPrice,
+              discountReason: pricingData.discountReason,
+              savings: pricingData.originalPrice - pricingData.finalPrice,
+            },
+            citySelection: {
+              cityId: selectedCity.cityId,
+              cityName: selectedCity.cityName,
+              month: selectedCity.month,
+              dates: selectedCity.dates,
+              location: selectedCity.location,
+            },
           },
         }),
       });
