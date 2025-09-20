@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
+import { useEffect } from 'react';
 
 export function PerformanceOptimizer() {
   useEffect(() => {
     // Prevent Flash of Unstyled Content (FOUC)
-    document.body.style.visibility = 'visible'
-    document.body.style.opacity = '1'
+    document.body.style.visibility = 'visible';
+    document.body.style.opacity = '1';
 
     // Performance optimizations
     const optimizePerformance = () => {
@@ -14,60 +14,60 @@ export function PerformanceOptimizer() {
       if ('requestIdleCallback' in window) {
         requestIdleCallback(() => {
           // Preload next page routes that user might visit
-          const link = document.createElement('link')
-          link.rel = 'prefetch'
-          link.href = '/pricing'
-          document.head.appendChild(link)
+          const link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.href = '/pricing';
+          document.head.appendChild(link);
 
-          const registerLink = document.createElement('link')
-          registerLink.rel = 'prefetch'
-          registerLink.href = '/register'
-          document.head.appendChild(registerLink)
-        })
+          const registerLink = document.createElement('link');
+          registerLink.rel = 'prefetch';
+          registerLink.href = '/register';
+          document.head.appendChild(registerLink);
+        });
       }
 
       // Optimize images loading
-      const images = document.querySelectorAll('img[src]')
-      images.forEach((img) => {
+      const images = document.querySelectorAll('img[src]');
+      images.forEach(img => {
         if (img instanceof HTMLImageElement && !img.loading) {
-          const rect = img.getBoundingClientRect()
+          const rect = img.getBoundingClientRect();
           // Set loading="lazy" for images below the fold
           if (rect.top > window.innerHeight) {
-            img.loading = 'lazy'
+            img.loading = 'lazy';
           }
         }
-      })
+      });
 
       // Clear any cached content that might cause flashing
       if ('caches' in window) {
-        caches.keys().then((cacheNames) => {
-          cacheNames.forEach((cacheName) => {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
             if (cacheName.includes('old') || cacheName.includes('stale')) {
-              caches.delete(cacheName)
+              caches.delete(cacheName);
             }
-          })
-        })
+          });
+        });
       }
-    }
+    };
 
     // Run optimizations
-    optimizePerformance()
+    optimizePerformance();
 
     // Set up performance observer for monitoring
     if ('PerformanceObserver' in window) {
       try {
-        const observer = new PerformanceObserver((list) => {
-          const entries = list.getEntries()
-          entries.forEach((entry) => {
+        const observer = new PerformanceObserver(list => {
+          const entries = list.getEntries();
+          entries.forEach(entry => {
             if (entry.entryType === 'navigation') {
               // Log any performance issues in development
               if (process.env.NODE_ENV === 'development') {
-                console.log('Navigation timing:', entry)
+                console.log('Navigation timing:', entry);
               }
             }
-          })
-        })
-        observer.observe({ entryTypes: ['navigation'] })
+          });
+        });
+        observer.observe({ entryTypes: ['navigation'] });
       } catch (e) {
         // PerformanceObserver not supported, ignore
       }
@@ -76,15 +76,15 @@ export function PerformanceOptimizer() {
     // Clean up memory on page unload
     const handleBeforeUnload = () => {
       // Clear any timers or intervals
-      clearTimeout(window.setTimeout(() => {}, 0))
-    }
+      clearTimeout(window.setTimeout(() => {}, 0));
+    };
 
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [])
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   return (
     <style jsx global>{`
@@ -96,14 +96,14 @@ export function PerformanceOptimizer() {
       }
 
       body.hydrated,
-      body[style*="visibility: visible"] {
+      body[style*='visibility: visible'] {
         visibility: visible !important;
         opacity: 1 !important;
       }
 
       /* Optimize font rendering */
       * {
-        font-feature-settings: "kern" 1;
+        font-feature-settings: 'kern' 1;
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -156,9 +156,13 @@ export function PerformanceOptimizer() {
       }
 
       /* Cache-busting for content updates */
-      [data-version]:not([data-version="${process.env.NODE_ENV === 'development' ? Date.now() : 'production'}"]) {
+      [data-version]:not(
+        [data-version='${process.env.NODE_ENV === 'development'
+          ? Date.now()
+          : 'production'}']
+      ) {
         display: none !important;
       }
     `}</style>
-  )
+  );
 }

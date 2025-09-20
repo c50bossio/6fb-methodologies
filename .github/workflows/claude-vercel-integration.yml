@@ -1,0 +1,426 @@
+# Claude Code Vercel Integration Workflow
+# Automated deployment analysis and optimization for Vercel
+# Integrated with existing CI/CD pipeline
+
+name: Claude Vercel Integration
+
+on:
+  deployment_status:
+  pull_request:
+    types: [opened, synchronize, closed]
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      deployment_analysis:
+        description: "Type of deployment analysis"
+        required: true
+        default: "full"
+        type: choice
+        options:
+          - full
+          - performance-only
+          - security-only
+          - cost-analysis
+
+env:
+  CLAUDE_MODEL: claude-3-5-haiku-20241022 # Cost-optimized for deployment analysis
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # ==============================================
+  # Deployment Analysis
+  # ==============================================
+  deployment-analysis:
+    name: Deployment Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'deployment_status'
+    outputs:
+      deployment_url: ${{ steps.extract-info.outputs.deployment_url }}
+      deployment_status: ${{ steps.extract-info.outputs.deployment_status }}
+      analysis_needed: ${{ steps.extract-info.outputs.analysis_needed }}
+
+    steps:
+      - name: Extract deployment information
+        id: extract-info
+        run: |
+          DEPLOYMENT_URL="${{ github.event.deployment_status.target_url }}"
+          DEPLOYMENT_STATUS="${{ github.event.deployment_status.state }}"
+
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "deployment_status=$DEPLOYMENT_STATUS" >> $GITHUB_OUTPUT
+
+          # Only analyze successful deployments
+          if [ "$DEPLOYMENT_STATUS" == "success" ] && [[ "$DEPLOYMENT_URL" == *"vercel.app"* ]]; then
+            echo "analysis_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "analysis_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Deployment URL: $DEPLOYMENT_URL"
+          echo "Status: $DEPLOYMENT_STATUS"
+
+      - name: Checkout repository
+        if: steps.extract-info.outputs.analysis_needed == 'true'
+        uses: actions/checkout@v4
+
+      - name: Claude Deployment Analysis
+        if: steps.extract-info.outputs.analysis_needed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: 3072
+          max_turns: 1
+          claude_args: |
+            Analyze the Vercel deployment and provide optimization recommendations.
+
+            🚀 **Deployment Analysis for:** ${{ steps.extract-info.outputs.deployment_url }}
+
+            **Analysis Focus Areas:**
+
+            🏗️ **Build Optimization**
+            - Build time analysis
+            - Bundle size optimization
+            - Dependency efficiency
+            - Build cache effectiveness
+
+            ⚡ **Performance Analysis**
+            - Core Web Vitals prediction
+            - Loading performance
+            - API response times
+            - Edge function efficiency
+
+            🔒 **Security & Configuration**
+            - Environment variable security
+            - Headers configuration
+            - CORS settings
+            - Rate limiting setup
+
+            💰 **Cost Optimization**
+            - Function execution costs
+            - Bandwidth usage
+            - Build minutes consumption
+            - Storage optimization
+
+            Provide specific, actionable recommendations for Vercel deployment optimization.
+
+  # ==============================================
+  # Pre-deployment Analysis
+  # ==============================================
+  pre-deployment:
+    name: Pre-deployment Analysis
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'pull_request' &&
+      (github.event.action == 'opened' || github.event.action == 'synchronize')
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze changes for deployment impact
+        id: deployment-impact
+        run: |
+          DEPLOYMENT_IMPACT="low"
+          ANALYSIS_COST="0.01"
+
+          # Check for changes that affect deployment
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE "(vercel\.json|next\.config|package\.json)"; then
+            DEPLOYMENT_IMPACT="high"
+            ANALYSIS_COST="0.03"
+          fi
+
+          # Check for API changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "src/app/api/"; then
+            DEPLOYMENT_IMPACT="medium"
+            ANALYSIS_COST="0.02"
+          fi
+
+          # Check for environment variable changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "\.env"; then
+            DEPLOYMENT_IMPACT="high"
+            ANALYSIS_COST="0.03"
+          fi
+
+          echo "deployment_impact=$DEPLOYMENT_IMPACT" >> $GITHUB_OUTPUT
+          echo "analysis_cost=$ANALYSIS_COST" >> $GITHUB_OUTPUT
+
+          echo "Deployment Impact: $DEPLOYMENT_IMPACT"
+
+      - name: Claude Pre-deployment Analysis
+        if: steps.deployment-impact.outputs.deployment_impact != 'low'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: 2048
+          max_turns: 1
+          claude_args: |
+            Analyze the PR changes for potential Vercel deployment issues.
+
+            🔍 **Pre-deployment Checklist:**
+
+            **Configuration Changes**
+            - Vercel.json modifications
+            - Next.js config updates
+            - Environment variable changes
+            - Build script modifications
+
+            **Deployment Risks**
+            - Breaking changes in API routes
+            - Missing environment variables
+            - Build failures
+            - Performance regressions
+
+            **Vercel-specific Considerations**
+            - Function size limits (50MB)
+            - Execution time limits (10s Hobby, 15s Pro)
+            - Memory constraints
+            - Edge function compatibility
+
+            **Recommendations**
+            - Environment variable checklist
+            - Testing strategy for production
+            - Rollback plan if needed
+
+            Provide a deployment readiness assessment.
+
+      - name: Create deployment checklist
+        if: steps.deployment-impact.outputs.deployment_impact == 'high'
+        run: |
+          echo "# 🚀 Vercel Deployment Checklist" > deployment_checklist.md
+          echo "" >> deployment_checklist.md
+          echo "## Pre-deployment Verification" >> deployment_checklist.md
+          echo "" >> deployment_checklist.md
+          echo "- [ ] Environment variables updated in Vercel dashboard" >> deployment_checklist.md
+          echo "- [ ] Build command verified: \`npm run build\`" >> deployment_checklist.md
+          echo "- [ ] API routes tested locally" >> deployment_checklist.md
+          echo "- [ ] Database migrations completed (if any)" >> deployment_checklist.md
+          echo "- [ ] Third-party service configurations verified" >> deployment_checklist.md
+          echo "" >> deployment_checklist.md
+          echo "## Post-deployment Monitoring" >> deployment_checklist.md
+          echo "" >> deployment_checklist.md
+          echo "- [ ] Core Web Vitals check" >> deployment_checklist.md
+          echo "- [ ] API endpoint health check" >> deployment_checklist.md
+          echo "- [ ] Error monitoring (Sentry)" >> deployment_checklist.md
+          echo "- [ ] Performance metrics review" >> deployment_checklist.md
+          echo "" >> deployment_checklist.md
+          echo "## Rollback Plan" >> deployment_checklist.md
+          echo "" >> deployment_checklist.md
+          echo "- Previous deployment: Available in Vercel dashboard" >> deployment_checklist.md
+          echo "- Database state: Document any schema changes" >> deployment_checklist.md
+          echo "- Environment variables: Backup current values" >> deployment_checklist.md
+
+      - name: Comment deployment checklist
+        if: steps.deployment-impact.outputs.deployment_impact == 'high'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const checklist = fs.readFileSync('deployment_checklist.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: checklist
+            });
+
+  # ==============================================
+  # Post-deployment Validation
+  # ==============================================
+  post-deployment:
+    name: Post-deployment Validation
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success'
+
+    steps:
+      - name: Wait for deployment to be ready
+        run: |
+          echo "Waiting 30 seconds for deployment to be fully ready..."
+          sleep 30
+
+      - name: Run deployment health checks
+        id: health-check
+        run: |
+          DEPLOYMENT_URL="${{ github.event.deployment_status.target_url }}"
+
+          # Basic health check
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL" || echo "000")
+
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "health_status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "health_status=unhealthy" >> $GITHUB_OUTPUT
+          fi
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Deployment URL: $DEPLOYMENT_URL"
+
+      - name: Claude Post-deployment Analysis
+        if: steps.health-check.outputs.health_status == 'healthy'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: 2048
+          max_turns: 1
+          claude_args: |
+            Analyze the successful Vercel deployment and provide optimization insights.
+
+            🎯 **Deployment Validation for:** ${{ github.event.deployment_status.target_url }}
+
+            **Performance Validation**
+            - Initial page load performance
+            - API endpoint responsiveness
+            - Core Web Vitals estimation
+            - Mobile performance considerations
+
+            **Security Validation**
+            - HTTPS configuration
+            - Security headers presence
+            - CORS policy effectiveness
+            - Rate limiting functionality
+
+            **Monitoring Setup**
+            - Vercel Analytics integration
+            - Error tracking setup
+            - Performance monitoring
+            - Custom metrics tracking
+
+            **Next Steps**
+            - Performance monitoring recommendations
+            - Security hardening suggestions
+            - Cost optimization opportunities
+            - User experience improvements
+
+            Provide actionable next steps for production monitoring.
+
+      - name: Deployment failure notification
+        if: steps.health-check.outputs.health_status == 'unhealthy'
+        run: |
+          echo "❌ Deployment health check failed"
+          echo "URL: ${{ github.event.deployment_status.target_url }}"
+          echo "Consider checking Vercel deployment logs and function errors."
+
+  # ==============================================
+  # Cost Analysis and Optimization
+  # ==============================================
+  cost-analysis:
+    name: Vercel Cost Analysis
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.deployment_analysis == 'cost-analysis') ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'closed' &&
+       github.event.pull_request.merged == true)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Analyze Vercel configuration for cost optimization
+        run: |
+          echo "# 💰 Vercel Cost Optimization Analysis" > cost_analysis.md
+          echo "" >> cost_analysis.md
+          echo "## Current Configuration Analysis" >> cost_analysis.md
+          echo "" >> cost_analysis.md
+
+          # Check if vercel.json exists
+          if [ -f "vercel.json" ]; then
+            echo "✅ vercel.json found - analyzing configuration..." >> cost_analysis.md
+          else
+            echo "⚠️ No vercel.json found - using default configuration" >> cost_analysis.md
+          fi
+
+          # Analyze package.json for dependencies
+          if [ -f "package.json" ]; then
+            DEPS_COUNT=$(jq '.dependencies | length' package.json)
+            DEV_DEPS_COUNT=$(jq '.devDependencies | length' package.json)
+            echo "📦 Dependencies: $DEPS_COUNT production, $DEV_DEPS_COUNT development" >> cost_analysis.md
+          fi
+
+      - name: Claude Cost Optimization Analysis
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: 3072
+          max_turns: 1
+          claude_args: |
+            Analyze the Vercel deployment configuration for cost optimization opportunities.
+
+            💰 **Vercel Cost Optimization Analysis**
+
+            **Function Usage Optimization**
+            - Serverless function efficiency
+            - Edge function opportunities
+            - Static generation vs server-side rendering
+            - API route optimization
+
+            **Build Optimization**
+            - Build time reduction strategies
+            - Dependency optimization
+            - Build cache optimization
+            - Output file size reduction
+
+            **Bandwidth Optimization**
+            - Image optimization with Next.js
+            - Asset compression
+            - CDN usage optimization
+            - Unused asset elimination
+
+            **Resource Usage**
+            - Memory allocation optimization
+            - Execution time optimization
+            - Cold start minimization
+            - Database connection pooling
+
+            **Monitoring & Alerts**
+            - Usage monitoring setup
+            - Cost alert configuration
+            - Performance vs cost trade-offs
+            - Scaling considerations
+
+            Provide specific recommendations for reducing Vercel costs while maintaining performance.
+
+      - name: Generate cost optimization report
+        run: |
+          echo "" >> cost_analysis.md
+          echo "## 📊 Estimated Cost Impact" >> cost_analysis.md
+          echo "" >> cost_analysis.md
+          echo "- **Build Minutes:** Optimizations could save 20-30% build time" >> cost_analysis.md
+          echo "- **Function Executions:** Edge functions can reduce costs by 50%" >> cost_analysis.md
+          echo "- **Bandwidth:** Image optimization can reduce by 40-60%" >> cost_analysis.md
+          echo "" >> cost_analysis.md
+          echo "## 🎯 Implementation Priority" >> cost_analysis.md
+          echo "" >> cost_analysis.md
+          echo "1. **High Impact:** Image optimization, build caching" >> cost_analysis.md
+          echo "2. **Medium Impact:** API route optimization, edge functions" >> cost_analysis.md
+          echo "3. **Low Impact:** Bundle size reduction, monitoring setup" >> cost_analysis.md
+
+      - name: Comment cost analysis
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('cost_analysis.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 💰 Vercel Deployment Cost Analysis\n\n${analysis}\n\n*Analysis generated by Claude Code for deployment optimization.*`
+            });

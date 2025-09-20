@@ -41,21 +41,21 @@ export type {
   SessionStatus,
 
   // Container
-  IServiceContainer
-} from './interfaces'
+  IServiceContainer,
+} from './interfaces';
 
 // ==================== SERVICE IMPLEMENTATIONS ====================
-export { AudioRecordingService } from './AudioRecordingService'
-export { TranscriptionService } from './TranscriptionService'
-export { NotesService } from './NotesService'
-export { SessionService } from './SessionService'
+export { AudioRecordingService } from './AudioRecordingService';
+export { TranscriptionService } from './TranscriptionService';
+export { NotesService } from './NotesService';
+export { SessionService } from './SessionService';
 
 // ==================== SERVICE CONTAINER ====================
 export {
   ServiceContainer,
   services,
-  createServiceContainer
-} from './ServiceContainer'
+  createServiceContainer,
+} from './ServiceContainer';
 
 // ==================== USAGE EXAMPLES AND UTILITIES ====================
 

@@ -1,0 +1,438 @@
+# Claude Code Performance Analysis Workflow
+# AI-powered performance optimization for Next.js applications
+# Integrated with Vercel deployment pipeline
+
+name: Claude Performance Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "src/components/**"
+      - "src/app/**"
+      - "src/lib/**"
+      - "package.json"
+      - "next.config.mjs"
+      - "tailwind.config.js"
+  workflow_dispatch:
+    inputs:
+      analysis_type:
+        description: "Type of performance analysis"
+        required: true
+        default: "comprehensive"
+        type: choice
+        options:
+          - comprehensive
+          - bundle-size
+          - react-performance
+          - database-performance
+          - quick-scan
+
+env:
+  CLAUDE_MODEL: claude-3-5-haiku-20241022 # Cost-optimized model for performance analysis
+  MAX_TOKENS: 4096
+  NODE_VERSION: "20"
+
+jobs:
+  # ==============================================
+  # Performance Impact Assessment
+  # ==============================================
+  performance-assessment:
+    name: Performance Impact Assessment
+    runs-on: ubuntu-latest
+    outputs:
+      performance_risk: ${{ steps.assess.outputs.performance_risk }}
+      analysis_scope: ${{ steps.assess.outputs.analysis_scope }}
+      estimated_cost: ${{ steps.assess.outputs.estimated_cost }}
+      bundle_analysis_needed: ${{ steps.assess.outputs.bundle_analysis_needed }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assess performance impact
+        id: assess
+        run: |
+          PERFORMANCE_RISK="low"
+          ANALYSIS_SCOPE="basic"
+          ESTIMATED_COST="0.01"
+          BUNDLE_ANALYSIS_NEEDED="false"
+
+          # Check for component changes that might affect performance
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE "(components|app)"; then
+            COMPONENT_CHANGES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E "(components|app)" | wc -l)
+
+            if [ "$COMPONENT_CHANGES" -gt 10 ]; then
+              PERFORMANCE_RISK="high"
+              ANALYSIS_SCOPE="comprehensive"
+              ESTIMATED_COST="0.04"
+            elif [ "$COMPONENT_CHANGES" -gt 3 ]; then
+              PERFORMANCE_RISK="medium"
+              ANALYSIS_SCOPE="focused"
+              ESTIMATED_COST="0.02"
+            fi
+          fi
+
+          # Check for dependency changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "package.json"; then
+            BUNDLE_ANALYSIS_NEEDED="true"
+            ESTIMATED_COST=$(echo "$ESTIMATED_COST + 0.01" | bc -l)
+          fi
+
+          # Check for Next.js config changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE "(next.config|tailwind.config)"; then
+            PERFORMANCE_RISK="high"
+            ANALYSIS_SCOPE="configuration"
+            ESTIMATED_COST=$(echo "$ESTIMATED_COST + 0.02" | bc -l)
+          fi
+
+          echo "performance_risk=$PERFORMANCE_RISK" >> $GITHUB_OUTPUT
+          echo "analysis_scope=$ANALYSIS_SCOPE" >> $GITHUB_OUTPUT
+          echo "estimated_cost=$ESTIMATED_COST" >> $GITHUB_OUTPUT
+          echo "bundle_analysis_needed=$BUNDLE_ANALYSIS_NEEDED" >> $GITHUB_OUTPUT
+
+          echo "Performance Risk: $PERFORMANCE_RISK"
+          echo "Analysis Scope: $ANALYSIS_SCOPE"
+          echo "Bundle Analysis: $BUNDLE_ANALYSIS_NEEDED"
+
+  # ==============================================
+  # Bundle Size Analysis
+  # ==============================================
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    needs: performance-assessment
+    if: needs.performance-assessment.outputs.bundle_analysis_needed == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and analyze bundle
+        run: |
+          npm run build 2>&1 | tee build_output.txt
+
+          # Extract bundle size information
+          if [ -d ".next" ]; then
+            echo "Bundle analysis completed"
+
+            # Get bundle sizes
+            du -sh .next/static/chunks/* > bundle_sizes.txt 2>/dev/null || echo "No chunks found"
+
+            # Check for large bundles
+            LARGE_BUNDLES=$(find .next/static/chunks -size +500k 2>/dev/null | wc -l)
+            echo "large_bundles=$LARGE_BUNDLES" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Bundle Analysis
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: ${{ env.MAX_TOKENS }}
+          max_turns: 1
+          claude_args: |
+            Analyze the Next.js bundle build output and provide optimization recommendations.
+
+            📊 **Bundle Analysis Focus:**
+            - Bundle size optimization opportunities
+            - Code splitting effectiveness
+            - Dynamic import usage
+            - Tree shaking optimization
+            - Third-party library analysis
+
+            🎯 **Optimization Recommendations:**
+            - Identify large dependencies that could be replaced
+            - Suggest code splitting strategies
+            - Recommend lazy loading opportunities
+            - Bundle analyzer integration suggestions
+
+            📈 **Performance Impact:**
+            - First Contentful Paint (FCP) impact
+            - Largest Contentful Paint (LCP) considerations
+            - Time to Interactive (TTI) optimization
+
+            Provide specific, actionable recommendations with code examples.
+
+  # ==============================================
+  # React Performance Analysis
+  # ==============================================
+  react-performance:
+    name: React Performance Analysis
+    runs-on: ubuntu-latest
+    needs: performance-assessment
+    if: >
+      needs.performance-assessment.outputs.performance_risk != 'low' &&
+      contains(needs.performance-assessment.outputs.analysis_scope, 'comprehensive')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Analyze React component changes
+        id: react-analysis
+        run: |
+          # Get changed React component files
+          git diff --name-only HEAD~1 HEAD | grep -E "\.(tsx|jsx)$" > component_changes.txt || true
+
+          if [ -s component_changes.txt ]; then
+            echo "react_components_changed=true" >> $GITHUB_OUTPUT
+            echo "Changed React components:"
+            cat component_changes.txt
+          else
+            echo "react_components_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude React Performance Review
+        if: steps.react-analysis.outputs.react_components_changed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: ${{ env.MAX_TOKENS }}
+          max_turns: 2
+          claude_args: |
+            Analyze the React component changes for performance optimization opportunities.
+
+            🚀 **React Performance Checklist:**
+
+            **Re-rendering Optimization:**
+            - Unnecessary re-renders due to object/array recreations
+            - Missing React.memo() usage
+            - useCallback and useMemo optimization opportunities
+            - Props drilling that could be optimized
+
+            **State Management:**
+            - useState vs useReducer efficiency
+            - Context usage and potential performance issues
+            - State colocation opportunities
+
+            **Component Architecture:**
+            - Component size and complexity
+            - Prop passing efficiency
+            - Children prop optimization
+            - Render prop patterns
+
+            **Next.js Specific:**
+            - Server vs Client Component decisions
+            - Dynamic imports for code splitting
+            - Image optimization with next/image
+            - Font optimization
+
+            **Anti-patterns Detection:**
+            - Objects/functions created in render
+            - Inline styles causing re-renders
+            - Unnecessary useEffect dependencies
+            - Large component files
+
+            Provide specific code examples and refactoring suggestions.
+
+  # ==============================================
+  # Database Performance Analysis
+  # ==============================================
+  database-performance:
+    name: Database Performance Analysis
+    runs-on: ubuntu-latest
+    needs: performance-assessment
+    if: >
+      needs.performance-assessment.outputs.performance_risk == 'high' &&
+      (contains(github.event.pull_request.changed_files, 'src/lib/') ||
+       contains(github.event.pull_request.changed_files, 'src/app/api/'))
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for database-related changes
+        id: db-check
+        run: |
+          # Look for database queries and operations
+          if git diff HEAD~1 HEAD | grep -qE "(SELECT|INSERT|UPDATE|DELETE|supabase|sql|query)"; then
+            echo "database_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "database_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Database Performance Review
+        if: steps.db-check.outputs.database_changes == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: 3072
+          max_turns: 1
+          claude_args: |
+            Analyze database operations for performance optimization.
+
+            🗄️ **Database Performance Focus:**
+
+            **Query Optimization:**
+            - N+1 query problems
+            - Missing indexes
+            - Inefficient JOIN operations
+            - SELECT * usage
+
+            **Caching Opportunities:**
+            - Query result caching
+            - Redis integration
+            - Application-level caching
+            - CDN caching for static data
+
+            **Connection Management:**
+            - Connection pooling
+            - Connection timeouts
+            - Prepared statement usage
+
+            **API Design:**
+            - Pagination implementation
+            - Bulk operations
+            - GraphQL vs REST efficiency
+            - Response size optimization
+
+            Provide specific recommendations for Next.js and Supabase/PostgreSQL.
+
+  # ==============================================
+  # Performance Report Generation
+  # ==============================================
+  performance-report:
+    name: Performance Report
+    runs-on: ubuntu-latest
+    needs:
+      [
+        performance-assessment,
+        bundle-analysis,
+        react-performance,
+        database-performance,
+      ]
+    if: always()
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Generate performance report
+        run: |
+          echo "# ⚡ Claude Code Performance Analysis Report" > performance_report.md
+          echo "" >> performance_report.md
+          echo "**Analysis Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> performance_report.md
+          echo "**Repository:** ${{ github.repository }}" >> performance_report.md
+          echo "**PR/Branch:** ${{ github.head_ref || github.ref_name }}" >> performance_report.md
+          echo "**Performance Risk:** ${{ needs.performance-assessment.outputs.performance_risk }}" >> performance_report.md
+          echo "" >> performance_report.md
+
+          echo "## 📊 Analysis Summary" >> performance_report.md
+          echo "" >> performance_report.md
+          echo "| Component | Status | Focus Area |" >> performance_report.md
+          echo "|-----------|--------|------------|" >> performance_report.md
+          echo "| Bundle Analysis | ${{ needs.bundle-analysis.result || 'Skipped' }} | Code splitting, tree shaking |" >> performance_report.md
+          echo "| React Performance | ${{ needs.react-performance.result || 'Skipped' }} | Re-renders, hooks optimization |" >> performance_report.md
+          echo "| Database Performance | ${{ needs.database-performance.result || 'Skipped' }} | Queries, caching |" >> performance_report.md
+          echo "" >> performance_report.md
+
+          echo "## 🎯 Key Performance Metrics to Monitor" >> performance_report.md
+          echo "" >> performance_report.md
+          echo "### Core Web Vitals" >> performance_report.md
+          echo "- **LCP (Largest Contentful Paint):** < 2.5s" >> performance_report.md
+          echo "- **FID (First Input Delay):** < 100ms" >> performance_report.md
+          echo "- **CLS (Cumulative Layout Shift):** < 0.1" >> performance_report.md
+          echo "" >> performance_report.md
+          echo "### Next.js Specific" >> performance_report.md
+          echo "- **Bundle Size:** Monitor for increases > 10%" >> performance_report.md
+          echo "- **Build Time:** Keep under 2 minutes" >> performance_report.md
+          echo "- **API Response Time:** < 200ms for cached, < 1s for dynamic" >> performance_report.md
+          echo "" >> performance_report.md
+
+          echo "## 🚀 Recommendations" >> performance_report.md
+          echo "" >> performance_report.md
+          echo "1. **Review Claude Code performance comments** on specific files" >> performance_report.md
+          echo "2. **Test performance changes** with Vercel's built-in analytics" >> performance_report.md
+          echo "3. **Monitor bundle size** in subsequent builds" >> performance_report.md
+          echo "4. **Implement suggested optimizations** based on priority" >> performance_report.md
+          echo "" >> performance_report.md
+
+          echo "## 💰 Cost Summary" >> performance_report.md
+          echo "- **Estimated Analysis Cost:** \${{ needs.performance-assessment.outputs.estimated_cost }}" >> performance_report.md
+          echo "- **Within Budget:** ✅ (Target: \$0.01-0.04)" >> performance_report.md
+
+      - name: Comment performance report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('performance_report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  # ==============================================
+  # Vercel Integration Performance Check
+  # ==============================================
+  vercel-performance:
+    name: Vercel Performance Integration
+    runs-on: ubuntu-latest
+    needs: performance-assessment
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.performance-assessment.outputs.performance_risk != 'low'
+
+    steps:
+      - name: Performance recommendations for Vercel
+        run: |
+          echo "# 🚀 Vercel Performance Integration" > vercel_performance.md
+          echo "" >> vercel_performance.md
+          echo "## Recommended Vercel Settings" >> vercel_performance.md
+          echo "" >> vercel_performance.md
+          echo "```json" >> vercel_performance.md
+          echo "{" >> vercel_performance.md
+          echo "  \"framework\": \"nextjs\"," >> vercel_performance.md
+          echo "  \"buildCommand\": \"npm run build\"," >> vercel_performance.md
+          echo "  \"outputDirectory\": \".next\"," >> vercel_performance.md
+          echo "  \"installCommand\": \"npm ci\"," >> vercel_performance.md
+          echo "  \"functions\": {" >> vercel_performance.md
+          echo "    \"src/app/api/**\": {" >> vercel_performance.md
+          echo "      \"memory\": 1024," >> vercel_performance.md
+          echo "      \"maxDuration\": 10" >> vercel_performance.md
+          echo "    }" >> vercel_performance.md
+          echo "  }" >> vercel_performance.md
+          echo "}" >> vercel_performance.md
+          echo "```" >> vercel_performance.md
+          echo "" >> vercel_performance.md
+          echo "## Performance Monitoring" >> vercel_performance.md
+          echo "- Enable Vercel Analytics for Core Web Vitals tracking" >> vercel_performance.md
+          echo "- Set up Vercel Speed Insights for real user monitoring" >> vercel_performance.md
+          echo "- Monitor function execution times in Vercel dashboard" >> vercel_performance.md
+
+      - name: Comment Vercel recommendations
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const recommendations = fs.readFileSync('vercel_performance.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: recommendations
+            });

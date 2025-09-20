@@ -1,0 +1,1548 @@
+openapi: 3.0.3
+info:
+  title: 6FB Workbook API
+  description: API for the 6FB Workshop Workbook system
+  version: 1.0.0
+  contact:
+    name: 6FB Development Team
+    email: dev@6fbmethodologies.com
+
+servers:
+  - url: https://6fbmethodologies.com/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+paths:
+  # Authentication APIs
+  /workbook/auth/login:
+    post:
+      summary: Authenticate user
+      description: Authenticate user with email and access code
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+          headers:
+            Set-Cookie:
+              description: Authentication tokens set as HTTP-only cookies
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Suspicious activity detected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too many authentication attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /workbook/auth/verify:
+    get:
+      summary: Verify authentication token
+      description: Verify current authentication token and return session info
+      tags:
+        - Authentication
+      responses:
+        "200":
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResponse"
+        "401":
+          description: Token is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Suspicious activity detected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /workbook/auth/refresh:
+    post:
+      summary: Refresh authentication token
+      description: Use refresh token to obtain new access token
+      tags:
+        - Authentication
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token (optional if provided in cookie)
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+          headers:
+            Set-Cookie:
+              description: New authentication tokens set as HTTP-only cookies
+              schema:
+                type: string
+        "401":
+          description: Refresh token is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Suspicious activity detected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too many refresh attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    get:
+      summary: Check refresh token status
+      description: Check if refresh token is available and valid
+      tags:
+        - Authentication
+      responses:
+        "200":
+          description: Refresh token status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                  userId:
+                    type: string
+                    nullable: true
+                  message:
+                    type: string
+
+  /workbook/auth/logout:
+    post:
+      summary: Logout user
+      description: Clear authentication tokens and logout user
+      tags:
+        - Authentication
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+          headers:
+            Set-Cookie:
+              description: Authentication cookies cleared
+              schema:
+                type: string
+
+  # Workshop Module APIs
+  /workbook/modules:
+    get:
+      summary: Get all workshop modules
+      description: Retrieve all published workshop modules with user progress
+      tags:
+        - Modules
+      parameters:
+        - name: include_progress
+          in: query
+          description: Include user progress data
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: List of workshop modules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modules:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkshopModuleWithProgress"
+                  total_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/modules/{moduleId}:
+    get:
+      summary: Get specific workshop module
+      description: Retrieve detailed information about a specific module
+      tags:
+        - Modules
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Module details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkshopModuleDetailed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/modules/{moduleId}/lessons/{lessonId}:
+    get:
+      summary: Get specific lesson content
+      description: Retrieve detailed lesson content and track access
+      tags:
+        - Modules
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lesson content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkshopLesson"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # Progress Tracking APIs
+  /workbook/progress:
+    get:
+      summary: Get user progress overview
+      description: Retrieve overall progress across all modules
+      tags:
+        - Progress
+      responses:
+        "200":
+          description: User progress overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProgressOverview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/progress/{moduleId}:
+    get:
+      summary: Get module progress
+      description: Get detailed progress for a specific module
+      tags:
+        - Progress
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Module progress details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProgress"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    put:
+      summary: Update module progress
+      description: Update user progress for a specific module
+      tags:
+        - Progress
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressUpdate"
+      responses:
+        "200":
+          description: Progress updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProgress"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # Audio Recording APIs
+  /workbook/recordings:
+    get:
+      summary: Get user recordings
+      description: Retrieve all audio recordings for the current user
+      tags:
+        - Audio
+      parameters:
+        - name: module_id
+          in: query
+          description: Filter by module ID
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Number of recordings to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of recordings to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of audio recordings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recordings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AudioRecording"
+                  total_count:
+                    type: integer
+                  has_more:
+                    type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      summary: Upload audio recording
+      description: Upload a new audio recording with optional metadata
+      tags:
+        - Audio
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - audio_file
+              properties:
+                audio_file:
+                  type: string
+                  format: binary
+                  description: Audio file to upload
+                module_id:
+                  type: string
+                  format: uuid
+                  description: Associated module ID
+                lesson_id:
+                  type: string
+                  description: Associated lesson ID
+                metadata:
+                  type: string
+                  description: JSON string of audio metadata
+      responses:
+        "201":
+          description: Recording uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudioRecording"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /workbook/recordings/{recordingId}:
+    get:
+      summary: Get specific recording
+      description: Retrieve details of a specific audio recording
+      tags:
+        - Audio
+      parameters:
+        - name: recordingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Recording details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudioRecordingDetailed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      summary: Delete recording
+      description: Delete an audio recording and associated transcription
+      tags:
+        - Audio
+      parameters:
+        - name: recordingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Recording deleted successfully
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # Transcription APIs
+  /workbook/transcribe:
+    post:
+      summary: Transcribe audio recording
+      description: Start transcription process for an audio recording
+      tags:
+        - Transcription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recording_id
+              properties:
+                recording_id:
+                  type: string
+                  format: uuid
+                  description: ID of the audio recording to transcribe
+                language:
+                  type: string
+                  description: Expected language (auto-detect if not provided)
+                  example: "en"
+      responses:
+        "202":
+          description: Transcription started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptionRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/transcriptions:
+    get:
+      summary: Get user transcriptions
+      description: Retrieve all transcriptions for the current user
+      tags:
+        - Transcription
+      parameters:
+        - name: status
+          in: query
+          description: Filter by transcription status
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed]
+        - name: search
+          in: query
+          description: Search within transcription text
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: List of transcriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transcriptions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TranscriptionRecord"
+                  total_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/transcriptions/search:
+    get:
+      summary: Search transcriptions
+      description: Search across all user transcriptions with advanced filters
+      tags:
+        - Transcription
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+        - name: module_id
+          in: query
+          description: Filter by module
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          description: Search from date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: date_to
+          in: query
+          description: Search to date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SearchResult"
+                  total_count:
+                    type: integer
+                  query:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # Notes APIs
+  /workbook/notes:
+    get:
+      summary: Get user notes
+      description: Retrieve all notes for the current user
+      tags:
+        - Notes
+      parameters:
+        - name: module_id
+          in: query
+          description: Filter by module ID
+          schema:
+            type: string
+            format: uuid
+        - name: tags
+          in: query
+          description: Filter by tags (comma-separated)
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search within note content
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum:
+              [
+                created_asc,
+                created_desc,
+                updated_asc,
+                updated_desc,
+                title_asc,
+                title_desc,
+              ]
+            default: updated_desc
+      responses:
+        "200":
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkbookNote"
+                  total_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      summary: Create new note
+      description: Create a new note with optional associations
+      tags:
+        - Notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteCreate"
+      responses:
+        "201":
+          description: Note created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkbookNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/notes/{noteId}:
+    get:
+      summary: Get specific note
+      description: Retrieve details of a specific note
+      tags:
+        - Notes
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Note details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkbookNote"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    put:
+      summary: Update note
+      description: Update an existing note
+      tags:
+        - Notes
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteUpdate"
+      responses:
+        "200":
+          description: Note updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkbookNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      summary: Delete note
+      description: Delete a note
+      tags:
+        - Notes
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Note deleted successfully
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # Export APIs
+  /workbook/export:
+    post:
+      summary: Export user data
+      description: Export user data in various formats
+      tags:
+        - Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+      responses:
+        "200":
+          description: Export file ready for download
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  download_url:
+                    type: string
+                    format: uri
+                    description: Temporary download URL
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: URL expiration time
+                  file_size_bytes:
+                    type: integer
+                    description: Size of exported file
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # Live Session APIs
+  /workbook/sessions:
+    get:
+      summary: Get live sessions
+      description: Retrieve available and upcoming live sessions
+      tags:
+        - Sessions
+      parameters:
+        - name: status
+          in: query
+          description: Filter by session status
+          schema:
+            type: string
+            enum: [scheduled, active, ended]
+        - name: module_id
+          in: query
+          description: Filter by module
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of live sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LiveSession"
+                  total_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /workbook/sessions/{sessionId}/join:
+    post:
+      summary: Join live session
+      description: Join a live session as a participant
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successfully joined session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/LiveSession"
+                  participant:
+                    $ref: "#/components/schemas/SessionParticipant"
+                  websocket_url:
+                    type: string
+                    description: WebSocket URL for real-time features
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  schemas:
+    # Authentication Schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@6fbmethodologies.com"
+        password:
+          type: string
+          minLength: 6
+          maxLength: 128
+          description: User's access code
+          example: "6FB-ACCESS-CODE"
+        customerId:
+          type: string
+          description: Optional Stripe customer ID for verification
+          example: "cus_123456789"
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Authenticated as premium user"
+        user:
+          $ref: "#/components/schemas/UserSession"
+
+    VerifyResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+          example: true
+        user:
+          $ref: "#/components/schemas/UserSession"
+        expiresAt:
+          type: integer
+          description: Token expiration timestamp
+          example: 1703980800
+        verifiedAt:
+          type: integer
+          description: Verification timestamp
+          example: 1703894400
+
+    RefreshResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Token refreshed successfully"
+        user:
+          $ref: "#/components/schemas/UserSession"
+        expiresAt:
+          type: integer
+          description: New token expiration timestamp
+          example: 1703980800
+
+    UserSession:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique user identifier
+          example: "user_1703894400123"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@6fbmethodologies.com"
+        name:
+          type: string
+          description: User's display name
+          example: "Workshop Participant"
+        role:
+          type: string
+          enum: [basic, premium, vip]
+          description: User's membership level
+          example: "premium"
+        permissions:
+          type: array
+          items:
+            type: string
+          description: User's permissions array
+          example: ["view_content", "record_audio", "transcribe_audio", "save_progress", "export_notes"]
+
+    WorkshopModule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Module 1: Introduction to 6FB Methodology"
+        description:
+          type: string
+        module_order:
+          type: integer
+          minimum: 1
+          maximum: 6
+        duration_minutes:
+          type: integer
+        is_published:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WorkshopModuleWithProgress:
+      allOf:
+        - $ref: "#/components/schemas/WorkshopModule"
+        - type: object
+          properties:
+            user_progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: User's progress percentage
+            progress_status:
+              type: string
+              enum: [not_started, in_progress, completed, locked]
+            is_accessible:
+              type: boolean
+              description: Whether user can access this module
+
+    WorkshopModuleDetailed:
+      allOf:
+        - $ref: "#/components/schemas/WorkshopModuleWithProgress"
+        - type: object
+          properties:
+            content:
+              type: object
+              properties:
+                overview:
+                  type: string
+                learning_objectives:
+                  type: array
+                  items:
+                    type: string
+                lessons:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/WorkshopLesson"
+                resources:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Resource"
+
+    WorkshopLesson:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [video, text, interactive, exercise, discussion]
+        estimated_minutes:
+          type: integer
+        sort_order:
+          type: integer
+        content:
+          type: object
+          properties:
+            text:
+              type: string
+              description: Rich text content (HTML)
+            video_url:
+              type: string
+              format: uri
+            interactive:
+              type: object
+            exercises:
+              type: array
+              items:
+                type: object
+
+    Resource:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [pdf, video, link, document]
+        url:
+          type: string
+          format: uri
+        description:
+          type: string
+
+    UserProgress:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        module_id:
+          type: string
+          format: uuid
+        lesson_id:
+          type: string
+          nullable: true
+        progress_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        status:
+          type: string
+          enum: [not_started, in_progress, completed, locked]
+        time_spent_minutes:
+          type: integer
+        last_accessed_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserProgressOverview:
+      type: object
+      properties:
+        overall_progress:
+          type: number
+          format: float
+          description: Overall progress percentage across all modules
+        modules_started:
+          type: integer
+        modules_completed:
+          type: integer
+        total_time_spent_minutes:
+          type: integer
+        current_streak_days:
+          type: integer
+        last_activity:
+          type: string
+          format: date-time
+        achievements:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              earned_at:
+                type: string
+                format: date-time
+
+    ProgressUpdate:
+      type: object
+      required:
+        - progress_percent
+      properties:
+        progress_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        lesson_id:
+          type: string
+          nullable: true
+        time_spent_minutes:
+          type: integer
+          minimum: 0
+
+    AudioRecording:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+        file_url:
+          type: string
+          format: uri
+        mime_type:
+          type: string
+        duration_seconds:
+          type: integer
+        file_size_bytes:
+          type: integer
+        module_id:
+          type: string
+          format: uuid
+          nullable: true
+        lesson_id:
+          type: string
+          nullable: true
+        is_processed:
+          type: boolean
+        transcription_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    AudioRecordingDetailed:
+      allOf:
+        - $ref: "#/components/schemas/AudioRecording"
+        - type: object
+          properties:
+            metadata:
+              type: object
+              properties:
+                sample_rate:
+                  type: integer
+                channels:
+                  type: integer
+                bitrate:
+                  type: integer
+                recording_quality:
+                  type: string
+                  enum: [low, medium, high]
+                tags:
+                  type: array
+                  items:
+                    type: string
+            transcription:
+              $ref: "#/components/schemas/TranscriptionRecord"
+
+    TranscriptionRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        audio_recording_id:
+          type: string
+          format: uuid
+        text:
+          type: string
+          nullable: true
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        language:
+          type: string
+        word_count:
+          type: integer
+        processing_time:
+          type: integer
+          description: Processing time in seconds
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SearchResult:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [note, transcription]
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+          description: Excerpt with search highlights
+        created_at:
+          type: string
+          format: date-time
+        relevance_score:
+          type: number
+          format: float
+
+    WorkbookNote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+          description: Rich text content (HTML)
+        module_id:
+          type: string
+          format: uuid
+          nullable: true
+        lesson_id:
+          type: string
+          nullable: true
+        audio_recording_id:
+          type: string
+          format: uuid
+          nullable: true
+        timestamp:
+          type: integer
+          nullable: true
+          description: Timestamp in audio/video (seconds)
+        tags:
+          type: array
+          items:
+            type: string
+        is_private:
+          type: boolean
+        is_pinned:
+          type: boolean
+        word_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    NoteCreate:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        content:
+          type: string
+          minLength: 1
+        module_id:
+          type: string
+          format: uuid
+        lesson_id:
+          type: string
+        audio_recording_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        is_private:
+          type: boolean
+          default: true
+
+    NoteUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        content:
+          type: string
+          minLength: 1
+        tags:
+          type: array
+          items:
+            type: string
+        is_private:
+          type: boolean
+        is_pinned:
+          type: boolean
+
+    ExportRequest:
+      type: object
+      required:
+        - format
+      properties:
+        format:
+          type: string
+          enum: [pdf, json, markdown, csv]
+        include_audio:
+          type: boolean
+          default: false
+        include_transcriptions:
+          type: boolean
+          default: true
+        include_notes:
+          type: boolean
+          default: true
+        include_progress:
+          type: boolean
+          default: true
+        date_from:
+          type: string
+          format: date-time
+        date_to:
+          type: string
+          format: date-time
+
+    LiveSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        instructor_id:
+          type: string
+          format: uuid
+        module_id:
+          type: string
+          format: uuid
+          nullable: true
+        scheduled_start:
+          type: string
+          format: date-time
+        scheduled_end:
+          type: string
+          format: date-time
+        actual_start:
+          type: string
+          format: date-time
+          nullable: true
+        actual_end:
+          type: string
+          format: date-time
+          nullable: true
+        max_participants:
+          type: integer
+        status:
+          type: string
+          enum: [scheduled, starting, active, paused, ended, cancelled]
+        features:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [poll, qa, breakout, whiteboard, recording, chat]
+              is_enabled:
+                type: boolean
+              config:
+                type: object
+        participant_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    SessionParticipant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        joined_at:
+          type: string
+          format: date-time
+        left_at:
+          type: string
+          format: date-time
+          nullable: true
+        role:
+          type: string
+          enum: [instructor, assistant, participant, observer]
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+              [
+                can_speak,
+                can_share_screen,
+                can_use_whiteboard,
+                can_create_polls,
+                can_moderate,
+              ]
+        participation_score:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Modules
+    description: Workshop module management
+  - name: Progress
+    description: User progress tracking
+  - name: Audio
+    description: Audio recording management
+  - name: Transcription
+    description: Audio transcription services
+  - name: Notes
+    description: Note-taking and management
+  - name: Export
+    description: Data export functionality
+  - name: Sessions
+    description: Live session management

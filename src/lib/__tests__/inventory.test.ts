@@ -145,7 +145,7 @@ export async function testRaceConditionPrevention() {
 export async function testInventoryAlerts() {
   console.log('=== Testing Inventory Alert Thresholds ===\n')
 
-  const cityId = 'la-mar-2026'
+  const cityId = 'vegas-mar-2026'
 
   // Simulate selling down to alert thresholds
   const alertThresholds = [25, 15, 10, 5, 2, 0]

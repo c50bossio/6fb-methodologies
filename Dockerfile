@@ -1,5 +1,6 @@
-# 6FB Methodologies Workshop - Production Dockerfile
+# 6FB Workbook System - Production Dockerfile
 # Multi-stage build optimized for security, performance, and minimal attack surface
+# Supports Socket.io, audio processing, and workbook features
 
 # ==============================================
 # Stage 1: Dependencies Installation
@@ -46,6 +47,9 @@ RUN apk update && apk upgrade && \
     apk add --no-cache \
     dumb-init \
     curl \
+    postgresql-client \
+    redis-tools \
+    ffmpeg \
     && rm -rf /var/cache/apk/*
 
 # Create non-root user
@@ -62,6 +66,8 @@ COPY --from=dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.mjs ./next.config.mjs
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/.next/cache && \
@@ -89,8 +95,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application with custom server
+CMD ["node", "server.js"]
 
 # ==============================================
 # Development Dockerfile (for local development)

@@ -1,36 +1,80 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
+  darkMode: ['class'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/lib/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        // Tomb45 inspired dark mode palette
-        background: {
-          primary: '#1a1a1a',
-          secondary: '#242424',
-          accent: '#2a2a2a',
+        // Design System Colors
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
-        text: {
-          primary: '#f8f9fa',
-          secondary: '#e9ecef',
-          muted: '#6c757d',
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        // 6FB Brand Colors
         tomb45: {
           green: '#00C851',
           'green-hover': '#00a63f',
           'green-light': '#28a745',
           'green-dark': '#00962d',
         },
-        border: {
-          primary: '#343a40',
-          secondary: '#495057',
-          accent: '#6c757d',
+        // Custom theme colors
+        'background-primary': '#1a1a1a',
+        'background-secondary': '#242424',
+        'background-accent': '#2a2a2a',
+        'text-primary': '#f8f9fa',
+        'text-secondary': '#e9ecef',
+        'text-muted': '#6c757d',
+        'border-primary': '#343a40',
+        'border-secondary': '#495057',
+        // Workbook Specific Colors
+        workbook: {
+          sidebar: '#1a1b1e',
+          content: '#2d2d2d',
+          accent: '#3d3d3d',
+          'text-primary': '#f8f9fa',
+          'text-secondary': '#e9ecef',
+          'text-muted': '#6c757d',
+          progress: '#4ade80',
+          'progress-bg': '#374151',
+          audio: '#8b5cf6',
+          note: '#f59e0b',
+          highlight: '#3b82f6',
         },
+        // Status Colors
         success: {
           DEFAULT: '#28a745',
           light: '#d4edda',
@@ -87,6 +131,12 @@ module.exports = {
         'fade-in-up': 'fadeInUp 0.6s ease-out',
         'scale-in': 'scaleIn 0.3s ease-out',
         'pulse-green': 'pulseGreen 2s infinite',
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        'bounce-in': 'bounceIn 0.6s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'recording-pulse': 'recordingPulse 1.5s ease-in-out infinite',
+        'progress-bar': 'progressBar 2s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -105,11 +155,63 @@ module.exports = {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(0, 200, 81, 0.7)' },
           '70%': { boxShadow: '0 0 0 10px rgba(0, 200, 81, 0)' },
         },
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+        bounceIn: {
+          '0%': { opacity: '0', transform: 'scale(0.3)' },
+          '50%': { opacity: '1', transform: 'scale(1.05)' },
+          '70%': { transform: 'scale(0.9)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        slideIn: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        recordingPulse: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.8', transform: 'scale(1.05)' },
+        },
+        progressBar: {
+          '0%': { width: '0%' },
+          '100%': { width: '100%' },
+        },
       },
     },
   },
   plugins: [
     require('@tailwindcss/typography'),
     require('@tailwindcss/forms'),
+    require('tailwindcss-animate'),
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.scrollbar-hide': {
+          /* IE and Edge */
+          '-ms-overflow-style': 'none',
+          /* Firefox */
+          'scrollbar-width': 'none',
+          /* Safari and Chrome */
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        },
+        '.glass-effect': {
+          'backdrop-filter': 'blur(10px)',
+          'background-color': 'rgba(255, 255, 255, 0.1)',
+          'border': '1px solid rgba(255, 255, 255, 0.2)',
+        },
+        '.dark-glass-effect': {
+          'backdrop-filter': 'blur(10px)',
+          'background-color': 'rgba(0, 0, 0, 0.2)',
+          'border': '1px solid rgba(255, 255, 255, 0.1)',
+        }
+      }
+      addUtilities(newUtilities)
+    }
   ],
 }

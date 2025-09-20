@@ -4,30 +4,30 @@
  * Provides analytics context and initialization for the entire application
  */
 
-'use client'
+'use client';
 
-import { createContext, useContext, useEffect, ReactNode } from 'react'
-import { analytics } from '@/lib/analytics'
-import { useAnalytics } from '@/hooks/useAnalytics'
+import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { analytics } from '@/lib/analytics';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface AnalyticsContextType {
-  initialized: boolean
+  initialized: boolean;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType>({
-  initialized: false
-})
+  initialized: false,
+});
 
 export function useAnalyticsContext() {
-  return useContext(AnalyticsContext)
+  return useContext(AnalyticsContext);
 }
 
 interface AnalyticsProviderProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
-  const { trackEvent } = useAnalytics()
+  const { trackEvent } = useAnalytics();
 
   useEffect(() => {
     // Track application load
@@ -38,11 +38,15 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       user_agent: navigator.userAgent,
       screen_resolution: `${screen.width}x${screen.height}`,
       viewport_size: `${window.innerWidth}x${window.innerHeight}`,
-    })
+    });
 
     // Track device type
-    const deviceType = window.innerWidth <= 768 ? 'mobile' :
-                      window.innerWidth <= 1024 ? 'tablet' : 'desktop'
+    const deviceType =
+      window.innerWidth <= 768
+        ? 'mobile'
+        : window.innerWidth <= 1024
+          ? 'tablet'
+          : 'desktop';
 
     // Track device properties
     trackEvent('device_info', {
@@ -51,17 +55,17 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       experience_level: '1-2',
       is_6fb_member: false,
       registration_source: 'direct',
-    })
+    });
 
     // Extract and track UTM parameters
-    const urlParams = new URLSearchParams(window.location.search)
+    const urlParams = new URLSearchParams(window.location.search);
     const utmParams = {
       source: urlParams.get('utm_source'),
       medium: urlParams.get('utm_medium'),
       campaign: urlParams.get('utm_campaign'),
       term: urlParams.get('utm_term'),
       content: urlParams.get('utm_content'),
-    }
+    };
 
     if (Object.values(utmParams).some(value => value !== null)) {
       trackEvent('marketing_attribution', {
@@ -72,12 +76,12 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
         utm_campaign: utmParams.campaign,
         utm_term: utmParams.term,
         utm_content: utmParams.content,
-      })
+      });
 
       // Track attribution data
       trackEvent('utm_attribution', {
         registration_source: utmParams.source || 'direct',
-      })
+      });
     }
 
     // Track referrer information
@@ -88,14 +92,13 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
         label: document.referrer,
         referrer_domain: new URL(document.referrer).hostname,
         referrer_url: document.referrer,
-      })
+      });
     }
-
-  }, [trackEvent])
+  }, [trackEvent]);
 
   return (
     <AnalyticsContext.Provider value={{ initialized: true }}>
       {children}
     </AnalyticsContext.Provider>
-  )
+  );
 }

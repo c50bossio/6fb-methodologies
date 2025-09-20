@@ -20,10 +20,10 @@ datasources:
       prometheusVersion: 2.47.0
       cacheLevel: High
       disableMetricsLookup: false
-      customQueryParameters: ''
-      httpHeaderName1: 'X-Grafana-Org-Id'
+      customQueryParameters: ""
+      httpHeaderName1: "X-Grafana-Org-Id"
     secureJsonData:
-      httpHeaderValue1: '1'
+      httpHeaderValue1: "1"
 
   - name: Alertmanager
     type: alertmanager

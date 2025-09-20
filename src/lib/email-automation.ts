@@ -1,55 +1,55 @@
 // Email Marketing Automation and CRM Integration System
-import { analytics } from './analytics'
+import { analytics } from './analytics';
 
 export interface EmailTemplate {
-  id: string
-  name: string
-  subject: string
-  htmlContent: string
-  textContent: string
-  variables: string[]
-  category: 'welcome' | 'confirmation' | 'recovery' | 'workshop' | 'marketing'
+  id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+  variables: string[];
+  category: 'welcome' | 'confirmation' | 'recovery' | 'workshop' | 'marketing';
 }
 
 export interface EmailSequence {
-  id: string
-  name: string
-  trigger: string
+  id: string;
+  name: string;
+  trigger: string;
   emails: Array<{
-    templateId: string
-    delayHours: number
-    conditions?: Record<string, any>
-  }>
+    templateId: string;
+    delayHours: number;
+    conditions?: Record<string, any>;
+  }>;
 }
 
 export interface Contact {
-  email: string
-  firstName?: string
-  lastName?: string
-  businessName?: string
-  businessType?: string
-  yearsExperience?: string
-  phone?: string
-  tags: string[]
-  customFields: Record<string, any>
-  subscriptionStatus: 'subscribed' | 'unsubscribed' | 'bounced'
-  lastEngagement?: Date
-  totalSpent: number
-  workshopsAttended: number
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  businessName?: string;
+  businessType?: string;
+  yearsExperience?: string;
+  phone?: string;
+  tags: string[];
+  customFields: Record<string, any>;
+  subscriptionStatus: 'subscribed' | 'unsubscribed' | 'bounced';
+  lastEngagement?: Date;
+  totalSpent: number;
+  workshopsAttended: number;
 }
 
 class EmailAutomationService {
-  private static instance: EmailAutomationService
-  private contacts: Map<string, Contact> = new Map()
-  private sequences: Map<string, EmailSequence> = new Map()
-  private templates: Map<string, EmailTemplate> = new Map()
+  private static instance: EmailAutomationService;
+  private contacts: Map<string, Contact> = new Map();
+  private sequences: Map<string, EmailSequence> = new Map();
+  private templates: Map<string, EmailTemplate> = new Map();
 
   static getInstance(): EmailAutomationService {
     if (!EmailAutomationService.instance) {
-      EmailAutomationService.instance = new EmailAutomationService()
-      EmailAutomationService.instance.initializeTemplatesAndSequences()
+      EmailAutomationService.instance = new EmailAutomationService();
+      EmailAutomationService.instance.initializeTemplatesAndSequences();
     }
-    return EmailAutomationService.instance
+    return EmailAutomationService.instance;
   }
 
   private initializeTemplatesAndSequences() {
@@ -73,13 +73,14 @@ class EmailAutomationService {
       `,
       textContent: `Welcome {{firstName}}! You're all set for the 6FB Methodologies Workshop...`,
       variables: ['firstName', 'ticketType', 'amountPaid'],
-      category: 'welcome'
-    })
+      category: 'welcome',
+    });
 
     this.templates.set('payment-recovery', {
       id: 'payment-recovery',
       name: 'Payment Recovery',
-      subject: 'Complete Your Workshop Registration - Only {{spotsLeft}} Spots Left!',
+      subject:
+        'Complete Your Workshop Registration - Only {{spotsLeft}} Spots Left!',
       htmlContent: `
         <h1>Don't Miss Out, {{firstName}}!</h1>
         <p>We noticed you started registering for the 6FB Methodologies Workshop but didn't complete your payment.</p>
@@ -105,8 +106,8 @@ class EmailAutomationService {
       `,
       textContent: `Don't Miss Out, {{firstName}}! We noticed you started registering...`,
       variables: ['firstName', 'spotsLeft', 'recoveryUrl', 'vipBenefits'],
-      category: 'recovery'
-    })
+      category: 'recovery',
+    });
 
     this.templates.set('workshop-reminder-48h', {
       id: 'workshop-reminder-48h',
@@ -155,9 +156,20 @@ class EmailAutomationService {
         <p>Can't wait to see you there!</p>
       `,
       textContent: `Almost Time, {{firstName}}! The 6FB Methodologies Workshop is in just 2 days...`,
-      variables: ['firstName', 'workshopDate', 'workshopTime', 'workshopLocation', 'ticketType', 'handbookUrl', 'preparationGuideUrl', 'videoSeriesUrl', 'vipTicket', 'supportPhone'],
-      category: 'workshop'
-    })
+      variables: [
+        'firstName',
+        'workshopDate',
+        'workshopTime',
+        'workshopLocation',
+        'ticketType',
+        'handbookUrl',
+        'preparationGuideUrl',
+        'videoSeriesUrl',
+        'vipTicket',
+        'supportPhone',
+      ],
+      category: 'workshop',
+    });
 
     this.templates.set('workbook-access', {
       id: 'workbook-access',
@@ -273,9 +285,20 @@ Day 2 - Leverage the Data: Implementation planning, action templates, progress t
 Need help? Email us at {{supportEmail}}
 
 The 6FB Methodologies Team`,
-      variables: ['firstName', 'workbookPassword', 'workbookUrl', 'step1', 'step2', 'step3', 'note', 'ticketType', 'workshopDate', 'supportEmail'],
-      category: 'workshop'
-    })
+      variables: [
+        'firstName',
+        'workbookPassword',
+        'workbookUrl',
+        'step1',
+        'step2',
+        'step3',
+        'note',
+        'ticketType',
+        'workshopDate',
+        'supportEmail',
+      ],
+      category: 'workshop',
+    });
 
     this.templates.set('post-workshop-followup', {
       id: 'post-workshop-followup',
@@ -313,9 +336,16 @@ The 6FB Methodologies Team`,
         <p>The 6FB Team</p>
       `,
       textContent: `Thanks for an Amazing Workshop, {{firstName}}! It was fantastic meeting you...`,
-      variables: ['firstName', 'implementationGuideUrl', 'templatesUrl', 'pricingCalculatorUrl', 'communityUrl', 'strategyCallUrl'],
-      category: 'workshop'
-    })
+      variables: [
+        'firstName',
+        'implementationGuideUrl',
+        'templatesUrl',
+        'pricingCalculatorUrl',
+        'communityUrl',
+        'strategyCallUrl',
+      ],
+      category: 'workshop',
+    });
 
     // Initialize email sequences
     this.sequences.set('new-registrant-welcome', {
@@ -324,10 +354,14 @@ The 6FB Methodologies Team`,
       trigger: 'payment_succeeded',
       emails: [
         { templateId: 'welcome-new-registrant', delayHours: 0 },
-        { templateId: 'workshop-reminder-48h', delayHours: 48, conditions: { hoursUntilWorkshop: 48 } },
-        { templateId: 'post-workshop-followup', delayHours: 192 } // 8 days (1 day after workshop)
-      ]
-    })
+        {
+          templateId: 'workshop-reminder-48h',
+          delayHours: 48,
+          conditions: { hoursUntilWorkshop: 48 },
+        },
+        { templateId: 'post-workshop-followup', delayHours: 192 }, // 8 days (1 day after workshop)
+      ],
+    });
 
     this.sequences.set('payment-recovery', {
       id: 'payment-recovery',
@@ -336,34 +370,44 @@ The 6FB Methodologies Team`,
       emails: [
         { templateId: 'payment-recovery', delayHours: 1 },
         { templateId: 'payment-recovery', delayHours: 24 },
-        { templateId: 'payment-recovery', delayHours: 72 }
-      ]
-    })
+        { templateId: 'payment-recovery', delayHours: 72 },
+      ],
+    });
   }
 
   async createOrUpdateContact(contactData: Partial<Contact>): Promise<Contact> {
     if (!contactData.email) {
-      throw new Error('Email is required')
+      throw new Error('Email is required');
     }
 
-    const existingContact = this.contacts.get(contactData.email)
+    const existingContact = this.contacts.get(contactData.email);
     const contact: Contact = {
       email: contactData.email,
       firstName: contactData.firstName || existingContact?.firstName,
       lastName: contactData.lastName || existingContact?.lastName,
       businessName: contactData.businessName || existingContact?.businessName,
       businessType: contactData.businessType || existingContact?.businessType,
-      yearsExperience: contactData.yearsExperience || existingContact?.yearsExperience,
+      yearsExperience:
+        contactData.yearsExperience || existingContact?.yearsExperience,
       phone: contactData.phone || existingContact?.phone,
       tags: [...(existingContact?.tags || []), ...(contactData.tags || [])],
-      customFields: { ...existingContact?.customFields, ...contactData.customFields },
-      subscriptionStatus: contactData.subscriptionStatus || existingContact?.subscriptionStatus || 'subscribed',
+      customFields: {
+        ...existingContact?.customFields,
+        ...contactData.customFields,
+      },
+      subscriptionStatus:
+        contactData.subscriptionStatus ||
+        existingContact?.subscriptionStatus ||
+        'subscribed',
       lastEngagement: new Date(),
-      totalSpent: (existingContact?.totalSpent || 0) + (contactData.totalSpent || 0),
-      workshopsAttended: (existingContact?.workshopsAttended || 0) + (contactData.workshopsAttended || 0),
-    }
+      totalSpent:
+        (existingContact?.totalSpent || 0) + (contactData.totalSpent || 0),
+      workshopsAttended:
+        (existingContact?.workshopsAttended || 0) +
+        (contactData.workshopsAttended || 0),
+    };
 
-    this.contacts.set(contact.email, contact)
+    this.contacts.set(contact.email, contact);
 
     // Track contact creation/update
     await analytics.trackEvent('contact_updated', {
@@ -371,28 +415,37 @@ The 6FB Methodologies Team`,
       isNew: !existingContact,
       tags: contact.tags,
       totalSpent: contact.totalSpent,
-    })
+    });
 
-    return contact
+    return contact;
   }
 
-  async triggerSequence(sequenceId: string, contactEmail: string, variables: Record<string, any> = {}) {
-    const sequence = this.sequences.get(sequenceId)
-    const contact = this.contacts.get(contactEmail)
+  async triggerSequence(
+    sequenceId: string,
+    contactEmail: string,
+    variables: Record<string, any> = {}
+  ) {
+    const sequence = this.sequences.get(sequenceId);
+    const contact = this.contacts.get(contactEmail);
 
     if (!sequence) {
-      throw new Error(`Sequence not found: ${sequenceId}`)
+      throw new Error(`Sequence not found: ${sequenceId}`);
     }
 
     if (!contact) {
-      throw new Error(`Contact not found: ${contactEmail}`)
+      throw new Error(`Contact not found: ${contactEmail}`);
     }
 
-    console.log(`Triggering sequence ${sequenceId} for ${contactEmail}`)
+    console.log(`Triggering sequence ${sequenceId} for ${contactEmail}`);
 
     // In a real implementation, this would schedule emails using a job queue
     for (const emailConfig of sequence.emails) {
-      await this.scheduleEmail(emailConfig.templateId, contact, variables, emailConfig.delayHours)
+      await this.scheduleEmail(
+        emailConfig.templateId,
+        contact,
+        variables,
+        emailConfig.delayHours
+      );
     }
 
     // Track sequence trigger
@@ -400,81 +453,116 @@ The 6FB Methodologies Team`,
       sequenceId,
       contactEmail,
       emailCount: sequence.emails.length,
-    })
+    });
   }
 
-  private async scheduleEmail(templateId: string, contact: Contact, variables: Record<string, any>, delayHours: number) {
-    const template = this.templates.get(templateId)
+  private async scheduleEmail(
+    templateId: string,
+    contact: Contact,
+    variables: Record<string, any>,
+    delayHours: number
+  ) {
+    const template = this.templates.get(templateId);
     if (!template) {
-      throw new Error(`Template not found: ${templateId}`)
+      throw new Error(`Template not found: ${templateId}`);
     }
 
     // Simulate email scheduling (in production, use a job queue like Bull or Agenda)
-    console.log(`Scheduling email "${template.name}" for ${contact.email} in ${delayHours} hours`)
+    console.log(
+      `Scheduling email "${template.name}" for ${contact.email} in ${delayHours} hours`
+    );
 
     const emailData = {
       to: contact.email,
-      subject: this.interpolateTemplate(template.subject, { ...contact, ...variables }),
-      htmlContent: this.interpolateTemplate(template.htmlContent, { ...contact, ...variables }),
-      textContent: this.interpolateTemplate(template.textContent, { ...contact, ...variables }),
+      subject: this.interpolateTemplate(template.subject, {
+        ...contact,
+        ...variables,
+      }),
+      htmlContent: this.interpolateTemplate(template.htmlContent, {
+        ...contact,
+        ...variables,
+      }),
+      textContent: this.interpolateTemplate(template.textContent, {
+        ...contact,
+        ...variables,
+      }),
       scheduledFor: new Date(Date.now() + delayHours * 60 * 60 * 1000),
       templateId,
       contactEmail: contact.email,
-    }
+    };
 
     // In production, this would integrate with:
     // - Resend API
     // - SendGrid API
     // - Mailgun API
     // - Postmark API
-    console.log('Email scheduled:', emailData)
+    console.log('Email scheduled:', emailData);
 
-    return emailData
+    return emailData;
   }
 
-  private interpolateTemplate(template: string, variables: Record<string, any>): string {
-    let result = template
+  private interpolateTemplate(
+    template: string,
+    variables: Record<string, any>
+  ): string {
+    let result = template;
 
     // Simple template interpolation (in production, use a proper template engine like Handlebars)
     for (const [key, value] of Object.entries(variables)) {
-      const regex = new RegExp(`{{${key}}}`, 'g')
-      result = result.replace(regex, String(value || ''))
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      result = result.replace(regex, String(value || ''));
     }
 
     // Handle conditional blocks (simplified Handlebars-like syntax)
-    result = result.replace(/{{#if (\w+)}}([\s\S]*?){{\/if}}/g, (match, condition, content) => {
-      return variables[condition] ? content : ''
-    })
+    result = result.replace(
+      /{{#if (\w+)}}([\s\S]*?){{\/if}}/g,
+      (match, condition, content) => {
+        return variables[condition] ? content : '';
+      }
+    );
 
-    return result
+    return result;
   }
 
-  async sendTransactionalEmail(templateId: string, contactEmail: string, variables: Record<string, any> = {}) {
-    const template = this.templates.get(templateId)
-    const contact = this.contacts.get(contactEmail)
+  async sendTransactionalEmail(
+    templateId: string,
+    contactEmail: string,
+    variables: Record<string, any> = {}
+  ) {
+    const template = this.templates.get(templateId);
+    const contact = this.contacts.get(contactEmail);
 
     if (!template) {
-      throw new Error(`Template not found: ${templateId}`)
+      throw new Error(`Template not found: ${templateId}`);
     }
 
     const emailData = {
       to: contactEmail,
-      subject: this.interpolateTemplate(template.subject, { ...contact, ...variables }),
-      htmlContent: this.interpolateTemplate(template.htmlContent, { ...contact, ...variables }),
-      textContent: this.interpolateTemplate(template.textContent, { ...contact, ...variables }),
+      subject: this.interpolateTemplate(template.subject, {
+        ...contact,
+        ...variables,
+      }),
+      htmlContent: this.interpolateTemplate(template.htmlContent, {
+        ...contact,
+        ...variables,
+      }),
+      textContent: this.interpolateTemplate(template.textContent, {
+        ...contact,
+        ...variables,
+      }),
       templateId,
-    }
+    };
 
-    console.log('Sending transactional email:', emailData)
+    console.log('Sending transactional email:', emailData);
 
     // Track email send
     await analytics.trackEvent('email_sent', {
       templateId,
       contactEmail,
       category: template.category,
-    })
+    });
 
-    return emailData
+    return emailData;
   }
 
   // CRM Integration Methods
@@ -490,9 +578,9 @@ The 6FB Methodologies Team`,
       custom_total_spent: contact.totalSpent,
       custom_workshops_attended: contact.workshopsAttended,
       hs_lead_status: 'CUSTOMER',
-    }
+    };
 
-    console.log('Would sync to HubSpot:', hubspotData)
+    console.log('Would sync to HubSpot:', hubspotData);
     // await hubspotClient.contacts.basicApi.createOrUpdate(contact.email, { properties: hubspotData })
   }
 
@@ -508,9 +596,9 @@ The 6FB Methodologies Team`,
       Total_Spent__c: contact.totalSpent,
       Workshops_Attended__c: contact.workshopsAttended,
       LeadSource: '6FB Workshop',
-    }
+    };
 
-    console.log('Would sync to Salesforce:', salesforceData)
+    console.log('Would sync to Salesforce:', salesforceData);
     // await salesforceClient.sobject('Lead').upsert(salesforceData, 'Email')
   }
 
@@ -528,23 +616,23 @@ The 6FB Methodologies Team`,
         { field: 'TOTAL_SPENT', value: contact.totalSpent.toString() },
       ],
       tags: contact.tags,
-    }
+    };
 
-    console.log('Would sync to ActiveCampaign:', acData)
+    console.log('Would sync to ActiveCampaign:', acData);
     // await activeCampaignClient.contacts.createOrUpdate(acData)
   }
 
   // Automation trigger methods
   async handlePaymentSuccess(paymentData: {
-    email: string
-    name: string
-    amount: number
-    ticketType: string
-    quantity: number
-    metadata: Record<string, any>
+    email: string;
+    name: string;
+    amount: number;
+    ticketType: string;
+    quantity: number;
+    metadata: Record<string, any>;
   }) {
     // Create/update contact
-    const [firstName, ...lastNameParts] = paymentData.name.split(' ')
+    const [firstName, ...lastNameParts] = paymentData.name.split(' ');
     await this.createOrUpdateContact({
       email: paymentData.email,
       firstName,
@@ -556,44 +644,44 @@ The 6FB Methodologies Team`,
       tags: ['workshop-attendee', paymentData.ticketType.toLowerCase()],
       totalSpent: paymentData.amount,
       workshopsAttended: 1,
-    })
+    });
 
     // Trigger welcome sequence
     await this.triggerSequence('new-registrant-welcome', paymentData.email, {
       ticketType: paymentData.ticketType,
       amountPaid: `$${(paymentData.amount / 100).toFixed(2)}`,
       quantity: paymentData.quantity,
-    })
+    });
 
     // Sync to CRM systems
-    const contact = this.contacts.get(paymentData.email)!
+    const contact = this.contacts.get(paymentData.email)!;
     await Promise.all([
       this.syncToHubSpot(contact),
       this.syncToSalesforce(contact),
       this.syncToActiveCanpaign(contact),
-    ])
+    ]);
   }
 
   async handlePaymentFailure(paymentData: {
-    email: string
-    name: string
-    amount: number
-    errorMessage: string
+    email: string;
+    name: string;
+    amount: number;
+    errorMessage: string;
   }) {
     // Create/update contact
-    const [firstName, ...lastNameParts] = paymentData.name.split(' ')
+    const [firstName, ...lastNameParts] = paymentData.name.split(' ');
     await this.createOrUpdateContact({
       email: paymentData.email,
       firstName,
       lastName: lastNameParts.join(' '),
       tags: ['payment-failed'],
-    })
+    });
 
     // Trigger recovery sequence
     await this.triggerSequence('payment-recovery', paymentData.email, {
       spotsLeft: Math.floor(Math.random() * 10) + 5, // Mock spots remaining
       recoveryUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/recovery?email=${encodeURIComponent(paymentData.email)}`,
-    })
+    });
   }
 
   // Analytics and reporting
@@ -611,41 +699,61 @@ The 6FB Methodologies Team`,
       unsubscribeRate: 1.0,
       bounceRate: 1.3,
       topPerformingTemplates: [
-        { templateId: 'welcome-new-registrant', openRate: 65.2, clickRate: 15.3 },
-        { templateId: 'workshop-reminder-48h', openRate: 58.7, clickRate: 12.8 },
+        {
+          templateId: 'welcome-new-registrant',
+          openRate: 65.2,
+          clickRate: 15.3,
+        },
+        {
+          templateId: 'workshop-reminder-48h',
+          openRate: 58.7,
+          clickRate: 12.8,
+        },
         { templateId: 'payment-recovery', openRate: 42.1, clickRate: 8.9 },
-      ]
-    }
+      ],
+    };
   }
 }
 
 // Export singleton instance
-export const emailAutomation = EmailAutomationService.getInstance()
+export const emailAutomation = EmailAutomationService.getInstance();
 
 // Utility functions
-export const segmentContacts = (contacts: Contact[], criteria: {
-  tags?: string[]
-  businessType?: string
-  totalSpentMin?: number
-  totalSpentMax?: number
-  workshopsAttendedMin?: number
-}) => {
+export const segmentContacts = (
+  contacts: Contact[],
+  criteria: {
+    tags?: string[];
+    businessType?: string;
+    totalSpentMin?: number;
+    totalSpentMax?: number;
+    workshopsAttendedMin?: number;
+  }
+) => {
   return contacts.filter(contact => {
-    if (criteria.tags && !criteria.tags.some(tag => contact.tags.includes(tag))) {
-      return false
+    if (
+      criteria.tags &&
+      !criteria.tags.some(tag => contact.tags.includes(tag))
+    ) {
+      return false;
     }
-    if (criteria.businessType && contact.businessType !== criteria.businessType) {
-      return false
+    if (
+      criteria.businessType &&
+      contact.businessType !== criteria.businessType
+    ) {
+      return false;
     }
     if (criteria.totalSpentMin && contact.totalSpent < criteria.totalSpentMin) {
-      return false
+      return false;
     }
     if (criteria.totalSpentMax && contact.totalSpent > criteria.totalSpentMax) {
-      return false
+      return false;
     }
-    if (criteria.workshopsAttendedMin && contact.workshopsAttended < criteria.workshopsAttendedMin) {
-      return false
+    if (
+      criteria.workshopsAttendedMin &&
+      contact.workshopsAttended < criteria.workshopsAttendedMin
+    ) {
+      return false;
     }
-    return true
-  })
-}
+    return true;
+  });
+};

@@ -20,7 +20,7 @@ const CONFIG = {
     RESPONSE_TIME: 3000, // 3 seconds
     MEMORY_USAGE: 512 * 1024 * 1024, // 512MB
     BUILD_TIME: 30000, // 30 seconds
-    ERROR_RATE: 0.1 // 10%
+    ERROR_RATE: 0.1, // 10%
   },
   COLORS: {
     RED: '\x1b[31m',
@@ -28,8 +28,8 @@ const CONFIG = {
     YELLOW: '\x1b[33m',
     BLUE: '\x1b[34m',
     CYAN: '\x1b[36m',
-    RESET: '\x1b[0m'
-  }
+    RESET: '\x1b[0m',
+  },
 };
 
 // Ensure logs directory exists
@@ -45,7 +45,7 @@ class PerformanceMonitor {
       buildTimes: [],
       memoryUsage: [],
       errors: [],
-      alerts: []
+      alerts: [],
     };
 
     this.loadExistingMetrics();
@@ -60,11 +60,15 @@ class PerformanceMonitor {
         const existingMetrics = JSON.parse(data);
 
         // Keep only recent data (last 24 hours)
-        const cutoff = Date.now() - (24 * 60 * 60 * 1000);
-        this.metrics.requests = existingMetrics.requests?.filter(r => r.timestamp > cutoff) || [];
-        this.metrics.buildTimes = existingMetrics.buildTimes?.filter(b => b.timestamp > cutoff) || [];
-        this.metrics.memoryUsage = existingMetrics.memoryUsage?.filter(m => m.timestamp > cutoff) || [];
-        this.metrics.errors = existingMetrics.errors?.filter(e => e.timestamp > cutoff) || [];
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        this.metrics.requests =
+          existingMetrics.requests?.filter(r => r.timestamp > cutoff) || [];
+        this.metrics.buildTimes =
+          existingMetrics.buildTimes?.filter(b => b.timestamp > cutoff) || [];
+        this.metrics.memoryUsage =
+          existingMetrics.memoryUsage?.filter(m => m.timestamp > cutoff) || [];
+        this.metrics.errors =
+          existingMetrics.errors?.filter(e => e.timestamp > cutoff) || [];
       }
     } catch (error) {
       this.log('WARN', `Could not load existing metrics: ${error.message}`);
@@ -74,7 +78,10 @@ class PerformanceMonitor {
   // Save metrics to file
   saveMetrics() {
     try {
-      fs.writeFileSync(CONFIG.METRICS_FILE, JSON.stringify(this.metrics, null, 2));
+      fs.writeFileSync(
+        CONFIG.METRICS_FILE,
+        JSON.stringify(this.metrics, null, 2)
+      );
     } catch (error) {
       this.log('ERROR', `Could not save metrics: ${error.message}`);
     }
@@ -94,40 +101,40 @@ class PerformanceMonitor {
 
   // Test HTTP endpoint performance
   async testEndpoint(path = '/') {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const startTime = performance.now();
       const timeout = setTimeout(() => {
         resolve({
           success: false,
           responseTime: CONFIG.ALERT_THRESHOLDS.RESPONSE_TIME,
-          error: 'Timeout'
+          error: 'Timeout',
         });
       }, CONFIG.ALERT_THRESHOLDS.RESPONSE_TIME);
 
-      const req = http.get(`http://localhost:${CONFIG.PORT}${path}`, (res) => {
+      const req = http.get(`http://localhost:${CONFIG.PORT}${path}`, res => {
         clearTimeout(timeout);
         const endTime = performance.now();
         const responseTime = endTime - startTime;
 
         let body = '';
-        res.on('data', chunk => body += chunk);
+        res.on('data', chunk => (body += chunk));
         res.on('end', () => {
           resolve({
             success: res.statusCode < 400,
             responseTime,
             statusCode: res.statusCode,
-            contentLength: body.length
+            contentLength: body.length,
           });
         });
       });
 
-      req.on('error', (error) => {
+      req.on('error', error => {
         clearTimeout(timeout);
         const endTime = performance.now();
         resolve({
           success: false,
           responseTime: endTime - startTime,
-          error: error.message
+          error: error.message,
         });
       });
 
@@ -139,7 +146,9 @@ class PerformanceMonitor {
   getMemoryUsage() {
     try {
       const { execSync } = require('child_process');
-      const psOutput = execSync('ps -o pid,rss,vsz,comm -C node', { encoding: 'utf8' });
+      const psOutput = execSync('ps -o pid,rss,vsz,comm -C node', {
+        encoding: 'utf8',
+      });
 
       let totalMemory = 0;
       const lines = psOutput.split('\n').slice(1); // Skip header
@@ -183,7 +192,7 @@ class PerformanceMonitor {
       return {
         timestamp: buildTime.getTime(),
         duration: estimatedDuration,
-        fileCount: files
+        fileCount: files,
       };
     } catch (error) {
       return null;
@@ -223,38 +232,45 @@ class PerformanceMonitor {
       avg: sum / values.length,
       median: sorted[Math.floor(sorted.length / 2)],
       p95: sorted[Math.floor(sorted.length * 0.95)],
-      count: values.length
+      count: values.length,
     };
   }
 
   // Check for alerts based on thresholds
   checkAlerts() {
     const now = Date.now();
-    const recentRequests = this.metrics.requests.filter(r => now - r.timestamp < 60000); // Last minute
-    const recentMemory = this.metrics.memoryUsage.filter(m => now - m.timestamp < 300000); // Last 5 minutes
+    const recentRequests = this.metrics.requests.filter(
+      r => now - r.timestamp < 60000
+    ); // Last minute
+    const recentMemory = this.metrics.memoryUsage.filter(
+      m => now - m.timestamp < 300000
+    ); // Last 5 minutes
 
     const alerts = [];
 
     // Response time alert
     if (recentRequests.length > 0) {
-      const avgResponseTime = recentRequests.reduce((sum, r) => sum + r.responseTime, 0) / recentRequests.length;
+      const avgResponseTime =
+        recentRequests.reduce((sum, r) => sum + r.responseTime, 0) /
+        recentRequests.length;
       if (avgResponseTime > CONFIG.ALERT_THRESHOLDS.RESPONSE_TIME) {
         alerts.push({
           type: 'HIGH_RESPONSE_TIME',
           message: `Average response time: ${Math.round(avgResponseTime)}ms (threshold: ${CONFIG.ALERT_THRESHOLDS.RESPONSE_TIME}ms)`,
-          severity: 'WARNING'
+          severity: 'WARNING',
         });
       }
     }
 
     // Memory usage alert
     if (recentMemory.length > 0) {
-      const avgMemory = recentMemory.reduce((sum, m) => sum + m.usage, 0) / recentMemory.length;
+      const avgMemory =
+        recentMemory.reduce((sum, m) => sum + m.usage, 0) / recentMemory.length;
       if (avgMemory > CONFIG.ALERT_THRESHOLDS.MEMORY_USAGE) {
         alerts.push({
           type: 'HIGH_MEMORY_USAGE',
           message: `Average memory usage: ${Math.round(avgMemory / 1024 / 1024)}MB (threshold: ${Math.round(CONFIG.ALERT_THRESHOLDS.MEMORY_USAGE / 1024 / 1024)}MB)`,
-          severity: 'WARNING'
+          severity: 'WARNING',
         });
       }
     }
@@ -267,22 +283,25 @@ class PerformanceMonitor {
         alerts.push({
           type: 'HIGH_ERROR_RATE',
           message: `Error rate: ${Math.round(errorRate * 100)}% (threshold: ${Math.round(CONFIG.ALERT_THRESHOLDS.ERROR_RATE * 100)}%)`,
-          severity: 'CRITICAL'
+          severity: 'CRITICAL',
         });
       }
     }
 
     // Log new alerts
     for (const alert of alerts) {
-      const existingAlert = this.metrics.alerts.find(a =>
-        a.type === alert.type &&
-        now - a.timestamp < 300000 // Don't repeat alerts within 5 minutes
+      const existingAlert = this.metrics.alerts.find(
+        a => a.type === alert.type && now - a.timestamp < 300000 // Don't repeat alerts within 5 minutes
       );
 
       if (!existingAlert) {
         alert.timestamp = now;
         this.metrics.alerts.push(alert);
-        this.log(alert.severity, `🚨 ALERT: ${alert.message}`, CONFIG.COLORS.RED);
+        this.log(
+          alert.severity,
+          `🚨 ALERT: ${alert.message}`,
+          CONFIG.COLORS.RED
+        );
       }
     }
 
@@ -293,25 +312,58 @@ class PerformanceMonitor {
   displayDashboard() {
     console.clear();
 
-    this.log('INFO', '═══════════════════════════════════════════════════════════════', CONFIG.COLORS.BLUE);
-    this.log('INFO', '                    Performance Monitor Dashboard                  ', CONFIG.COLORS.BLUE);
-    this.log('INFO', '═══════════════════════════════════════════════════════════════', CONFIG.COLORS.BLUE);
+    this.log(
+      'INFO',
+      '═══════════════════════════════════════════════════════════════',
+      CONFIG.COLORS.BLUE
+    );
+    this.log(
+      'INFO',
+      '                    Performance Monitor Dashboard                  ',
+      CONFIG.COLORS.BLUE
+    );
+    this.log(
+      'INFO',
+      '═══════════════════════════════════════════════════════════════',
+      CONFIG.COLORS.BLUE
+    );
 
     const now = Date.now();
     const uptime = Math.round((now - this.metrics.startTime) / 1000);
 
-    this.log('INFO', `📊 Uptime: ${uptime}s | Port: ${CONFIG.PORT} | PID: ${process.pid}`, CONFIG.COLORS.CYAN);
+    this.log(
+      'INFO',
+      `📊 Uptime: ${uptime}s | Port: ${CONFIG.PORT} | PID: ${process.pid}`,
+      CONFIG.COLORS.CYAN
+    );
     console.log();
 
     // Recent requests statistics
-    const recentRequests = this.metrics.requests.filter(r => now - r.timestamp < 300000); // Last 5 minutes
+    const recentRequests = this.metrics.requests.filter(
+      r => now - r.timestamp < 300000
+    ); // Last 5 minutes
     if (recentRequests.length > 0) {
-      const requestStats = this.calculateStats(recentRequests.map(r => r.responseTime));
-      const successRate = Math.round((recentRequests.filter(r => r.success).length / recentRequests.length) * 100);
+      const requestStats = this.calculateStats(
+        recentRequests.map(r => r.responseTime)
+      );
+      const successRate = Math.round(
+        (recentRequests.filter(r => r.success).length / recentRequests.length) *
+          100
+      );
 
-      this.log('INFO', '🌐 HTTP Performance (Last 5 minutes):', CONFIG.COLORS.CYAN);
-      this.log('INFO', `   Requests: ${recentRequests.length} | Success Rate: ${successRate}%`);
-      this.log('INFO', `   Response Time - Avg: ${Math.round(requestStats.avg)}ms | P95: ${Math.round(requestStats.p95)}ms | Max: ${Math.round(requestStats.max)}ms`);
+      this.log(
+        'INFO',
+        '🌐 HTTP Performance (Last 5 minutes):',
+        CONFIG.COLORS.CYAN
+      );
+      this.log(
+        'INFO',
+        `   Requests: ${recentRequests.length} | Success Rate: ${successRate}%`
+      );
+      this.log(
+        'INFO',
+        `   Response Time - Avg: ${Math.round(requestStats.avg)}ms | P95: ${Math.round(requestStats.p95)}ms | Max: ${Math.round(requestStats.max)}ms`
+      );
     } else {
       this.log('INFO', '🌐 No recent HTTP requests', CONFIG.COLORS.YELLOW);
     }
@@ -319,41 +371,64 @@ class PerformanceMonitor {
     console.log();
 
     // Memory usage
-    const recentMemory = this.metrics.memoryUsage.filter(m => now - m.timestamp < 300000);
+    const recentMemory = this.metrics.memoryUsage.filter(
+      m => now - m.timestamp < 300000
+    );
     if (recentMemory.length > 0) {
       const memoryStats = this.calculateStats(recentMemory.map(m => m.usage));
 
       this.log('INFO', '💾 Memory Usage (Last 5 minutes):', CONFIG.COLORS.CYAN);
-      this.log('INFO', `   Avg: ${Math.round(memoryStats.avg / 1024 / 1024)}MB | Peak: ${Math.round(memoryStats.max / 1024 / 1024)}MB`);
+      this.log(
+        'INFO',
+        `   Avg: ${Math.round(memoryStats.avg / 1024 / 1024)}MB | Peak: ${Math.round(memoryStats.max / 1024 / 1024)}MB`
+      );
     }
 
     console.log();
 
     // Build performance
-    const recentBuilds = this.metrics.buildTimes.filter(b => now - b.timestamp < 3600000); // Last hour
+    const recentBuilds = this.metrics.buildTimes.filter(
+      b => now - b.timestamp < 3600000
+    ); // Last hour
     if (recentBuilds.length > 0) {
       const buildStats = this.calculateStats(recentBuilds.map(b => b.duration));
 
-      this.log('INFO', '🏗️  Build Performance (Last hour):', CONFIG.COLORS.CYAN);
-      this.log('INFO', `   Builds: ${recentBuilds.length} | Avg Time: ${Math.round(buildStats.avg)}ms`);
+      this.log(
+        'INFO',
+        '🏗️  Build Performance (Last hour):',
+        CONFIG.COLORS.CYAN
+      );
+      this.log(
+        'INFO',
+        `   Builds: ${recentBuilds.length} | Avg Time: ${Math.round(buildStats.avg)}ms`
+      );
     }
 
     console.log();
 
     // Recent alerts
-    const recentAlerts = this.metrics.alerts.filter(a => now - a.timestamp < 3600000); // Last hour
+    const recentAlerts = this.metrics.alerts.filter(
+      a => now - a.timestamp < 3600000
+    ); // Last hour
     if (recentAlerts.length > 0) {
       this.log('INFO', '🚨 Recent Alerts:', CONFIG.COLORS.RED);
       recentAlerts.slice(-3).forEach(alert => {
         const timeAgo = Math.round((now - alert.timestamp) / 60000);
-        this.log('INFO', `   ${alert.type}: ${alert.message} (${timeAgo}m ago)`);
+        this.log(
+          'INFO',
+          `   ${alert.type}: ${alert.message} (${timeAgo}m ago)`
+        );
       });
     } else {
       this.log('INFO', '✅ No recent alerts', CONFIG.COLORS.GREEN);
     }
 
     console.log();
-    this.log('INFO', '⚙️  Controls: Ctrl+C to exit | Updates every 5s', CONFIG.COLORS.YELLOW);
+    this.log(
+      'INFO',
+      '⚙️  Controls: Ctrl+C to exit | Updates every 5s',
+      CONFIG.COLORS.YELLOW
+    );
   }
 
   // Run performance check cycle
@@ -364,21 +439,22 @@ class PerformanceMonitor {
     const httpResult = await this.testEndpoint('/');
     this.metrics.requests.push({
       timestamp,
-      ...httpResult
+      ...httpResult,
     });
 
     // Record memory usage
     const memoryUsage = this.getMemoryUsage();
     this.metrics.memoryUsage.push({
       timestamp,
-      usage: memoryUsage
+      usage: memoryUsage,
     });
 
     // Check build performance
     const buildInfo = this.checkBuildPerformance();
     if (buildInfo) {
       // Only add if it's a new build
-      const lastBuild = this.metrics.buildTimes[this.metrics.buildTimes.length - 1];
+      const lastBuild =
+        this.metrics.buildTimes[this.metrics.buildTimes.length - 1];
       if (!lastBuild || buildInfo.timestamp > lastBuild.timestamp) {
         this.metrics.buildTimes.push(buildInfo);
       }
@@ -402,7 +478,11 @@ class PerformanceMonitor {
   // Setup signal handlers for graceful shutdown
   setupSignalHandlers() {
     const shutdown = () => {
-      this.log('INFO', 'Shutting down performance monitor...', CONFIG.COLORS.YELLOW);
+      this.log(
+        'INFO',
+        'Shutting down performance monitor...',
+        CONFIG.COLORS.YELLOW
+      );
       this.saveMetrics();
       process.exit(0);
     };
@@ -413,17 +493,33 @@ class PerformanceMonitor {
 
   // Start monitoring
   async start() {
-    this.log('INFO', '🔍 Starting performance monitoring...', CONFIG.COLORS.GREEN);
-    this.log('INFO', `Monitoring Next.js server on port ${CONFIG.PORT}`, CONFIG.COLORS.CYAN);
+    this.log(
+      'INFO',
+      '🔍 Starting performance monitoring...',
+      CONFIG.COLORS.GREEN
+    );
+    this.log(
+      'INFO',
+      `Monitoring Next.js server on port ${CONFIG.PORT}`,
+      CONFIG.COLORS.CYAN
+    );
 
     while (true) {
       try {
         await this.runCheckCycle();
         this.displayDashboard();
-        await new Promise(resolve => setTimeout(resolve, CONFIG.CHECK_INTERVAL));
+        await new Promise(resolve =>
+          setTimeout(resolve, CONFIG.CHECK_INTERVAL)
+        );
       } catch (error) {
-        this.log('ERROR', `Monitoring error: ${error.message}`, CONFIG.COLORS.RED);
-        await new Promise(resolve => setTimeout(resolve, CONFIG.CHECK_INTERVAL));
+        this.log(
+          'ERROR',
+          `Monitoring error: ${error.message}`,
+          CONFIG.COLORS.RED
+        );
+        await new Promise(resolve =>
+          setTimeout(resolve, CONFIG.CHECK_INTERVAL)
+        );
       }
     }
   }
@@ -431,26 +527,62 @@ class PerformanceMonitor {
   // Generate performance report
   generateReport() {
     const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
+    const hourAgo = now - 60 * 60 * 1000;
 
-    const recentRequests = this.metrics.requests.filter(r => r.timestamp > hourAgo);
-    const recentMemory = this.metrics.memoryUsage.filter(m => m.timestamp > hourAgo);
-    const recentBuilds = this.metrics.buildTimes.filter(b => b.timestamp > hourAgo);
+    const recentRequests = this.metrics.requests.filter(
+      r => r.timestamp > hourAgo
+    );
+    const recentMemory = this.metrics.memoryUsage.filter(
+      m => m.timestamp > hourAgo
+    );
+    const recentBuilds = this.metrics.buildTimes.filter(
+      b => b.timestamp > hourAgo
+    );
 
     const report = {
       generatedAt: new Date().toISOString(),
       timeRange: 'Last 1 hour',
       summary: {
         totalRequests: recentRequests.length,
-        successRate: recentRequests.length > 0 ? Math.round((recentRequests.filter(r => r.success).length / recentRequests.length) * 100) : 0,
-        avgResponseTime: recentRequests.length > 0 ? Math.round(recentRequests.reduce((sum, r) => sum + r.responseTime, 0) / recentRequests.length) : 0,
-        avgMemoryUsage: recentMemory.length > 0 ? Math.round(recentMemory.reduce((sum, m) => sum + m.usage, 0) / recentMemory.length / 1024 / 1024) : 0,
-        buildCount: recentBuilds.length
+        successRate:
+          recentRequests.length > 0
+            ? Math.round(
+                (recentRequests.filter(r => r.success).length /
+                  recentRequests.length) *
+                  100
+              )
+            : 0,
+        avgResponseTime:
+          recentRequests.length > 0
+            ? Math.round(
+                recentRequests.reduce((sum, r) => sum + r.responseTime, 0) /
+                  recentRequests.length
+              )
+            : 0,
+        avgMemoryUsage:
+          recentMemory.length > 0
+            ? Math.round(
+                recentMemory.reduce((sum, m) => sum + m.usage, 0) /
+                  recentMemory.length /
+                  1024 /
+                  1024
+              )
+            : 0,
+        buildCount: recentBuilds.length,
       },
-      httpPerformance: recentRequests.length > 0 ? this.calculateStats(recentRequests.map(r => r.responseTime)) : null,
-      memoryUsage: recentMemory.length > 0 ? this.calculateStats(recentMemory.map(m => m.usage)) : null,
-      buildPerformance: recentBuilds.length > 0 ? this.calculateStats(recentBuilds.map(b => b.duration)) : null,
-      alerts: this.metrics.alerts.filter(a => a.timestamp > hourAgo)
+      httpPerformance:
+        recentRequests.length > 0
+          ? this.calculateStats(recentRequests.map(r => r.responseTime))
+          : null,
+      memoryUsage:
+        recentMemory.length > 0
+          ? this.calculateStats(recentMemory.map(m => m.usage))
+          : null,
+      buildPerformance:
+        recentBuilds.length > 0
+          ? this.calculateStats(recentBuilds.map(b => b.duration))
+          : null,
+      alerts: this.metrics.alerts.filter(a => a.timestamp > hourAgo),
     };
 
     const reportFile = `logs/performance-report-${new Date().toISOString().split('T')[0]}.json`;

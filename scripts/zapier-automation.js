@@ -11,17 +11,20 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-const WEBHOOK_URL = process.env.NODE_ENV === 'production'
-  ? 'https://6fbmethodologies.com/api/webhooks/skool'
-  : 'http://localhost:3000/api/webhooks/skool';
+const WEBHOOK_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://6fbmethodologies.com/api/webhooks/skool'
+    : 'http://localhost:3000/api/webhooks/skool';
 
-const VERIFY_URL = process.env.NODE_ENV === 'production'
-  ? 'https://6fbmethodologies.com/api/verify-member'
-  : 'http://localhost:3000/api/verify-member';
+const VERIFY_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://6fbmethodologies.com/api/verify-member'
+    : 'http://localhost:3000/api/verify-member';
 
-const SYNC_URL = process.env.NODE_ENV === 'production'
-  ? 'https://6fbmethodologies.com/api/skool/sync'
-  : 'http://localhost:3000/api/skool/sync';
+const SYNC_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://6fbmethodologies.com/api/skool/sync'
+    : 'http://localhost:3000/api/skool/sync';
 
 class ZapierAutomation {
   constructor() {
@@ -33,7 +36,7 @@ class ZapierAutomation {
       yellow: '\x1b[33m',
       blue: '\x1b[34m',
       magenta: '\x1b[35m',
-      cyan: '\x1b[36m'
+      cyan: '\x1b[36m',
     };
   }
 
@@ -75,7 +78,10 @@ class ZapierAutomation {
 
       this.log('📊 Webhook Status:', 'cyan');
       this.log(`  URL: ${WEBHOOK_URL}`, 'blue');
-      this.log(`  Status: ${response.ok ? 'Active' : 'Error'}`, response.ok ? 'green' : 'red');
+      this.log(
+        `  Status: ${response.ok ? 'Active' : 'Error'}`,
+        response.ok ? 'green' : 'red'
+      );
       this.log(`  Total Members: ${data.totalMembers || 0}`, 'blue');
 
       if (data.members && data.members.length > 0) {
@@ -98,7 +104,7 @@ class ZapierAutomation {
       lastName: 'Member',
       email: 'test.member@6fb.com',
       transactionId: `test_${Date.now()}`,
-      subscriptionDate: new Date().toISOString().split('T')[0]
+      subscriptionDate: new Date().toISOString().split('T')[0],
     };
 
     const member = memberData || defaultMember;
@@ -111,7 +117,7 @@ class ZapierAutomation {
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(member)
+        body: JSON.stringify(member),
       });
 
       const result = await response.json();
@@ -138,7 +144,7 @@ class ZapierAutomation {
       const response = await fetch(VERIFY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
 
       const result = await response.json();
@@ -238,7 +244,7 @@ class ZapierAutomation {
       await fetch(WEBHOOK_URL, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, action: 'remove' })
+        body: JSON.stringify({ email, action: 'remove' }),
       });
       this.log(`🧹 Cleaned up test member: ${email}`, 'green');
     } catch (error) {
@@ -292,7 +298,7 @@ class ZapierAutomation {
 
       const response = await fetch(SYNC_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const result = await response.json();
@@ -312,10 +318,12 @@ class ZapierAutomation {
       } else {
         this.log('❌ Sync failed', 'red');
         this.log(`  Error: ${result.error}`, 'red');
-        this.log(`  Imported: ${result.imported} members before failure`, 'yellow');
+        this.log(
+          `  Imported: ${result.imported} members before failure`,
+          'yellow'
+        );
         return false;
       }
-
     } catch (error) {
       this.log(`❌ Sync error: ${error.message}`, 'red');
       return false;
@@ -329,7 +337,7 @@ class ZapierAutomation {
       const response = await fetch(SYNC_URL, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, action: 'sync' })
+        body: JSON.stringify({ email, action: 'sync' }),
       });
 
       const result = await response.json();
@@ -344,11 +352,13 @@ class ZapierAutomation {
         this.log('❌ Member sync failed', 'red');
         this.log(`  Error: ${result.error}`, 'red');
         if (result.member) {
-          this.log(`  Found member but: ${result.member.subscriptionStatus}`, 'yellow');
+          this.log(
+            `  Found member but: ${result.member.subscriptionStatus}`,
+            'yellow'
+          );
         }
         return false;
       }
-
     } catch (error) {
       this.log(`❌ Member sync error: ${error.message}`, 'red');
       return false;
@@ -367,12 +377,18 @@ class ZapierAutomation {
         const data = await response.json();
 
         if (data.totalMembers !== lastMemberCount) {
-          this.log(`📊 Member count changed: ${lastMemberCount} → ${data.totalMembers}`, 'green');
+          this.log(
+            `📊 Member count changed: ${lastMemberCount} → ${data.totalMembers}`,
+            'green'
+          );
           lastMemberCount = data.totalMembers;
 
           if (data.members && data.members.length > 0) {
             const latest = data.members[data.members.length - 1];
-            this.log(`  Latest member: ${latest.name} (${latest.email})`, 'blue');
+            this.log(
+              `  Latest member: ${latest.name} (${latest.email})`,
+              'blue'
+            );
           }
         }
       } catch (error) {
@@ -424,7 +440,10 @@ async function main() {
       const syncEmail = process.argv[3];
       if (!syncEmail) {
         automation.log('❌ Email required for sync-member command', 'red');
-        automation.log('Usage: node scripts/zapier-automation.js sync-member email@example.com', 'yellow');
+        automation.log(
+          'Usage: node scripts/zapier-automation.js sync-member email@example.com',
+          'yellow'
+        );
       } else {
         await automation.syncSpecificMember(syncEmail);
       }

@@ -56,11 +56,13 @@ class SMSService {
     // Support multiple notification phone numbers
     this.targetNumbers = [
       '+1-352-556-8981', // Primary number
-      '+1-813-520-3348'  // Secondary number
+      '+1-813-520-3348', // Secondary number
     ];
 
     if (!accountSid || !authToken) {
-      console.warn('Twilio credentials not found. SMS notifications will be disabled.');
+      console.warn(
+        'Twilio credentials not found. SMS notifications will be disabled.'
+      );
     }
 
     this.client = new Twilio(accountSid, authToken);
@@ -69,13 +71,18 @@ class SMSService {
   /**
    * Send SMS notification for ticket sale
    */
-  async sendTicketSaleNotification(data: TicketSaleData): Promise<SMSDeliveryResult> {
+  async sendTicketSaleNotification(
+    data: TicketSaleData
+  ): Promise<SMSDeliveryResult> {
     try {
       if (!this.isConfigured()) {
-        console.log('SMS service not configured, would send:', this.formatTicketSaleMessage(data));
+        console.log(
+          'SMS service not configured, would send:',
+          this.formatTicketSaleMessage(data)
+        );
         return {
           success: false,
-          error: 'SMS service not configured'
+          error: 'SMS service not configured',
         };
       }
 
@@ -83,29 +90,37 @@ class SMSService {
 
       // Send to all target numbers
       const results = await Promise.allSettled(
-        this.targetNumbers.map(number => this.sendWithRetry(message, data.sessionId, 0, number))
+        this.targetNumbers.map(number =>
+          this.sendWithRetry(message, data.sessionId, 0, number)
+        )
       );
 
       // Check if at least one message was sent successfully
-      const successCount = results.filter(result =>
-        result.status === 'fulfilled' && result.value.success
+      const successCount = results.filter(
+        result => result.status === 'fulfilled' && result.value.success
       ).length;
 
       const allSuccessful = successCount === this.targetNumbers.length;
       const anySuccessful = successCount > 0;
 
-      console.log(`SMS notifications sent: ${successCount}/${this.targetNumbers.length} successful`);
+      console.log(
+        `SMS notifications sent: ${successCount}/${this.targetNumbers.length} successful`
+      );
 
       return {
         success: anySuccessful,
-        messageId: allSuccessful ? 'all-sent' : `${successCount}-of-${this.targetNumbers.length}-sent`,
-        error: allSuccessful ? undefined : `Only ${successCount} of ${this.targetNumbers.length} messages sent`
+        messageId: allSuccessful
+          ? 'all-sent'
+          : `${successCount}-of-${this.targetNumbers.length}-sent`,
+        error: allSuccessful
+          ? undefined
+          : `Only ${successCount} of ${this.targetNumbers.length} messages sent`,
       };
     } catch (error) {
       console.error('Failed to send ticket sale SMS:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -133,17 +148,28 @@ class SMSService {
       return {
         success: true,
         messageId: result.sid,
-        retryCount
+        retryCount,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`SMS send attempt ${retryCount + 1} failed to ${phoneNumber}:`, errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error(
+        `SMS send attempt ${retryCount + 1} failed to ${phoneNumber}:`,
+        errorMessage
+      );
 
       // Retry logic
       if (retryCount < this.maxRetries) {
-        console.log(`Retrying SMS send to ${phoneNumber} in ${this.retryDelay}ms...`);
+        console.log(
+          `Retrying SMS send to ${phoneNumber} in ${this.retryDelay}ms...`
+        );
         await this.delay(this.retryDelay * (retryCount + 1)); // Exponential backoff
-        return this.sendWithRetry(message, sessionId, retryCount + 1, targetNumber);
+        return this.sendWithRetry(
+          message,
+          sessionId,
+          retryCount + 1,
+          targetNumber
+        );
       }
 
       // Log final failure for monitoring
@@ -151,13 +177,13 @@ class SMSService {
         sessionId,
         retryCount,
         error: errorMessage,
-        targetNumber: phoneNumber
+        targetNumber: phoneNumber,
       });
 
       return {
         success: false,
         error: errorMessage,
-        retryCount
+        retryCount,
       };
     }
   }
@@ -168,10 +194,16 @@ class SMSService {
   private formatTicketSaleMessage(data: TicketSaleData): string {
     const amount = (data.totalAmount / 100).toFixed(2);
     const ticketText = data.quantity === 1 ? 'ticket' : 'tickets';
-    const totalText = data.quantity === 1 ? `$${amount}` : `${data.quantity}x ${data.ticketType} tickets ($${amount})`;
+    const totalText =
+      data.quantity === 1
+        ? `$${amount}`
+        : `${data.quantity}x ${data.ticketType} tickets ($${amount})`;
 
     let remainingText = '';
-    if (data.gaTicketsRemaining !== undefined && data.vipTicketsRemaining !== undefined) {
+    if (
+      data.gaTicketsRemaining !== undefined &&
+      data.vipTicketsRemaining !== undefined
+    ) {
       remainingText = `\nRemaining: ${data.gaTicketsRemaining} GA, ${data.vipTicketsRemaining} VIP`;
     }
 
@@ -190,13 +222,13 @@ Customer: ${data.customerEmail}${remainingText}`;
    */
   private getWorkshopDateForCity(city: string): string {
     const workshopSchedule: Record<string, string> = {
-      'Dallas': 'January 25-26, 2026',
-      'Atlanta': 'February 22-23, 2026',
-      'Los Angeles': 'March 1-2, 2026',
-      'NYC': 'April 26-27, 2026',
+      Dallas: 'January 25-26, 2026',
+      Atlanta: 'February 22-23, 2026',
+      'Las Vegas': 'March 1-2, 2026',
+      NYC: 'April 26-27, 2026',
       'New York': 'April 26-27, 2026', // Alternative name for NYC
-      'Chicago': 'May 31-June 1, 2026',
-      'San Francisco': 'June 14-15, 2026'
+      Chicago: 'May 31-June 1, 2026',
+      'San Francisco': 'June 14-15, 2026',
     };
 
     return workshopSchedule[city] || '';
@@ -213,28 +245,36 @@ System: Ready ✅`;
 
     // Test all target numbers
     const results = await Promise.allSettled(
-      this.targetNumbers.map(number => this.sendWithRetry(testMessage, undefined, 0, number))
+      this.targetNumbers.map(number =>
+        this.sendWithRetry(testMessage, undefined, 0, number)
+      )
     );
 
-    const successCount = results.filter(result =>
-      result.status === 'fulfilled' && result.value.success
+    const successCount = results.filter(
+      result => result.status === 'fulfilled' && result.value.success
     ).length;
 
     return {
       success: successCount > 0,
       messageId: `test-${successCount}-of-${this.targetNumbers.length}`,
-      error: successCount === this.targetNumbers.length ? undefined : `Only ${successCount} test messages sent`
+      error:
+        successCount === this.targetNumbers.length
+          ? undefined
+          : `Only ${successCount} test messages sent`,
     };
   }
 
   /**
    * Send system alert SMS (for errors, etc.)
    */
-  async sendSystemAlert(message: string, severity: 'low' | 'medium' | 'high' = 'medium'): Promise<SMSDeliveryResult> {
+  async sendSystemAlert(
+    message: string,
+    severity: 'low' | 'medium' | 'high' = 'medium'
+  ): Promise<SMSDeliveryResult> {
     const alertEmoji = {
       low: '💙',
       medium: '⚠️',
-      high: '🚨'
+      high: '🚨',
     }[severity];
 
     const alertMessage = `${alertEmoji} 6FB SYSTEM ALERT
@@ -243,17 +283,22 @@ Time: ${new Date().toLocaleString()}`;
 
     // Send alerts to all target numbers
     const results = await Promise.allSettled(
-      this.targetNumbers.map(number => this.sendWithRetry(alertMessage, undefined, 0, number))
+      this.targetNumbers.map(number =>
+        this.sendWithRetry(alertMessage, undefined, 0, number)
+      )
     );
 
-    const successCount = results.filter(result =>
-      result.status === 'fulfilled' && result.value.success
+    const successCount = results.filter(
+      result => result.status === 'fulfilled' && result.value.success
     ).length;
 
     return {
       success: successCount > 0,
       messageId: `alert-${successCount}-of-${this.targetNumbers.length}`,
-      error: successCount === this.targetNumbers.length ? undefined : `Only ${successCount} alert messages sent`
+      error:
+        successCount === this.targetNumbers.length
+          ? undefined
+          : `Only ${successCount} alert messages sent`,
     };
   }
 
@@ -275,24 +320,30 @@ Time: ${new Date().toLocaleString()}`;
   getStatus() {
     return {
       configured: this.isConfigured(),
-      fromNumber: this.phoneNumber ? `${this.phoneNumber.slice(0, 6)}...` : 'Not set',
+      fromNumber: this.phoneNumber
+        ? `${this.phoneNumber.slice(0, 6)}...`
+        : 'Not set',
       toNumbers: this.targetNumbers.map(num => `${num.slice(0, 6)}...`),
       targetCount: this.targetNumbers.length,
       maxRetries: this.maxRetries,
-      retryDelay: this.retryDelay
+      retryDelay: this.retryDelay,
     };
   }
 
   /**
    * Send accountability check-in message
    */
-  async sendAccountabilityCheckIn(subscription: AccountabilitySubscription): Promise<SMSDeliveryResult> {
+  async sendAccountabilityCheckIn(
+    subscription: AccountabilitySubscription
+  ): Promise<SMSDeliveryResult> {
     try {
       if (!this.isConfigured()) {
-        console.log('SMS service not configured, would send accountability check-in');
+        console.log(
+          'SMS service not configured, would send accountability check-in'
+        );
         return {
           success: false,
-          error: 'SMS service not configured'
+          error: 'SMS service not configured',
         };
       }
 
@@ -311,10 +362,17 @@ How are you doing? Reply with a number 1-10 (1=struggling, 10=crushing it) and a
 
 Reply STOP to cancel these messages.`;
 
-      const result = await this.sendWithRetry(message, undefined, 0, subscription.phoneNumber);
+      const result = await this.sendWithRetry(
+        message,
+        undefined,
+        0,
+        subscription.phoneNumber
+      );
 
       if (result.success) {
-        console.log(`Accountability check-in sent to ${subscription.userId}: ${result.messageId}`);
+        console.log(
+          `Accountability check-in sent to ${subscription.userId}: ${result.messageId}`
+        );
       }
 
       return result;
@@ -322,7 +380,7 @@ Reply STOP to cancel these messages.`;
       console.error('Failed to send accountability check-in:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -338,7 +396,7 @@ Reply STOP to cancel these messages.`;
     const response: AccountabilityResponse = {
       date: new Date(),
       messageId,
-      response: messageBody.trim()
+      response: messageBody.trim(),
     };
 
     // Extract progress score if present (1-10)
@@ -372,7 +430,7 @@ Reply STOP to cancel these messages.`;
       if (!this.isConfigured()) {
         return {
           success: false,
-          error: 'SMS service not configured'
+          error: 'SMS service not configured',
         };
       }
 
@@ -394,7 +452,7 @@ Reply STOP to cancel these messages.`;
       console.error('Failed to send accountability confirmation:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -402,12 +460,15 @@ Reply STOP to cancel these messages.`;
   /**
    * Handle STOP request with confirmation
    */
-  async handleStopRequest(phoneNumber: string, userId: string): Promise<SMSDeliveryResult> {
+  async handleStopRequest(
+    phoneNumber: string,
+    userId: string
+  ): Promise<SMSDeliveryResult> {
     try {
       if (!this.isConfigured()) {
         return {
           success: false,
-          error: 'SMS service not configured'
+          error: 'SMS service not configured',
         };
       }
 
@@ -425,7 +486,7 @@ This will stop all future accountability check-ins.`;
       console.error('Failed to send stop confirmation:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -433,12 +494,14 @@ This will stop all future accountability check-ins.`;
   /**
    * Send cancellation confirmation
    */
-  async sendCancellationConfirmation(phoneNumber: string): Promise<SMSDeliveryResult> {
+  async sendCancellationConfirmation(
+    phoneNumber: string
+  ): Promise<SMSDeliveryResult> {
     try {
       if (!this.isConfigured()) {
         return {
           success: false,
-          error: 'SMS service not configured'
+          error: 'SMS service not configured',
         };
       }
 
@@ -455,7 +518,7 @@ Thanks for using 6FB! 🙏`;
       console.error('Failed to send cancellation confirmation:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

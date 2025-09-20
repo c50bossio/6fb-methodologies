@@ -1,24 +1,24 @@
 // Database-powered authentication for production
-import { sql } from '@vercel/postgres'
+import { sql } from '@vercel/postgres';
 
 export interface WorkbookUser {
-  email: string
-  password: string
-  firstName: string
-  lastName: string
-  ticketType: string
-  stripeSessionId: string
-  createdAt: string
-  businessType?: string
-  yearsExperience?: string
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  ticketType: string;
+  stripeSessionId: string;
+  createdAt: string;
+  businessType?: string;
+  yearsExperience?: string;
 }
 
 export interface StoredWorkbookUser extends WorkbookUser {
-  id: number
-  updatedAt: string
-  lastLogin: string | null
-  loginCount: number
-  isActive: boolean
+  id: number;
+  updatedAt: string;
+  lastLogin: string | null;
+  loginCount: number;
+  isActive: boolean;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface StoredWorkbookUser extends WorkbookUser {
  */
 export async function storeWorkbookUser(user: WorkbookUser): Promise<void> {
   try {
-    const normalizedEmail = user.email.toLowerCase().trim()
+    const normalizedEmail = user.email.toLowerCase().trim();
 
     await sql`
       INSERT INTO workbook_users (
@@ -48,72 +48,81 @@ export async function storeWorkbookUser(user: WorkbookUser): Promise<void> {
         business_type = EXCLUDED.business_type,
         years_experience = EXCLUDED.years_experience,
         updated_at = CURRENT_TIMESTAMP
-    `
+    `;
 
-    console.log(`📝 Stored workbook user in database: ${normalizedEmail}`)
+    console.log(`📝 Stored workbook user in database: ${normalizedEmail}`);
   } catch (error) {
-    console.error('Failed to store workbook user:', error)
-    throw new Error('Database storage failed')
+    console.error('Failed to store workbook user:', error);
+    throw new Error('Database storage failed');
   }
 }
 
 /**
  * Verify workbook password against database
  */
-export async function verifyWorkbookPassword(email: string, password: string): Promise<boolean> {
+export async function verifyWorkbookPassword(
+  email: string,
+  password: string
+): Promise<boolean> {
   try {
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = email.toLowerCase().trim();
 
     const result = await sql`
       SELECT password, is_active
       FROM workbook_users
       WHERE email = ${normalizedEmail}
-    `
+    `;
 
     if (result.rows.length === 0) {
-      console.warn(`🔍 Workbook user not found in database: ${normalizedEmail}`)
-      return false
+      console.warn(
+        `🔍 Workbook user not found in database: ${normalizedEmail}`
+      );
+      return false;
     }
 
-    const user = result.rows[0]
+    const user = result.rows[0];
 
     if (!user.is_active) {
-      console.warn(`🚫 Workbook user is deactivated: ${normalizedEmail}`)
-      return false
+      console.warn(`🚫 Workbook user is deactivated: ${normalizedEmail}`);
+      return false;
     }
 
-    const isValid = user.password === password.trim()
-    console.log(`🔐 Database password verification for ${normalizedEmail}: ${isValid ? 'SUCCESS' : 'FAILED'}`)
+    const isValid = user.password === password.trim();
+    console.log(
+      `🔐 Database password verification for ${normalizedEmail}: ${isValid ? 'SUCCESS' : 'FAILED'}`
+    );
 
     // Update login tracking if successful
     if (isValid) {
-      await updateLoginTracking(normalizedEmail)
+      await updateLoginTracking(normalizedEmail);
     }
 
-    return isValid
+    return isValid;
   } catch (error) {
-    console.error('Failed to verify password:', error)
-    return false
+    console.error('Failed to verify password:', error);
+    return false;
   }
 }
 
 /**
  * Get workbook user by email from database
  */
-export async function getWorkbookUser(email: string): Promise<StoredWorkbookUser | null> {
+export async function getWorkbookUser(
+  email: string
+): Promise<StoredWorkbookUser | null> {
   try {
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = email.toLowerCase().trim();
 
     const result = await sql`
       SELECT * FROM workbook_users
       WHERE email = ${normalizedEmail} AND is_active = true
-    `
+    `;
 
     if (result.rows.length === 0) {
-      return null
+      return null;
     }
 
-    const user = result.rows[0]
+    const user = result.rows[0];
     return {
       id: user.id,
       email: user.email,
@@ -128,11 +137,11 @@ export async function getWorkbookUser(email: string): Promise<StoredWorkbookUser
       updatedAt: user.updated_at,
       lastLogin: user.last_login,
       loginCount: user.login_count,
-      isActive: user.is_active
-    }
+      isActive: user.is_active,
+    };
   } catch (error) {
-    console.error('Failed to get workbook user:', error)
-    return null
+    console.error('Failed to get workbook user:', error);
+    return null;
   }
 }
 
@@ -147,9 +156,9 @@ async function updateLoginTracking(email: string): Promise<void> {
         last_login = CURRENT_TIMESTAMP,
         login_count = login_count + 1
       WHERE email = ${email}
-    `
+    `;
   } catch (error) {
-    console.error('Failed to update login tracking:', error)
+    console.error('Failed to update login tracking:', error);
     // Don't throw error - login should still succeed
   }
 }
@@ -168,10 +177,10 @@ export async function logUserAction(
 ): Promise<void> {
   try {
     // Get user ID if email provided
-    let userId = null
+    let userId = null;
     if (email) {
-      const user = await getWorkbookUser(email)
-      userId = user?.id || null
+      const user = await getWorkbookUser(email);
+      userId = user?.id || null;
     }
 
     await sql`
@@ -182,9 +191,9 @@ export async function logUserAction(
         ${userId}, ${action}, ${ipAddress}, ${userAgent}, ${success},
         ${errorMessage || null}, ${JSON.stringify(metadata || {})}
       )
-    `
+    `;
   } catch (error) {
-    console.error('Failed to log user action:', error)
+    console.error('Failed to log user action:', error);
     // Don't throw error - main operation should still succeed
   }
 }
@@ -194,7 +203,7 @@ export async function logUserAction(
  */
 export async function getUserStats(email: string): Promise<any> {
   try {
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = email.toLowerCase().trim();
 
     const result = await sql`
       SELECT
@@ -214,28 +223,31 @@ export async function getUserStats(email: string): Promise<any> {
       LEFT JOIN api_usage api ON u.id = api.user_id
       WHERE u.email = ${normalizedEmail} AND u.is_active = true
       GROUP BY u.id, u.first_name, u.last_name, u.ticket_type, u.created_at, u.last_login, u.login_count
-    `
+    `;
 
-    return result.rows[0] || null
+    return result.rows[0] || null;
   } catch (error) {
-    console.error('Failed to get user stats:', error)
-    return null
+    console.error('Failed to get user stats:', error);
+    return null;
   }
 }
 
 /**
  * Database health check
  */
-export async function checkDatabaseHealth(): Promise<{ healthy: boolean; error?: string }> {
+export async function checkDatabaseHealth(): Promise<{
+  healthy: boolean;
+  error?: string;
+}> {
   try {
-    await sql`SELECT 1 as health_check`
-    return { healthy: true }
+    await sql`SELECT 1 as health_check`;
+    return { healthy: true };
   } catch (error) {
-    console.error('Database health check failed:', error)
+    console.error('Database health check failed:', error);
     return {
       healthy: false,
-      error: error instanceof Error ? error.message : 'Unknown database error'
-    }
+      error: error instanceof Error ? error.message : 'Unknown database error',
+    };
   }
 }
 
@@ -249,17 +261,19 @@ export async function initializeDatabase(): Promise<void> {
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public' AND table_name = 'workbook_users'
-    `
+    `;
 
     if (result.rows.length === 0) {
-      console.log('🔧 Database tables not found. Please run the database schema script.')
-      console.log('Run: psql your_database < scripts/upgrade-to-database.sql')
-      throw new Error('Database tables not initialized')
+      console.log(
+        '🔧 Database tables not found. Please run the database schema script.'
+      );
+      console.log('Run: psql your_database < scripts/upgrade-to-database.sql');
+      throw new Error('Database tables not initialized');
     }
 
-    console.log('✅ Database tables verified')
+    console.log('✅ Database tables verified');
   } catch (error) {
-    console.error('Database initialization check failed:', error)
-    throw error
+    console.error('Database initialization check failed:', error);
+    throw error;
   }
 }

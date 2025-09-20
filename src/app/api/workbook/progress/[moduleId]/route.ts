@@ -1,27 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { extractToken, verifyToken, validateSession, hasPermission, WORKBOOK_PERMISSIONS } from '@/lib/workbook-auth'
-import db, { DatabaseError, ValidationError } from '@/lib/database'
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  extractToken,
+  verifyToken,
+  validateSession,
+  hasPermission,
+  WORKBOOK_PERMISSIONS,
+} from '@/lib/workbook-auth';
+import db, { DatabaseError, ValidationError } from '@/lib/database';
 
 async function authenticateRequest(request: NextRequest) {
-  const token = extractToken(request)
+  const token = extractToken(request);
   if (!token) {
-    return { error: 'Authentication token required', status: 401 }
+    return { error: 'Authentication token required', status: 401 };
   }
 
-  const session = verifyToken(token)
-  const validation = validateSession(session)
+  const session = verifyToken(token);
+  const validation = validateSession(session);
 
   if (!validation.isValid) {
-    return { error: validation.error || 'Invalid session', status: 401 }
+    return { error: validation.error || 'Invalid session', status: 401 };
   }
 
-  return { session: session! }
+  return { session: session! };
 }
 
 interface RouteParams {
   params: {
-    moduleId: string
-  }
+    moduleId: string;
+  };
 }
 
 // Workshop modules configuration
@@ -31,52 +37,64 @@ const WORKSHOP_MODULES = [
   { id: 'marketing', name: 'Marketing Strategies', order: 3 },
   { id: 'operations', name: 'Operations Excellence', order: 4 },
   { id: 'growth', name: 'Growth and Scaling', order: 5 },
-  { id: 'conclusion', name: 'Implementation and Next Steps', order: 6 }
-]
+  { id: 'conclusion', name: 'Implementation and Next Steps', order: 6 },
+];
 
 // GET /api/workbook/progress/[moduleId] - Get detailed progress for specific module
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateRequest(request)
+    const auth = await authenticateRequest(request);
     if ('error' in auth) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status })
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     if (!hasPermission(auth.session, WORKBOOK_PERMISSIONS.VIEW_CONTENT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
     }
 
-    const { moduleId } = params
+    const { moduleId } = params;
 
     if (!moduleId) {
-      return NextResponse.json({ error: 'Module ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Module ID is required' },
+        { status: 400 }
+      );
     }
 
     // Validate module ID
-    const validModule = WORKSHOP_MODULES.find(m => m.id === moduleId)
+    const validModule = WORKSHOP_MODULES.find(m => m.id === moduleId);
     if (!validModule) {
-      return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 });
     }
 
     // Get progress record
-    const progressData = await db.queryOne(`
+    const progressData = await db.queryOne(
+      `
       SELECT * FROM user_progress
       WHERE user_id = $1 AND module_id = $2
-    `, [auth.session.userId, moduleId])
+    `,
+      [auth.session.userId, moduleId]
+    );
 
     if (!progressData) {
       // Create default progress record if it doesn't exist
-      const newProgress = await db.queryOne(`
+      const newProgress = await db.queryOne(
+        `
         INSERT INTO user_progress (user_id, module_id, module_name, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *
-      `, [
-        auth.session.userId,
-        moduleId,
-        validModule.name,
-        new Date(),
-        new Date()
-      ])
+      `,
+        [
+          auth.session.userId,
+          moduleId,
+          validModule.name,
+          new Date(),
+          new Date(),
+        ]
+      );
 
       return NextResponse.json({
         success: true,
@@ -84,20 +102,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         module: validModule,
         sessions: [],
         notes: [],
-        transcriptions: []
-      })
+        transcriptions: [],
+      });
     }
 
     // Get related sessions for this module
-    const sessions = await db.query(`
+    const sessions = await db.query(
+      `
       SELECT id, title, status, started_at, ended_at, duration_seconds, total_chunks
       FROM workbook_sessions
       WHERE user_id = $1 AND workshop_module = $2
       ORDER BY created_at DESC
-    `, [auth.session.userId, moduleId])
+    `,
+      [auth.session.userId, moduleId]
+    );
 
     // Get notes related to this module (from sessions in this module)
-    const notes = await db.query(`
+    const notes = await db.query(
+      `
       SELECT sn.id, sn.title, sn.content, sn.type, sn.is_action_item,
              sn.action_item_completed, sn.importance, sn.created_at
       FROM session_notes sn
@@ -105,10 +127,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       WHERE ws.user_id = $1 AND ws.workshop_module = $2
       ORDER BY sn.created_at DESC
       LIMIT 20
-    `, [auth.session.userId, moduleId])
+    `,
+      [auth.session.userId, moduleId]
+    );
 
     // Get transcriptions for this module
-    const transcriptions = await db.query(`
+    const transcriptions = await db.query(
+      `
       SELECT t.id, t.text, t.status, t.cost_cents, t.completed_at,
              ar.duration_seconds
       FROM transcriptions t
@@ -117,16 +142,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       WHERE ws.user_id = $1 AND ws.workshop_module = $2
       ORDER BY t.completed_at DESC
       LIMIT 10
-    `, [auth.session.userId, moduleId])
+    `,
+      [auth.session.userId, moduleId]
+    );
 
     // Calculate additional statistics
     const totalCostCents = transcriptions
       .filter(t => t.status === 'completed')
-      .reduce((sum, t) => sum + (t.cost_cents || 0), 0)
+      .reduce((sum, t) => sum + (t.cost_cents || 0), 0);
 
     const totalTranscriptionTime = transcriptions
       .filter(t => t.status === 'completed')
-      .reduce((sum, t) => sum + (t.duration_seconds || 0), 0)
+      .reduce((sum, t) => sum + (t.duration_seconds || 0), 0);
 
     return NextResponse.json({
       success: true,
@@ -142,59 +169,75 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         total_cost_cents: totalCostCents,
         total_transcription_time_seconds: totalTranscriptionTime,
         action_items_count: notes.filter(n => n.is_action_item).length,
-        completed_action_items_count: notes.filter(n => n.is_action_item && n.action_item_completed).length
-      }
-    })
-
+        completed_action_items_count: notes.filter(
+          n => n.is_action_item && n.action_item_completed
+        ).length,
+      },
+    });
   } catch (error) {
-    console.error('Module progress GET error:', error)
-    return NextResponse.json({ error: 'Failed to fetch module progress' }, { status: 500 })
+    console.error('Module progress GET error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch module progress' },
+      { status: 500 }
+    );
   }
 }
 
 // PUT /api/workbook/progress/[moduleId] - Update progress for specific module
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateRequest(request)
+    const auth = await authenticateRequest(request);
     if ('error' in auth) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status })
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     if (!hasPermission(auth.session, WORKBOOK_PERMISSIONS.SAVE_PROGRESS)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
     }
 
-    const { moduleId } = params
-    const body = await request.json()
+    const { moduleId } = params;
+    const body = await request.json();
 
     if (!moduleId) {
-      return NextResponse.json({ error: 'Module ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Module ID is required' },
+        { status: 400 }
+      );
     }
 
     // Validate module ID
-    const validModule = WORKSHOP_MODULES.find(m => m.id === moduleId)
+    const validModule = WORKSHOP_MODULES.find(m => m.id === moduleId);
     if (!validModule) {
-      return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 });
     }
 
     const {
       progressPercentage,
       completed,
       timeSpentSeconds,
-      metadata = {}
-    } = body
+      metadata = {},
+    } = body;
 
     // Validation
-    if (progressPercentage !== undefined && (progressPercentage < 0 || progressPercentage > 100)) {
-      throw new ValidationError('Progress percentage must be between 0 and 100')
+    if (
+      progressPercentage !== undefined &&
+      (progressPercentage < 0 || progressPercentage > 100)
+    ) {
+      throw new ValidationError(
+        'Progress percentage must be between 0 and 100'
+      );
     }
 
     if (timeSpentSeconds !== undefined && timeSpentSeconds < 0) {
-      throw new ValidationError('Time spent cannot be negative')
+      throw new ValidationError('Time spent cannot be negative');
     }
 
     // Upsert progress record
-    const updatedProgress = await db.queryOne(`
+    const updatedProgress = await db.queryOne(
+      `
       INSERT INTO user_progress (
         user_id, module_id, module_name, progress_percentage,
         completed, completed_at, time_spent_seconds, last_accessed,
@@ -216,63 +259,74 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         END,
         updated_at = $11
       RETURNING *
-    `, [
-      auth.session.userId,
-      moduleId,
-      validModule.name,
-      progressPercentage,
-      completed,
-      completed ? new Date() : null,
-      timeSpentSeconds,
-      new Date(),
-      JSON.stringify(metadata),
-      new Date(),
-      new Date()
-    ])
+    `,
+      [
+        auth.session.userId,
+        moduleId,
+        validModule.name,
+        progressPercentage,
+        completed,
+        completed ? new Date() : null,
+        timeSpentSeconds,
+        new Date(),
+        JSON.stringify(metadata),
+        new Date(),
+        new Date(),
+      ]
+    );
 
     return NextResponse.json({
       success: true,
       progress: updatedProgress,
-      message: `Progress updated for module: ${validModule.name}`
-    })
-
+      message: `Progress updated for module: ${validModule.name}`,
+    });
   } catch (error) {
-    console.error('Module progress PUT error:', error)
+    console.error('Module progress PUT error:', error);
 
     if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ error: 'Failed to update module progress' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to update module progress' },
+      { status: 500 }
+    );
   }
 }
 
 // DELETE /api/workbook/progress/[moduleId] - Reset progress for specific module
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateRequest(request)
+    const auth = await authenticateRequest(request);
     if ('error' in auth) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status })
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     if (!hasPermission(auth.session, WORKBOOK_PERMISSIONS.SAVE_PROGRESS)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
     }
 
-    const { moduleId } = params
+    const { moduleId } = params;
 
     if (!moduleId) {
-      return NextResponse.json({ error: 'Module ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Module ID is required' },
+        { status: 400 }
+      );
     }
 
     // Validate module ID
-    const validModule = WORKSHOP_MODULES.find(m => m.id === moduleId)
+    const validModule = WORKSHOP_MODULES.find(m => m.id === moduleId);
     if (!validModule) {
-      return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 });
     }
 
     // Reset progress (set back to defaults)
-    const resetProgress = await db.queryOne(`
+    const resetProgress = await db.queryOne(
+      `
       UPDATE user_progress
       SET progress_percentage = 0,
           completed = false,
@@ -284,20 +338,27 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           updated_at = $1
       WHERE user_id = $2 AND module_id = $3
       RETURNING *
-    `, [new Date(), auth.session.userId, moduleId])
+    `,
+      [new Date(), auth.session.userId, moduleId]
+    );
 
     if (!resetProgress) {
-      return NextResponse.json({ error: 'Progress record not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Progress record not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       progress: resetProgress,
-      message: `Progress reset for module: ${validModule.name}`
-    })
-
+      message: `Progress reset for module: ${validModule.name}`,
+    });
   } catch (error) {
-    console.error('Module progress DELETE error:', error)
-    return NextResponse.json({ error: 'Failed to reset module progress' }, { status: 500 })
+    console.error('Module progress DELETE error:', error);
+    return NextResponse.json(
+      { error: 'Failed to reset module progress' },
+      { status: 500 }
+    );
   }
 }

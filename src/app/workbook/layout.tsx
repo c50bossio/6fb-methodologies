@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { WorkbookAuthProvider } from '@/components/WorkbookAuthProvider'
+import { WorkbookAuthProvider } from '@/components/WorkbookAuthProvider';
 
 export default function WorkbookLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <WorkbookAuthProvider>
-      {children}
-    </WorkbookAuthProvider>
-  )
+    <div suppressHydrationWarning>
+      <WorkbookAuthProvider>{children}</WorkbookAuthProvider>
+    </div>
+  );
 }

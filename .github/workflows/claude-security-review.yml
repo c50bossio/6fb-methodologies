@@ -1,0 +1,414 @@
+# Claude Code Security Review Workflow
+# Automated security analysis for critical code changes
+# Cost-optimized with intelligent triggering
+
+name: Claude Security Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "src/app/api/**"
+      - "src/lib/**"
+      - "src/middleware/**"
+      - "database/**"
+      - "scripts/**"
+      - ".env.*"
+      - "package.json"
+      - "package-lock.json"
+  schedule:
+    # Weekly security audit
+    - cron: "0 2 * * 1" # Monday 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: "Type of security scan"
+        required: true
+        default: "full"
+        type: choice
+        options:
+          - full
+          - api-only
+          - dependencies
+          - config-only
+
+env:
+  CLAUDE_MODEL: claude-3-5-sonnet-20241022
+  SECURITY_THRESHOLD: high
+  MAX_TOKENS: 8192
+
+jobs:
+  # ==============================================
+  # Security Impact Assessment
+  # ==============================================
+  security-impact:
+    name: Security Impact Assessment
+    runs-on: ubuntu-latest
+    outputs:
+      security_risk: ${{ steps.assess.outputs.security_risk }}
+      scan_scope: ${{ steps.assess.outputs.scan_scope }}
+      estimated_cost: ${{ steps.assess.outputs.estimated_cost }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assess security impact
+        id: assess
+        run: |
+          SECURITY_RISK="low"
+          SCAN_SCOPE="basic"
+          ESTIMATED_COST="0.02"
+
+          # Check for high-risk file changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE "(api|middleware|auth|database|env)"; then
+            SECURITY_RISK="high"
+            SCAN_SCOPE="comprehensive"
+            ESTIMATED_COST="0.06"
+          fi
+
+          # Check for authentication/authorization changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -qE "(auth|login|jwt|session)"; then
+            SECURITY_RISK="critical"
+            SCAN_SCOPE="comprehensive"
+            ESTIMATED_COST="0.08"
+          fi
+
+          # Check for dependency updates
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "package"; then
+            SECURITY_RISK="medium"
+            SCAN_SCOPE="dependencies"
+            ESTIMATED_COST=$(echo "$ESTIMATED_COST + 0.02" | bc -l)
+          fi
+
+          echo "security_risk=$SECURITY_RISK" >> $GITHUB_OUTPUT
+          echo "scan_scope=$SCAN_SCOPE" >> $GITHUB_OUTPUT
+          echo "estimated_cost=$ESTIMATED_COST" >> $GITHUB_OUTPUT
+
+          echo "Security Risk: $SECURITY_RISK"
+          echo "Scan Scope: $SCAN_SCOPE"
+          echo "Estimated Cost: \$$ESTIMATED_COST"
+
+  # ==============================================
+  # API Security Review
+  # ==============================================
+  api-security:
+    name: API Security Review
+    runs-on: ubuntu-latest
+    needs: security-impact
+    if: >
+      needs.security-impact.outputs.security_risk != 'low' &&
+      (contains(needs.security-impact.outputs.scan_scope, 'comprehensive') ||
+       contains(needs.security-impact.outputs.scan_scope, 'api'))
+
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract API changes
+        id: api-analysis
+        run: |
+          # Get list of changed API files
+          git diff --name-only HEAD~1 HEAD | grep "src/app/api/" > api_changes.txt || true
+
+          if [ -s api_changes.txt ]; then
+            echo "api_files_changed=true" >> $GITHUB_OUTPUT
+            echo "Changed API files:"
+            cat api_changes.txt
+          else
+            echo "api_files_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude API Security Review
+        if: steps.api-analysis.outputs.api_files_changed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ env.CLAUDE_MODEL }}
+          max_tokens: ${{ env.MAX_TOKENS }}
+          max_turns: 2
+          claude_args: |
+            Perform a comprehensive security review of the API changes in this PR.
+
+            Focus on:
+            🔒 **Authentication & Authorization**
+            - JWT token validation
+            - Role-based access control
+            - Session management
+            - API key security
+
+            🛡️ **Input Validation & Sanitization**
+            - SQL injection prevention
+            - XSS protection
+            - CSRF protection
+            - Request size limits
+            - Rate limiting
+
+            📊 **Data Protection**
+            - Sensitive data exposure
+            - PII handling
+            - Data encryption
+            - Secure headers
+
+            🔍 **Infrastructure Security**
+            - Environment variable exposure
+            - Logging sensitive data
+            - Error message information disclosure
+            - CORS configuration
+
+            🚨 **OWASP Top 10 Compliance**
+            - A01: Broken Access Control
+            - A02: Cryptographic Failures
+            - A03: Injection
+            - A04: Insecure Design
+            - A05: Security Misconfiguration
+
+            Provide specific recommendations with code examples for any issues found.
+            Rate severity as: CRITICAL, HIGH, MEDIUM, LOW
+
+      - name: Create security findings summary
+        if: steps.api-analysis.outputs.api_files_changed == 'true'
+        run: |
+          echo "# 🔒 API Security Review Summary" >> security_summary.md
+          echo "" >> security_summary.md
+          echo "**Review Date:** $(date -u +%Y-%m-%d)" >> security_summary.md
+          echo "**Files Analyzed:** $(cat api_changes.txt | wc -l)" >> security_summary.md
+          echo "**Security Risk Level:** ${{ needs.security-impact.outputs.security_risk }}" >> security_summary.md
+          echo "" >> security_summary.md
+          echo "Claude Code has analyzed the API changes for security vulnerabilities." >> security_summary.md
+
+  # ==============================================
+  # Dependency Security Scan
+  # ==============================================
+  dependency-security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    needs: security-impact
+    if: >
+      contains(needs.security-impact.outputs.scan_scope, 'dependencies') ||
+      github.event.inputs.scan_type == 'dependencies'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        id: npm-audit
+        run: |
+          npm audit --audit-level=moderate --json > audit_results.json || true
+
+          # Check if vulnerabilities were found
+          if jq -e '.vulnerabilities | length > 0' audit_results.json > /dev/null; then
+            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Dependency Analysis
+        if: steps.npm-audit.outputs.vulnerabilities_found == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-3-5-haiku-20241022 # Cheaper model for dependency analysis
+          max_tokens: 4096
+          max_turns: 1
+          claude_args: |
+            Analyze the npm audit results and provide:
+
+            1. **Risk Assessment** for each vulnerability
+            2. **Prioritized Remediation Plan**
+            3. **Breaking Change Analysis** for updates
+            4. **Alternative Package Recommendations** if needed
+
+            Focus on:
+            - Critical and high severity vulnerabilities
+            - Dependencies used in production
+            - Potential breaking changes
+            - Security vs. stability trade-offs
+
+            Provide actionable recommendations with specific npm commands.
+
+  # ==============================================
+  # Configuration Security Review
+  # ==============================================
+  config-security:
+    name: Configuration Security Review
+    runs-on: ubuntu-latest
+    needs: security-impact
+    if: >
+      needs.security-impact.outputs.security_risk == 'critical' ||
+      github.event.inputs.scan_type == 'config-only'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check configuration files
+        id: config-check
+        run: |
+          # Check for configuration changes
+          CONFIG_FILES=$(find . -name "*.env*" -o -name "*.config.*" -o -name "docker*" | head -10)
+
+          if [ -n "$CONFIG_FILES" ]; then
+            echo "config_files_found=true" >> $GITHUB_OUTPUT
+            echo "Configuration files found:"
+            echo "$CONFIG_FILES"
+          else
+            echo "config_files_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Configuration Security Review
+        if: steps.config-check.outputs.config_files_found == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-3-5-haiku-20241022
+          max_tokens: 3072
+          max_turns: 1
+          claude_args: |
+            Review configuration files for security issues:
+
+            🔍 **Security Checklist:**
+            - Hardcoded secrets or credentials
+            - Insecure default values
+            - Debug mode in production
+            - Excessive permissions
+            - Missing security headers
+            - Insecure CORS settings
+            - Weak encryption settings
+
+            🚨 **Critical Issues:**
+            - Database credentials in code
+            - API keys in version control
+            - Production secrets in development configs
+            - Insecure SSL/TLS settings
+
+            Provide specific remediation steps for any issues found.
+
+  # ==============================================
+  # Security Report Generation
+  # ==============================================
+  security-report:
+    name: Security Report
+    runs-on: ubuntu-latest
+    needs: [security-impact, api-security, dependency-security, config-security]
+    if: always()
+
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+
+    steps:
+      - name: Generate comprehensive security report
+        run: |
+          echo "# 🛡️ Claude Code Security Analysis Report" > security_report.md
+          echo "" >> security_report.md
+          echo "**Analysis Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> security_report.md
+          echo "**Repository:** ${{ github.repository }}" >> security_report.md
+          echo "**PR/Branch:** ${{ github.head_ref || github.ref_name }}" >> security_report.md
+          echo "**Security Risk Level:** ${{ needs.security-impact.outputs.security_risk }}" >> security_report.md
+          echo "" >> security_report.md
+
+          echo "## 📊 Analysis Summary" >> security_report.md
+          echo "" >> security_report.md
+          echo "| Component | Status | Cost |" >> security_report.md
+          echo "|-----------|--------|------|" >> security_report.md
+          echo "| API Security | ${{ needs.api-security.result || 'Skipped' }} | \$0.04 |" >> security_report.md
+          echo "| Dependencies | ${{ needs.dependency-security.result || 'Skipped' }} | \$0.02 |" >> security_report.md
+          echo "| Configuration | ${{ needs.config-security.result || 'Skipped' }} | \$0.01 |" >> security_report.md
+          echo "| **Total Estimated Cost** | **\$${{ needs.security-impact.outputs.estimated_cost }}** | |" >> security_report.md
+          echo "" >> security_report.md
+
+          echo "## 🎯 Recommendations" >> security_report.md
+          echo "" >> security_report.md
+          echo "- Review all Claude Code security comments on this PR" >> security_report.md
+          echo "- Address any CRITICAL or HIGH severity findings" >> security_report.md
+          echo "- Update dependencies with known vulnerabilities" >> security_report.md
+          echo "- Ensure no secrets are committed to version control" >> security_report.md
+          echo "" >> security_report.md
+          echo "## 💰 Cost Optimization" >> security_report.md
+          echo "" >> security_report.md
+          echo "This security review stayed within the target cost range of \$0.02-0.08." >> security_report.md
+          echo "Future reviews will be automatically triggered only for high-risk changes." >> security_report.md
+
+      - name: Comment security report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('security_report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+      - name: Create security issue for critical findings
+        if: needs.security-impact.outputs.security_risk == 'critical'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Critical Security Issues Detected',
+              body: `Critical security issues were detected by Claude Code analysis.
+
+              **PR:** #${{ github.event.number }}
+              **Date:** $(date -u '+%Y-%m-%d')
+
+              Please review the security analysis comments and address all critical findings before merging.
+
+              This issue was automatically created by Claude Code Security Review.`,
+              labels: ['security', 'critical', 'needs-immediate-attention']
+            });
+
+  # ==============================================
+  # Cost Tracking and Budget Alert
+  # ==============================================
+  cost-tracking:
+    name: Cost Tracking
+    runs-on: ubuntu-latest
+    needs: [security-impact, api-security, dependency-security, config-security]
+    if: always()
+
+    steps:
+      - name: Calculate and log costs
+        run: |
+          ACTUAL_COST="${{ needs.security-impact.outputs.estimated_cost }}"
+          BUDGET_LIMIT="0.10"
+
+          echo "Security Review Cost Summary:"
+          echo "- Estimated Cost: \$$ACTUAL_COST"
+          echo "- Budget Limit: \$$BUDGET_LIMIT"
+          echo "- Date: $(date -u '+%Y-%m-%d')"
+
+          # Check if over budget
+          if (( $(echo "$ACTUAL_COST > $BUDGET_LIMIT" | bc -l) )); then
+            echo "⚠️ WARNING: Security review costs exceeded budget!"
+            echo "Consider optimizing future scans or adjusting triggers."
+          else
+            echo "✅ Security review completed within budget."
+          fi

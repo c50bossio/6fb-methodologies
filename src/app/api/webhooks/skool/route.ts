@@ -1,40 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 import {
   addVerifiedSkoolMember,
   getAllVerifiedSkoolMembers,
   getVerifiedSkoolMemberCount,
   removeVerifiedSkoolMember,
   verifySkoolMember,
-  type SkoolMember
-} from '@/lib/skool-members'
+  type SkoolMember,
+} from '@/lib/skool-members';
 
 interface SkoolWebhookPayload {
-  firstName: string
-  lastName: string
-  email: string
-  transactionId: string
-  subscriptionDate: string
+  firstName: string;
+  lastName: string;
+  email: string;
+  transactionId: string;
+  subscriptionDate: string;
 }
 
 // Webhook endpoint to receive new paid member data from Skool via Zapier
 export async function POST(request: NextRequest) {
   try {
-    console.log('📨 Skool webhook received')
+    console.log('📨 Skool webhook received');
 
-    const payload: SkoolWebhookPayload = await request.json()
+    const payload: SkoolWebhookPayload = await request.json();
 
     // Validate required fields
-    const { firstName, lastName, email, transactionId, subscriptionDate } = payload
+    const { firstName, lastName, email, transactionId, subscriptionDate } =
+      payload;
 
     if (!email || !firstName || !lastName || !transactionId) {
-      console.error('❌ Missing required fields in Skool webhook:', payload)
+      console.error('❌ Missing required fields in Skool webhook:', payload);
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Create member record
     const member: SkoolMember = {
@@ -44,21 +45,24 @@ export async function POST(request: NextRequest) {
       transactionId,
       subscriptionDate,
       verifiedAt: new Date().toISOString(),
-      isActive: true
-    }
+      isActive: true,
+    };
 
     // Store verified member using shared service
-    addVerifiedSkoolMember(member)
+    addVerifiedSkoolMember(member);
 
     console.log('✅ Skool member verified and added:', {
       email: normalizedEmail,
       name: `${firstName} ${lastName}`,
       transactionId,
-      totalMembers: getVerifiedSkoolMemberCount()
-    })
+      totalMembers: getVerifiedSkoolMemberCount(),
+    });
 
     // Log for debugging
-    console.log('📊 Current verified Skool members:', getVerifiedSkoolMemberCount())
+    console.log(
+      '📊 Current verified Skool members:',
+      getVerifiedSkoolMemberCount()
+    );
 
     return NextResponse.json({
       success: true,
@@ -68,40 +72,39 @@ export async function POST(request: NextRequest) {
         name: `${firstName} ${lastName}`,
         membershipType: 'Skool-Member',
         isActive: true,
-        verifiedAt: member.verifiedAt
-      }
-    })
-
+        verifiedAt: member.verifiedAt,
+      },
+    });
   } catch (error) {
-    console.error('❌ Skool webhook error:', error)
+    console.error('❌ Skool webhook error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 // GET endpoint for testing and debugging
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url)
-    const email = url.searchParams.get('email')
+    const url = new URL(request.url);
+    const email = url.searchParams.get('email');
 
     if (email) {
       // Check specific member
-      const normalizedEmail = email.toLowerCase().trim()
-      const verification = verifySkoolMember(normalizedEmail)
+      const normalizedEmail = email.toLowerCase().trim();
+      const verification = verifySkoolMember(normalizedEmail);
 
       return NextResponse.json({
         email: normalizedEmail,
         isVerified: verification.isVerified,
         member: verification.member || null,
-        source: 'skool-webhook'
-      })
+        source: 'skool-webhook',
+      });
     }
 
     // Return all verified members (for debugging)
-    const membersList = getAllVerifiedSkoolMembers()
+    const membersList = getAllVerifiedSkoolMembers();
 
     return NextResponse.json({
       status: 'active',
@@ -111,44 +114,53 @@ export async function GET(request: NextRequest) {
         name: `${m.firstName} ${m.lastName}`,
         transactionId: m.transactionId,
         subscriptionDate: m.subscriptionDate,
-        verifiedAt: m.verifiedAt
+        verifiedAt: m.verifiedAt,
       })),
       endpoints: {
         POST: '/api/webhooks/skool - Receive new member data from Zapier',
-        'GET (with email)': '/api/webhooks/skool?email=test@example.com - Check specific member',
-        'GET (list all)': '/api/webhooks/skool - List all verified members'
-      }
-    })
-
+        'GET (with email)':
+          '/api/webhooks/skool?email=test@example.com - Check specific member',
+        'GET (list all)': '/api/webhooks/skool - List all verified members',
+      },
+    });
   } catch (error) {
-    console.error('❌ Skool webhook GET error:', error)
+    console.error('❌ Skool webhook GET error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 // PUT endpoint for manual member management (admin use)
 export async function PUT(request: NextRequest) {
   try {
-    const { email, action = 'add', firstName, lastName, transactionId } = await request.json()
+    const {
+      email,
+      action = 'add',
+      firstName,
+      lastName,
+      transactionId,
+    } = await request.json();
 
     if (!email) {
       return NextResponse.json(
         { success: false, error: 'Email address required' },
         { status: 400 }
-      )
+      );
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = email.toLowerCase().trim();
 
     if (action === 'add') {
       if (!firstName || !lastName) {
         return NextResponse.json(
-          { success: false, error: 'firstName and lastName required for adding members' },
+          {
+            success: false,
+            error: 'firstName and lastName required for adding members',
+          },
           { status: 400 }
-        )
+        );
       }
 
       const member: SkoolMember = {
@@ -158,34 +170,34 @@ export async function PUT(request: NextRequest) {
         transactionId: transactionId || `manual_${Date.now()}`,
         subscriptionDate: new Date().toISOString().split('T')[0],
         verifiedAt: new Date().toISOString(),
-        isActive: true
-      }
+        isActive: true,
+      };
 
-      addVerifiedSkoolMember(member)
+      addVerifiedSkoolMember(member);
 
       console.log('✅ Manual Skool member added:', {
         email: normalizedEmail,
-        name: `${firstName} ${lastName}`
-      })
-
+        name: `${firstName} ${lastName}`,
+      });
     } else if (action === 'remove') {
-      const existed = removeVerifiedSkoolMember(normalizedEmail)
+      const existed = removeVerifiedSkoolMember(normalizedEmail);
 
-      console.log(`🗑️ Manual Skool member removal: ${normalizedEmail} - ${existed ? 'removed' : 'not found'}`)
+      console.log(
+        `🗑️ Manual Skool member removal: ${normalizedEmail} - ${existed ? 'removed' : 'not found'}`
+      );
     }
 
     return NextResponse.json({
       success: true,
       message: `Member ${action === 'add' ? 'added' : 'removed'} successfully`,
-      totalMembers: getVerifiedSkoolMemberCount()
-    })
-
+      totalMembers: getVerifiedSkoolMemberCount(),
+    });
   } catch (error) {
-    console.error('❌ Skool webhook PUT error:', error)
+    console.error('❌ Skool webhook PUT error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 

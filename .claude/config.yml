@@ -1,0 +1,160 @@
+# Claude Code Configuration for 6FB Methodologies
+# Cost-optimized settings for GitHub Actions integration
+# Target: $0.02-0.04 per session
+
+# Model Configuration
+model: claude-3-5-sonnet-20241022 # Best price-to-performance ratio
+fallback_model: claude-3-5-haiku-20241022 # Cost-optimized fallback
+
+# Cost Control Settings
+max_tokens: 8192
+max_turns: 3
+timeout_minutes: 10
+cost_optimize: true
+
+# GitHub Actions Integration
+github:
+  auto_respond: true
+  mention_trigger: "@claude"
+  pr_auto_review: true
+  issue_auto_triage: true
+
+  # Cost optimization for different trigger types
+  cost_limits:
+    mention_response: 0.04 # @claude mentions
+    auto_review: 0.02 # Automatic PR reviews
+    security_scan: 0.06 # Security analysis
+    performance_analysis: 0.03 # Performance reviews
+    issue_triage: 0.01 # Issue labeling
+
+# Project-specific Context
+project:
+  name: "6FB Methodologies Workshop"
+  framework: "Next.js 14"
+  deployment: "Vercel"
+  tech_stack:
+    - "TypeScript"
+    - "React"
+    - "Tailwind CSS"
+    - "PostgreSQL"
+    - "Supabase"
+    - "Stripe"
+    - "Twilio"
+
+# Analysis Focus Areas
+analysis:
+  security:
+    enabled: true
+    priority: high
+    focus_areas:
+      - "API security"
+      - "Authentication"
+      - "Input validation"
+      - "Data protection"
+      - "Environment variables"
+
+  performance:
+    enabled: true
+    priority: medium
+    focus_areas:
+      - "Bundle size"
+      - "React performance"
+      - "Database queries"
+      - "Core Web Vitals"
+      - "Vercel optimization"
+
+  architecture:
+    enabled: true
+    priority: medium
+    focus_areas:
+      - "Component design"
+      - "API design"
+      - "State management"
+      - "Code organization"
+
+# Smart Triggering Rules
+triggers:
+  pr_review:
+    # Only trigger expensive analysis for significant changes
+    min_files: 1
+    max_files: 20 # Skip if too many files to control costs
+    file_patterns:
+      high_priority:
+        - "src/app/api/**"
+        - "src/lib/**"
+        - "src/middleware/**"
+        - "*.env*"
+      medium_priority:
+        - "src/components/**"
+        - "src/app/**"
+      low_priority:
+        - "*.md"
+        - "docs/**"
+
+  security_scan:
+    trigger_patterns:
+      - "src/app/api/**"
+      - "src/lib/auth/**"
+      - "src/middleware/**"
+      - "database/**"
+      - "package.json"
+      - "*.env*"
+
+  performance_analysis:
+    trigger_patterns:
+      - "src/components/**"
+      - "src/app/**"
+      - "package.json"
+      - "next.config.mjs"
+      - "tailwind.config.js"
+
+# Response Formatting
+formatting:
+  github_comments: true
+  include_code_examples: true
+  max_comment_length: 2000
+  use_markdown: true
+  include_cost_summary: true
+
+# Context Management
+context:
+  include_file_tree: false # Reduce token usage
+  max_file_size: 10000 # Skip large files
+  exclude_patterns:
+    - "node_modules/**"
+    - ".next/**"
+    - "build/**"
+    - "dist/**"
+    - "*.log"
+    - "*.map"
+
+# Memory and Learning
+memory:
+  remember_decisions: true
+  project_patterns: true
+  cost_tracking: true
+  usage_analytics: true
+
+# Reporting
+reporting:
+  daily_summary: false
+  weekly_summary: true
+  cost_alerts: true
+  performance_tracking: true
+
+# Integration Settings
+integrations:
+  vercel:
+    enabled: true
+    deployment_analysis: true
+    performance_monitoring: true
+    cost_optimization: true
+
+  sentry:
+    enabled: true
+    error_analysis: false # Disabled to control costs
+
+  github:
+    issue_creation: true
+    pr_comments: true
+    security_alerts: true

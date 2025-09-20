@@ -28,7 +28,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MemberVerificationRequest'
+              $ref: "#/components/schemas/MemberVerificationRequest"
             examples:
               valid_member:
                 summary: Valid member email
@@ -39,12 +39,12 @@ paths:
                 value:
                   email: "notamember@example.com"
       responses:
-        '200':
+        "200":
           description: Member verification completed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MemberVerificationResponse'
+                $ref: "#/components/schemas/MemberVerificationResponse"
               examples:
                 member_found:
                   summary: Active member found
@@ -61,12 +61,12 @@ paths:
                     success: true
                     isMember: false
                     member: null
-        '400':
+        "400":
           description: Invalid request parameters
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               examples:
                 invalid_email:
                   summary: Invalid email format
@@ -78,21 +78,21 @@ paths:
                   value:
                     success: false
                     error: "Email parameter is required"
-        '429':
+        "429":
           description: Rate limit exceeded
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               example:
                 success: false
                 error: "Rate limit exceeded. Please try again later."
-        '500':
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               example:
                 success: false
                 error: "Internal server error"
@@ -126,7 +126,7 @@ components:
           description: Whether the email belongs to an active 6FB member
           example: true
         member:
-          $ref: '#/components/schemas/MemberDetails'
+          $ref: "#/components/schemas/MemberDetails"
 
     MemberDetails:
       type: object

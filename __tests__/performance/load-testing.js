@@ -24,7 +24,7 @@ const generateTestUser = (index) => ({
   ticketType: index % 3 === 0 ? 'VIP' : 'GA',
   quantity: (index % 3) + 1, // 1-3 tickets
   isSixFBMember: index % 5 === 0, // 20% are members
-  cityId: ['dallas-jan-2026', 'atlanta-feb-2026', 'la-mar-2026'][index % 3],
+  cityId: ['dallas-jan-2026', 'atlanta-feb-2026', 'vegas-mar-2026'][index % 3],
 })
 
 // Performance metrics collector

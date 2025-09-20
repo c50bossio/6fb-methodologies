@@ -5,7 +5,7 @@ import { jest } from '@jest/globals'
 let mockInventoryState = {
   'dallas-jan-2026': { ga: 35, vip: 15 },
   'atlanta-feb-2026': { ga: 35, vip: 15 },
-  'la-mar-2026': { ga: 35, vip: 15 },
+  'vegas-mar-2026': { ga: 35, vip: 15 },
   'sf-jun-2026': { ga: 35, vip: 15 },
   'chicago-may-2026': { ga: 35, vip: 15 },
   'nyc-apr-2026': { ga: 35, vip: 15 },
@@ -15,7 +15,7 @@ let mockInventoryState = {
 let mockHiddenInventory = {
   'dallas-jan-2026': { ga: 10, vip: 0 },
   'atlanta-feb-2026': { ga: 15, vip: 0 },
-  'la-mar-2026': { ga: 15, vip: 0 },
+  'vegas-mar-2026': { ga: 15, vip: 0 },
   'sf-jun-2026': { ga: 10, vip: 0 },
   'chicago-may-2026': { ga: 15, vip: 0 },
   'nyc-apr-2026': { ga: 15, vip: 0 },
@@ -214,7 +214,7 @@ export const resetMockInventory = () => {
   mockInventoryState = {
     'dallas-jan-2026': { ga: 35, vip: 15 },
     'atlanta-feb-2026': { ga: 35, vip: 15 },
-    'la-mar-2026': { ga: 35, vip: 15 },
+    'vegas-mar-2026': { ga: 35, vip: 15 },
     'sf-jun-2026': { ga: 35, vip: 15 },
     'chicago-may-2026': { ga: 35, vip: 15 },
     'nyc-apr-2026': { ga: 35, vip: 15 },
@@ -223,7 +223,7 @@ export const resetMockInventory = () => {
   mockHiddenInventory = {
     'dallas-jan-2026': { ga: 10, vip: 0 },
     'atlanta-feb-2026': { ga: 15, vip: 0 },
-    'la-mar-2026': { ga: 15, vip: 0 },
+    'vegas-mar-2026': { ga: 15, vip: 0 },
     'sf-jun-2026': { ga: 10, vip: 0 },
     'chicago-may-2026': { ga: 15, vip: 0 },
     'nyc-apr-2026': { ga: 15, vip: 0 },

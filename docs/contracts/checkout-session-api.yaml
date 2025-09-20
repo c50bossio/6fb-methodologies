@@ -28,7 +28,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CheckoutSessionRequest'
+              $ref: "#/components/schemas/CheckoutSessionRequest"
             examples:
               ga_member:
                 summary: GA ticket for 6FB member
@@ -61,12 +61,12 @@ paths:
                     businessType: "enterprise"
                     yearsExperience: "more-than-10"
       responses:
-        '200':
+        "200":
           description: Checkout session created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckoutSessionResponse'
+                $ref: "#/components/schemas/CheckoutSessionResponse"
               examples:
                 ga_member_discount:
                   summary: GA ticket with member discount
@@ -92,12 +92,12 @@ paths:
                       discountAmount: 0
                       discountPercentage: 0
                       discountReason: ""
-        '400':
+        "400":
           description: Invalid request parameters
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               examples:
                 invalid_ticket_type:
                   summary: Invalid ticket type
@@ -114,12 +114,12 @@ paths:
                   value:
                     success: false
                     error: "Valid customer email is required"
-        '500':
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               examples:
                 stripe_error:
                   summary: Stripe API error
@@ -149,12 +149,12 @@ paths:
             type: string
             example: "cs_test_1234567890"
       responses:
-        '200':
+        "200":
           description: Session details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SessionDetailsResponse'
+                $ref: "#/components/schemas/SessionDetailsResponse"
               example:
                 success: true
                 session:
@@ -169,21 +169,21 @@ paths:
                     isSixFBMember: "true"
                     firstName: "John"
                     lastName: "Smith"
-        '400':
+        "400":
           description: Invalid or missing session ID
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               example:
                 success: false
                 error: "Session ID is required"
-        '500':
+        "500":
           description: Failed to retrieve session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               example:
                 success: false
                 error: "Failed to retrieve session"
@@ -227,7 +227,7 @@ components:
           description: Whether customer is a verified 6FB member
           example: true
         registrationData:
-          $ref: '#/components/schemas/RegistrationData'
+          $ref: "#/components/schemas/RegistrationData"
 
     RegistrationData:
       type: object
@@ -306,7 +306,7 @@ components:
           description: URL to redirect user to Stripe checkout
           example: "https://checkout.stripe.com/c/pay/cs_test_1234567890"
         pricing:
-          $ref: '#/components/schemas/PricingDetails'
+          $ref: "#/components/schemas/PricingDetails"
 
     PricingDetails:
       type: object
@@ -349,7 +349,7 @@ components:
           description: Whether the session details were retrieved successfully
           example: true
         session:
-          $ref: '#/components/schemas/SessionDetails'
+          $ref: "#/components/schemas/SessionDetails"
 
     SessionDetails:
       type: object

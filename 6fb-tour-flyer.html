@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6FB Methodologies Tour - Transform Your Barbering Business</title>
+    <meta name="description" content="Join the 6FB Methodologies Tour across 6 cities. Transform your barbering business with proven systems from expert coaches Dre, Nate, and Bossio.">
+    <meta property="og:title" content="6FB Methodologies Tour - Transform Your Barbering Business">
+    <meta property="og:description" content="2,000+ Barbers Trained • 95% Report Increased Revenue • $2.3M+ Additional Revenue Generated">
+    <meta property="og:image" content="https://6fbmethodologies.com/og-image.jpg">
+    <meta property="og:url" content="https://6fbmethodologies.com">
+
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #f8f9fa;
+            background: #1a1a1a;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                font-size: 12pt;
+                line-height: 1.4;
+            }
+            .flyer-container {
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0.5in !important;
+                box-shadow: none !important;
+            }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        /* Container */
+        .flyer-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 20px;
+            background: #242424;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            min-height: 11in;
+            border: 1px solid #343a40;
+        }
+
+        /* Colors */
+        .text-green { color: #00c851; }
+        .bg-green { background-color: #00c851; }
+        .bg-green-light { background-color: rgba(0, 200, 81, 0.1); }
+        .border-green { border-color: #00c851; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            background-image: url('/images/workshop-hero.jpg');
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: overlay;
+            color: white;
+            padding: 40px 20px;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(16,185,129,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+            background: linear-gradient(45deg, #00c851, #00a63f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00c851;
+            margin-bottom: 5px;
+        }
+
+        /* Tour Schedule */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .cities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .city-card {
+            background: #2a2a2a;
+            border: 2px solid #343a40;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .city-card:hover {
+            border-color: #00c851;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 200, 81, 0.2);
+        }
+
+        .city-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8f9fa;
+            margin-bottom: 5px;
+        }
+
+        .city-dates {
+            font-size: 16px;
+            color: #00c851;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .city-year {
+            font-size: 14px;
+            color: #e9ecef;
+        }
+
+        /* Coaches Section */
+        .coaches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .coach-card {
+            background: #2a2a2a;
+            border: 2px solid #343a40;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .coach-card:hover {
+            border-color: #00c851;
+            box-shadow: 0 5px 15px rgba(0, 200, 81, 0.1);
+        }
+
+        .coach-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            border: 3px solid #00c851;
+            overflow: hidden;
+            background: #343a40;
+        }
+
+        .coach-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .coach-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f8f9fa;
+            margin-bottom: 5px;
+        }
+
+        .coach-expertise {
+            font-size: 14px;
+            color: #00c851;
+            font-weight: 600;
+        }
+
+        /* What You'll Learn */
+        .learning-content {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #343a40;
+        }
+
+        .learning-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .learning-day {
+            background: #242424;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #00c851;
+            border: 1px solid #343a40;
+        }
+
+        .day-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f8f9fa;
+            margin-bottom: 10px;
+        }
+
+        .day-content {
+            font-size: 14px;
+            color: #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .topics-list {
+            list-style: none;
+        }
+
+        .topics-list li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 20px;
+            font-size: 14px;
+            color: #e9ecef;
+        }
+
+        .topics-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00c851;
+            font-weight: bold;
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .pricing-card {
+            background: #2a2a2a;
+            border: 2px solid #343a40;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card.popular {
+            border-color: #00c851;
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0, 200, 81, 0.2);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00c851;
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pricing-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f8f9fa;
+            margin-bottom: 10px;
+        }
+
+        .pricing-amount {
+            font-size: 36px;
+            font-weight: 900;
+            color: #00c851;
+            margin-bottom: 15px;
+        }
+
+        .pricing-description {
+            font-size: 14px;
+            color: #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .features-list {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 25px;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            position: relative;
+            padding-left: 25px;
+            font-size: 14px;
+            color: #e9ecef;
+        }
+
+        .features-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00c851;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Testimonials */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .testimonial-card {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #00c851;
+            border: 1px solid #343a40;
+        }
+
+        .testimonial-text {
+            font-size: 14px;
+            font-style: italic;
+            color: #e9ecef;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .testimonial-author {
+            font-size: 12px;
+            font-weight: 600;
+            color: #f8f9fa;
+        }
+
+        .testimonial-result {
+            font-size: 12px;
+            color: #00c851;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        /* Call to Action */
+        .cta-section {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .cta-subtitle {
+            font-size: 16px;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+
+        .cta-website {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00c851;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border: 2px solid #10B981;
+            border-radius: 10px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00c851;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .contact-info {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .flyer-container { padding: 15px; }
+            .main-title { font-size: 36px; }
+            .tagline { font-size: 16px; }
+            .stats-row { gap: 15px; }
+            .cities-grid { grid-template-columns: 1fr; }
+            .coaches-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .learning-grid { grid-template-columns: 1fr; }
+            .testimonials-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .main-title { font-size: 28px; }
+            .section-title { font-size: 22px; }
+            .city-name { font-size: 18px; }
+            .pricing-amount { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="flyer-container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                    <img src="/images/6fb-logo-new.png" alt="6FB Logo" style="height: 60px; width: auto;">
+                </div>
+                <h1 class="main-title">6FB METHODOLOGIES TOUR</h1>
+                <p class="tagline">Transform Your Barbering Business with Proven 6FB Methodologies</p>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-number">2,000+</span>
+                        Barbers Trained
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">95%</span>
+                        Report Increased Revenue
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">$2.3M+</span>
+                        Additional Revenue Generated
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">4.9/5</span>
+                        Average Rating
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tour Schedule Section -->
+        <section class="section">
+            <h2 class="section-title">2026 Tour Schedule - 6 Cities, 2 Intensive Days Each</h2>
+            <div class="cities-grid">
+                <div class="city-card">
+                    <h3 class="city-name">Dallas</h3>
+                    <p class="city-dates">January 25-26</p>
+                    <p class="city-year">2026</p>
+                </div>
+                <div class="city-card">
+                    <h3 class="city-name">Atlanta</h3>
+                    <p class="city-dates">February 22-23</p>
+                    <p class="city-year">2026</p>
+                </div>
+                <div class="city-card">
+                    <h3 class="city-name">Las Vegas</h3>
+                    <p class="city-dates">March 1-2</p>
+                    <p class="city-year">2026</p>
+                </div>
+                <div class="city-card">
+                    <h3 class="city-name">New York City</h3>
+                    <p class="city-dates">April 26-27</p>
+                    <p class="city-year">2026</p>
+                </div>
+                <div class="city-card">
+                    <h3 class="city-name">Chicago</h3>
+                    <p class="city-dates">May 31 - June 1</p>
+                    <p class="city-year">2026</p>
+                </div>
+                <div class="city-card">
+                    <h3 class="city-name">San Francisco</h3>
+                    <p class="city-dates">June 14-15</p>
+                    <p class="city-year">2026</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expert Coaches Section -->
+        <section class="section">
+            <h2 class="section-title">Meet Your Expert Coaches</h2>
+            <div class="coaches-grid">
+                <div class="coach-card">
+                    <div class="coach-avatar">
+                        <img src="/images/dre-profile.jpg" alt="Dre - Enterprise Systems & Leadership">
+                    </div>
+                    <h3 class="coach-name">Dre</h3>
+                    <p class="coach-expertise">Enterprise Systems & Leadership</p>
+                </div>
+                <div class="coach-card">
+                    <div class="coach-avatar">
+                        <img src="/images/nate-profile.jpg" alt="Nate - Systems & Marketing Expert">
+                    </div>
+                    <h3 class="coach-name">Nate</h3>
+                    <p class="coach-expertise">Systems & Marketing Expert</p>
+                </div>
+                <div class="coach-card">
+                    <div class="coach-avatar">
+                        <img src="/images/bossio-profile.jpg" alt="Bossio - Marketing & Wealth Building">
+                    </div>
+                    <h3 class="coach-name">Bossio</h3>
+                    <p class="coach-expertise">Marketing & Wealth Building</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- What You'll Learn Section -->
+        <section class="section">
+            <h2 class="section-title">What You'll Learn</h2>
+            <div class="learning-content">
+                <div class="learning-grid">
+                    <div class="learning-day">
+                        <h3 class="day-title">Day 1: Complete Methodology Training</h3>
+                        <p class="day-content">Dive deep into proven 6FB systems and strategies</p>
+                        <ul class="topics-list">
+                            <li>Enterprise business systems</li>
+                            <li>Client retention strategies</li>
+                            <li>Revenue optimization</li>
+                            <li>Marketing fundamentals</li>
+                        </ul>
+                    </div>
+                    <div class="learning-day">
+                        <h3 class="day-title">Day 2: Roundtables & Action Planning</h3>
+                        <p class="day-content">Transform knowledge into actionable business plans</p>
+                        <ul class="topics-list">
+                            <li>Paid advertising mastery</li>
+                            <li>Wealth building strategies</li>
+                            <li>KPI tracking systems</li>
+                            <li>Implementation roadmap</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section class="section">
+            <h2 class="section-title">Choose Your Experience</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3 class="pricing-title">General Admission</h3>
+                    <div class="pricing-amount">$1,000</div>
+                    <p class="pricing-description">Complete workshop access with all core content</p>
+                    <ul class="features-list">
+                        <li>Day 1: Complete methodology training</li>
+                        <li>Day 2: Roundtables & action planning</li>
+                        <li>Workbook & materials</li>
+                        <li>Certificate of completion</li>
+                        <li>Networking opportunities</li>
+                        <li>Follow-up resources</li>
+                    </ul>
+                </div>
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <h3 class="pricing-title">VIP Experience</h3>
+                    <div class="pricing-amount">$1,500</div>
+                    <p class="pricing-description">Everything in GA plus exclusive VIP perks</p>
+                    <ul class="features-list">
+                        <li>Everything in General Admission</li>
+                        <li>VIP private dinner with coaches</li>
+                        <li>Priority seating</li>
+                        <li>Extended Q&A access</li>
+                        <li>Exclusive VIP networking</li>
+                        <li>Premium welcome package</li>
+                        <li>Direct coach contact opportunity</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Success Stories Section -->
+        <section class="section">
+            <h2 class="section-title">Success Stories</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"The 6FB methodologies completely transformed my business. In 90 days, I went from struggling to stay afloat to having a waiting list."</p>
+                    <p class="testimonial-author">Marcus Rodriguez, Miami</p>
+                    <p class="testimonial-result">From $3K/month to $12K/month</p>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"Bossio's investment strategies opened my eyes to building real wealth. My portfolio is now my biggest income source."</p>
+                    <p class="testimonial-author">Jamal Washington, Atlanta</p>
+                    <p class="testimonial-result">Built $50K investment portfolio</p>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"Dre's enterprise systems saved my sanity. I used to work 80-hour weeks. Now I work 30 hours and my locations run themselves."</p>
+                    <p class="testimonial-author">David Chen, Enterprise Owner</p>
+                    <p class="testimonial-result">80 hours/week to 30 hours/week</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Section -->
+        <section class="cta-section">
+            <h2 class="cta-title">Ready to Transform Your Business?</h2>
+            <p class="cta-subtitle">Join thousands of barbers who have revolutionized their businesses with 6FB methodologies</p>
+            <div class="cta-website">6FBMETHODOLOGIES.COM</div>
+            <div class="qr-placeholder">
+                QR CODE<br>
+                SCAN TO<br>
+                REGISTER
+            </div>
+            <div class="contact-info">
+                <p>Questions? Contact us for more information</p>
+                <p>6FB Member Discount: 20% off with verification</p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

@@ -5,28 +5,31 @@
  * to prevent overselling and ensure accurate availability checks.
  */
 
-import { validateInventoryForCheckout, getPublicAvailableSpots } from './inventory'
-import type { CitySelection, TicketType } from '@/types'
+import {
+  validateInventoryForCheckout,
+  getPublicAvailableSpots,
+} from './inventory';
+import type { CitySelection, TicketType } from '@/types';
 
 export interface CheckoutValidationResult {
-  valid: boolean
-  errors: string[]
-  warnings: string[]
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
   inventory: {
-    requested: number
-    available: number
-    tier: 'ga' | 'vip'
-    cityId: string
-  }
+    requested: number;
+    available: number;
+    tier: 'ga' | 'vip';
+    cityId: string;
+  };
   suggestions?: {
-    alternativeTiers?: { tier: 'ga' | 'vip'; available: number }[]
-    alternativeCities?: { cityId: string; available: number }[]
-  }
+    alternativeTiers?: { tier: 'ga' | 'vip'; available: number }[];
+    alternativeCities?: { cityId: string; available: number }[];
+  };
 }
 
 export interface CheckoutValidationOptions {
-  includeSuggestions?: boolean
-  strictValidation?: boolean
+  includeSuggestions?: boolean;
+  strictValidation?: boolean;
 }
 
 /**
@@ -36,25 +39,25 @@ export async function validateCheckout(
   citySelection: CitySelection,
   options: CheckoutValidationOptions = {}
 ): Promise<CheckoutValidationResult> {
-  const errors: string[] = []
-  const warnings: string[] = []
-  const { includeSuggestions = false, strictValidation = true } = options
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const { includeSuggestions = false, strictValidation = true } = options;
 
   try {
-    const { cityId, ticketType, quantity } = citySelection
-    const tier = ticketType.toLowerCase() as 'ga' | 'vip'
+    const { cityId, ticketType, quantity } = citySelection;
+    const tier = ticketType.toLowerCase() as 'ga' | 'vip';
 
     // Basic validation
     if (!cityId) {
-      errors.push('City selection is required')
+      errors.push('City selection is required');
     }
 
     if (!ticketType || !['GA', 'VIP'].includes(ticketType)) {
-      errors.push('Valid ticket type is required (GA or VIP)')
+      errors.push('Valid ticket type is required (GA or VIP)');
     }
 
     if (!quantity || quantity < 1 || quantity > 10) {
-      errors.push('Quantity must be between 1 and 10')
+      errors.push('Quantity must be between 1 and 10');
     }
 
     // Return early if basic validation fails
@@ -67,13 +70,17 @@ export async function validateCheckout(
           requested: quantity,
           available: 0,
           tier,
-          cityId
-        }
-      }
+          cityId,
+        },
+      };
     }
 
     // Inventory validation
-    const inventoryValidation = await validateInventoryForCheckout(cityId, tier, quantity)
+    const inventoryValidation = await validateInventoryForCheckout(
+      cityId,
+      tier,
+      quantity
+    );
 
     const result: CheckoutValidationResult = {
       valid: inventoryValidation.valid,
@@ -83,37 +90,40 @@ export async function validateCheckout(
         requested: quantity,
         available: inventoryValidation.available,
         tier,
-        cityId
-      }
-    }
+        cityId,
+      },
+    };
 
     if (!inventoryValidation.valid) {
-      errors.push(inventoryValidation.error || 'Insufficient inventory available')
+      errors.push(
+        inventoryValidation.error || 'Insufficient inventory available'
+      );
 
       // Add suggestions if requested
       if (includeSuggestions) {
-        result.suggestions = await generateSuggestions(cityId, tier, quantity)
+        result.suggestions = await generateSuggestions(cityId, tier, quantity);
       }
     }
 
     // Warnings for low inventory
     if (inventoryValidation.valid && inventoryValidation.available <= 5) {
-      warnings.push(`Only ${inventoryValidation.available} ${tier.toUpperCase()} tickets remaining!`)
+      warnings.push(
+        `Only ${inventoryValidation.available} ${tier.toUpperCase()} tickets remaining!`
+      );
     }
 
     // Strict validation checks
     if (strictValidation) {
-      await performStrictValidation(citySelection, errors, warnings)
+      await performStrictValidation(citySelection, errors, warnings);
     }
 
-    result.errors = errors
-    result.warnings = warnings
-    result.valid = errors.length === 0
+    result.errors = errors;
+    result.warnings = warnings;
+    result.valid = errors.length === 0;
 
-    return result
-
+    return result;
   } catch (error) {
-    console.error('Error validating checkout:', error)
+    console.error('Error validating checkout:', error);
     return {
       valid: false,
       errors: ['Validation service temporarily unavailable'],
@@ -122,9 +132,9 @@ export async function validateCheckout(
         requested: citySelection.quantity,
         available: 0,
         tier: citySelection.ticketType.toLowerCase() as 'ga' | 'vip',
-        cityId: citySelection.cityId
-      }
-    }
+        cityId: citySelection.cityId,
+      },
+    };
   }
 }
 
@@ -135,34 +145,34 @@ export async function validateBulkCheckout(
   selections: CitySelection[],
   options: CheckoutValidationOptions = {}
 ): Promise<{
-  valid: boolean
-  results: CheckoutValidationResult[]
+  valid: boolean;
+  results: CheckoutValidationResult[];
   summary: {
-    totalValid: number
-    totalInvalid: number
-    totalErrors: number
-    totalWarnings: number
-  }
+    totalValid: number;
+    totalInvalid: number;
+    totalErrors: number;
+    totalWarnings: number;
+  };
 }> {
-  const results: CheckoutValidationResult[] = []
+  const results: CheckoutValidationResult[] = [];
 
   for (const selection of selections) {
-    const result = await validateCheckout(selection, options)
-    results.push(result)
+    const result = await validateCheckout(selection, options);
+    results.push(result);
   }
 
   const summary = {
     totalValid: results.filter(r => r.valid).length,
     totalInvalid: results.filter(r => !r.valid).length,
     totalErrors: results.reduce((sum, r) => sum + r.errors.length, 0),
-    totalWarnings: results.reduce((sum, r) => sum + r.warnings.length, 0)
-  }
+    totalWarnings: results.reduce((sum, r) => sum + r.warnings.length, 0),
+  };
 
   return {
     valid: summary.totalInvalid === 0,
     results,
-    summary
-  }
+    summary,
+  };
 }
 
 /**
@@ -173,27 +183,28 @@ export async function quickAvailabilityCheck(
   tier: 'ga' | 'vip',
   quantity: number = 1
 ): Promise<{
-  available: boolean
-  spots: number
-  message: string
+  available: boolean;
+  spots: number;
+  message: string;
 }> {
   try {
-    const available = await getPublicAvailableSpots(cityId, tier)
+    const available = await getPublicAvailableSpots(cityId, tier);
 
     return {
       available: available >= quantity,
       spots: available,
-      message: available >= quantity
-        ? `${available} ${tier.toUpperCase()} tickets available`
-        : `Only ${available} ${tier.toUpperCase()} tickets available (${quantity} requested)`
-    }
+      message:
+        available >= quantity
+          ? `${available} ${tier.toUpperCase()} tickets available`
+          : `Only ${available} ${tier.toUpperCase()} tickets available (${quantity} requested)`,
+    };
   } catch (error) {
-    console.error('Error in quick availability check:', error)
+    console.error('Error in quick availability check:', error);
     return {
       available: false,
       spots: 0,
-      message: 'Unable to check availability'
-    }
+      message: 'Unable to check availability',
+    };
   }
 }
 
@@ -205,58 +216,63 @@ async function generateSuggestions(
   tier: 'ga' | 'vip',
   quantity: number
 ): Promise<{
-  alternativeTiers?: { tier: 'ga' | 'vip'; available: number }[]
-  alternativeCities?: { cityId: string; available: number }[]
+  alternativeTiers?: { tier: 'ga' | 'vip'; available: number }[];
+  alternativeCities?: { cityId: string; available: number }[];
 }> {
-  const suggestions: any = {}
+  const suggestions: any = {};
 
   try {
     // Check alternative tier in same city
-    const alternateTier = tier === 'ga' ? 'vip' : 'ga'
-    const alternateAvailable = await getPublicAvailableSpots(cityId, alternateTier)
+    const alternateTier = tier === 'ga' ? 'vip' : 'ga';
+    const alternateAvailable = await getPublicAvailableSpots(
+      cityId,
+      alternateTier
+    );
 
     if (alternateAvailable >= quantity) {
-      suggestions.alternativeTiers = [{
-        tier: alternateTier,
-        available: alternateAvailable
-      }]
+      suggestions.alternativeTiers = [
+        {
+          tier: alternateTier,
+          available: alternateAvailable,
+        },
+      ];
     }
 
     // Check same tier in other cities (simplified - would need city list)
     const alternativeCities = [
       'dallas-jan-2026',
       'atlanta-feb-2026',
-      'la-mar-2026',
+      'vegas-mar-2026',
       'sf-jun-2026',
       'chicago-may-2026',
-      'nyc-apr-2026'
-    ].filter(id => id !== cityId)
+      'nyc-apr-2026',
+    ].filter(id => id !== cityId);
 
-    const cityAlternatives = []
-    for (const altCityId of alternativeCities.slice(0, 3)) { // Check top 3 alternatives
+    const cityAlternatives = [];
+    for (const altCityId of alternativeCities.slice(0, 3)) {
+      // Check top 3 alternatives
       try {
-        const available = await getPublicAvailableSpots(altCityId, tier)
+        const available = await getPublicAvailableSpots(altCityId, tier);
         if (available >= quantity) {
           cityAlternatives.push({
             cityId: altCityId,
-            available
-          })
+            available,
+          });
         }
       } catch (error) {
         // Skip this city if error
-        continue
+        continue;
       }
     }
 
     if (cityAlternatives.length > 0) {
-      suggestions.alternativeCities = cityAlternatives
+      suggestions.alternativeCities = cityAlternatives;
     }
-
   } catch (error) {
-    console.error('Error generating suggestions:', error)
+    console.error('Error generating suggestions:', error);
   }
 
-  return suggestions
+  return suggestions;
 }
 
 /**
@@ -269,7 +285,9 @@ async function performStrictValidation(
 ): Promise<void> {
   // Check for suspicious patterns
   if (citySelection.quantity > 5) {
-    warnings.push('Large quantity order detected - may require additional verification')
+    warnings.push(
+      'Large quantity order detected - may require additional verification'
+    );
   }
 
   // Rate limiting could be checked here
@@ -288,24 +306,28 @@ export async function reserveInventory(
   reservationId: string,
   timeoutMinutes: number = 10
 ): Promise<{
-  success: boolean
-  reservationId: string
-  expiresAt: Date
-  error?: string
+  success: boolean;
+  reservationId: string;
+  expiresAt: Date;
+  error?: string;
 }> {
   // This would implement temporary inventory holds during checkout process
   // to prevent race conditions between validation and payment completion
 
   try {
     // Validate availability first
-    const validation = await validateInventoryForCheckout(cityId, tier, quantity)
+    const validation = await validateInventoryForCheckout(
+      cityId,
+      tier,
+      quantity
+    );
     if (!validation.valid) {
       return {
         success: false,
         reservationId,
         expiresAt: new Date(),
-        error: validation.error
-      }
+        error: validation.error,
+      };
     }
 
     // In a real implementation, this would:
@@ -314,30 +336,34 @@ export async function reserveInventory(
     // 3. Set expiration timer
     // 4. Clean up expired reservations
 
-    const expiresAt = new Date(Date.now() + timeoutMinutes * 60 * 1000)
+    const expiresAt = new Date(Date.now() + timeoutMinutes * 60 * 1000);
 
-    console.log('inventory_reserved', {
-      cityId,
-      tier,
-      quantity,
-      reservationId,
-      expiresAt: expiresAt.toISOString()
-    }, 'inventory', 'low')
+    console.log(
+      'inventory_reserved',
+      {
+        cityId,
+        tier,
+        quantity,
+        reservationId,
+        expiresAt: expiresAt.toISOString(),
+      },
+      'inventory',
+      'low'
+    );
 
     return {
       success: true,
       reservationId,
-      expiresAt
-    }
-
+      expiresAt,
+    };
   } catch (error) {
-    console.error('Error reserving inventory:', error)
+    console.error('Error reserving inventory:', error);
     return {
       success: false,
       reservationId,
       expiresAt: new Date(),
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
@@ -353,18 +379,22 @@ export async function releaseInventoryReservation(
     // 2. Add the reserved quantity back to available inventory
     // 3. Delete the reservation record
 
-    console.log('inventory_reservation_released', {
-      reservationId,
-      timestamp: new Date().toISOString()
-    }, 'inventory', 'low')
+    console.log(
+      'inventory_reservation_released',
+      {
+        reservationId,
+        timestamp: new Date().toISOString(),
+      },
+      'inventory',
+      'low'
+    );
 
-    return { success: true }
-
+    return { success: true };
   } catch (error) {
-    console.error('Error releasing inventory reservation:', error)
+    console.error('Error releasing inventory reservation:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }

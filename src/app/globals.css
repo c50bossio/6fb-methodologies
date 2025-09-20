@@ -1,3 +1,5 @@
+@import '../styles/critical.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,13 +12,13 @@
     --text-primary: #f8f9fa;
     --text-secondary: #e9ecef;
     --text-muted: #6c757d;
-    --tomb45-green: #00C851;
+    --tomb45-green: #00c851;
     --tomb45-green-hover: #00a63f;
     --border-primary: #343a40;
   }
 
   * {
-    @apply border-border-primary;
+    border-color: var(--border-primary);
   }
 
   /* Mobile optimizations for workbook */
@@ -60,7 +62,9 @@
 
   body {
     @apply bg-background-primary text-text-primary;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
   }
 
   /* Custom scrollbar for dark mode */
@@ -206,11 +210,19 @@
 
   /* Gradient backgrounds */
   .gradient-radial {
-    background: radial-gradient(circle at center, rgba(0, 200, 81, 0.1) 0%, transparent 70%);
+    background: radial-gradient(
+      circle at center,
+      rgba(0, 200, 81, 0.1) 0%,
+      transparent 70%
+    );
   }
 
   .gradient-linear {
-    background: linear-gradient(135deg, rgba(0, 200, 81, 0.1) 0%, transparent 50%);
+    background: linear-gradient(
+      135deg,
+      rgba(0, 200, 81, 0.1) 0%,
+      transparent 50%
+    );
   }
 
   /* Banner overlay effects */
@@ -296,7 +308,8 @@
   }
 
   @keyframes pulse-green {
-    0%, 100% {
+    0%,
+    100% {
       box-shadow: 0 0 20px rgba(0, 200, 81, 0.3);
     }
     50% {
@@ -319,14 +332,20 @@
 
   /* Dark mode specific utilities */
   .dark-shadow {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 2px 4px -1px rgba(0, 0, 0, 0.15);
   }
 
   .dark-shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.3),
+      0 4px 6px -2px rgba(0, 0, 0, 0.15);
   }
 
   .dark-shadow-xl {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.15);
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.3),
+      0 10px 10px -5px rgba(0, 0, 0, 0.15);
   }
 }

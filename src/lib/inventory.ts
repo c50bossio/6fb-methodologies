@@ -11,157 +11,175 @@
  */
 
 export interface InventoryStatus {
-  cityId: string
+  cityId: string;
   publicLimits: {
-    ga: number
-    vip: number
-  }
+    ga: number;
+    vip: number;
+  };
   actualLimits: {
-    ga: number
-    vip: number
-  }
+    ga: number;
+    vip: number;
+  };
   sold: {
-    ga: number
-    vip: number
-  }
+    ga: number;
+    vip: number;
+  };
   publicAvailable: {
-    ga: number
-    vip: number
-  }
+    ga: number;
+    vip: number;
+  };
   actualAvailable: {
-    ga: number
-    vip: number
-  }
-  isPublicSoldOut: boolean
-  isActualSoldOut: boolean
-  lastUpdated: Date
+    ga: number;
+    vip: number;
+  };
+  isPublicSoldOut: boolean;
+  isActualSoldOut: boolean;
+  lastUpdated: Date;
 }
 
 export interface InventoryTransaction {
-  id: string
-  cityId: string
-  tier: 'ga' | 'vip'
-  quantity: number
-  operation: 'decrement' | 'expand' | 'reset'
-  timestamp: Date
+  id: string;
+  cityId: string;
+  tier: 'ga' | 'vip';
+  quantity: number;
+  operation: 'decrement' | 'expand' | 'reset';
+  timestamp: Date;
   metadata?: {
-    paymentIntentId?: string
-    sessionId?: string
-    adminUserId?: string
-    reason?: string
-  }
+    paymentIntentId?: string;
+    sessionId?: string;
+    adminUserId?: string;
+    reason?: string;
+  };
 }
 
 export interface InventoryExpansion {
-  cityId: string
-  tier: 'ga' | 'vip'
-  additionalSpots: number
-  reason: string
-  authorizedBy: string
-  timestamp: Date
+  cityId: string;
+  tier: 'ga' | 'vip';
+  additionalSpots: number;
+  reason: string;
+  authorizedBy: string;
+  timestamp: Date;
 }
 
 // Public limits as defined in requirements
 const PUBLIC_LIMITS = {
   ga: 35,
-  vip: 15
-} as const
+  vip: 15,
+} as const;
 
 // In-memory inventory store (would be replaced with database in production)
 class InventoryStore {
-  private inventory = new Map<string, {
-    actualLimits: { ga: number; vip: number }
-    sold: { ga: number; vip: number }
-    transactions: InventoryTransaction[]
-    expansions: InventoryExpansion[]
-  }>()
+  private inventory = new Map<
+    string,
+    {
+      actualLimits: { ga: number; vip: number };
+      sold: { ga: number; vip: number };
+      transactions: InventoryTransaction[];
+      expansions: InventoryExpansion[];
+    }
+  >();
 
-  private locks = new Map<string, Promise<void>>()
+  private locks = new Map<string, Promise<void>>();
 
   constructor() {
     // Initialize with default cities from cities.ts
-    this.initializeDefaultCities()
+    this.initializeDefaultCities();
   }
 
   private initializeDefaultCities() {
     const defaultCities = [
       'dallas-jan-2026',
       'atlanta-feb-2026',
-      'la-mar-2026',
+      'vegas-mar-2026',
       'sf-jun-2026',
       'chicago-may-2026',
-      'nyc-apr-2026'
-    ]
+      'nyc-apr-2026',
+    ];
 
     defaultCities.forEach(cityId => {
       this.inventory.set(cityId, {
         actualLimits: { ga: PUBLIC_LIMITS.ga, vip: PUBLIC_LIMITS.vip },
         sold: { ga: 0, vip: 0 },
         transactions: [],
-        expansions: []
-      })
-    })
+        expansions: [],
+      });
+    });
   }
 
   // Atomic operation wrapper to prevent race conditions
-  async withLock<T>(cityId: string, operation: () => T | Promise<T>): Promise<T> {
-    const lockKey = `${cityId}_lock`
+  async withLock<T>(
+    cityId: string,
+    operation: () => T | Promise<T>
+  ): Promise<T> {
+    const lockKey = `${cityId}_lock`;
 
     // Wait for existing lock to complete
     if (this.locks.has(lockKey)) {
-      await this.locks.get(lockKey)
+      await this.locks.get(lockKey);
     }
 
     // Create new lock
     const lockPromise = (async () => {
       try {
-        return await operation()
+        return await operation();
       } finally {
-        this.locks.delete(lockKey)
+        this.locks.delete(lockKey);
       }
-    })()
+    })();
 
-    this.locks.set(lockKey, lockPromise.then(() => {}))
-    return lockPromise
+    this.locks.set(
+      lockKey,
+      lockPromise.then(() => {})
+    );
+    return lockPromise;
   }
 
   async getCityInventory(cityId: string): Promise<{
-    actualLimits: { ga: number; vip: number }
-    sold: { ga: number; vip: number }
-    transactions: InventoryTransaction[]
-    expansions: InventoryExpansion[]
+    actualLimits: { ga: number; vip: number };
+    sold: { ga: number; vip: number };
+    transactions: InventoryTransaction[];
+    expansions: InventoryExpansion[];
   } | null> {
-    return this.inventory.get(cityId) || null
+    return this.inventory.get(cityId) || null;
   }
 
-  async setCityInventory(cityId: string, data: {
-    actualLimits: { ga: number; vip: number }
-    sold: { ga: number; vip: number }
-    transactions: InventoryTransaction[]
-    expansions: InventoryExpansion[]
-  }): Promise<void> {
-    this.inventory.set(cityId, data)
+  async setCityInventory(
+    cityId: string,
+    data: {
+      actualLimits: { ga: number; vip: number };
+      sold: { ga: number; vip: number };
+      transactions: InventoryTransaction[];
+      expansions: InventoryExpansion[];
+    }
+  ): Promise<void> {
+    this.inventory.set(cityId, data);
   }
 
-  async addTransaction(cityId: string, transaction: InventoryTransaction): Promise<void> {
-    const data = await this.getCityInventory(cityId)
+  async addTransaction(
+    cityId: string,
+    transaction: InventoryTransaction
+  ): Promise<void> {
+    const data = await this.getCityInventory(cityId);
     if (data) {
-      data.transactions.push(transaction)
-      await this.setCityInventory(cityId, data)
+      data.transactions.push(transaction);
+      await this.setCityInventory(cityId, data);
     }
   }
 
-  async addExpansion(cityId: string, expansion: InventoryExpansion): Promise<void> {
-    const data = await this.getCityInventory(cityId)
+  async addExpansion(
+    cityId: string,
+    expansion: InventoryExpansion
+  ): Promise<void> {
+    const data = await this.getCityInventory(cityId);
     if (data) {
-      data.expansions.push(expansion)
-      await this.setCityInventory(cityId, data)
+      data.expansions.push(expansion);
+      await this.setCityInventory(cityId, data);
     }
   }
 }
 
 // Global inventory store instance
-const inventoryStore = new InventoryStore()
+const inventoryStore = new InventoryStore();
 
 /**
  * Get public available spots (max 35 GA, 15 VIP)
@@ -172,20 +190,20 @@ export async function getPublicAvailableSpots(
   tier: 'ga' | 'vip'
 ): Promise<number> {
   try {
-    const inventory = await inventoryStore.getCityInventory(cityId)
+    const inventory = await inventoryStore.getCityInventory(cityId);
     if (!inventory) {
-      console.warn(`City ${cityId} not found in inventory`)
-      return 0
+      console.warn(`City ${cityId} not found in inventory`);
+      return 0;
     }
 
-    const publicLimit = PUBLIC_LIMITS[tier]
-    const sold = inventory.sold[tier]
-    const available = Math.max(0, publicLimit - sold)
+    const publicLimit = PUBLIC_LIMITS[tier];
+    const sold = inventory.sold[tier];
+    const available = Math.max(0, publicLimit - sold);
 
-    return available
+    return available;
   } catch (error) {
-    console.error(`Error getting public spots for ${cityId}:${tier}:`, error)
-    return 0
+    console.error(`Error getting public spots for ${cityId}:${tier}:`, error);
+    return 0;
   }
 }
 
@@ -198,20 +216,20 @@ export async function getActualAvailableSpots(
   tier: 'ga' | 'vip'
 ): Promise<number> {
   try {
-    const inventory = await inventoryStore.getCityInventory(cityId)
+    const inventory = await inventoryStore.getCityInventory(cityId);
     if (!inventory) {
-      console.warn(`City ${cityId} not found in inventory`)
-      return 0
+      console.warn(`City ${cityId} not found in inventory`);
+      return 0;
     }
 
-    const actualLimit = inventory.actualLimits[tier]
-    const sold = inventory.sold[tier]
-    const available = Math.max(0, actualLimit - sold)
+    const actualLimit = inventory.actualLimits[tier];
+    const sold = inventory.sold[tier];
+    const available = Math.max(0, actualLimit - sold);
 
-    return available
+    return available;
   } catch (error) {
-    console.error(`Error getting actual spots for ${cityId}:${tier}:`, error)
-    return 0
+    console.error(`Error getting actual spots for ${cityId}:${tier}:`, error);
+    return 0;
   }
 }
 
@@ -224,31 +242,31 @@ export async function decrementInventory(
   tier: 'ga' | 'vip',
   quantity: number,
   metadata?: {
-    paymentIntentId?: string
-    sessionId?: string
+    paymentIntentId?: string;
+    sessionId?: string;
   }
 ): Promise<{ success: boolean; error?: string; availableAfter?: number }> {
   return inventoryStore.withLock(cityId, async () => {
     try {
-      const inventory = await inventoryStore.getCityInventory(cityId)
+      const inventory = await inventoryStore.getCityInventory(cityId);
       if (!inventory) {
-        return { success: false, error: `City ${cityId} not found` }
+        return { success: false, error: `City ${cityId} not found` };
       }
 
-      const currentSold = inventory.sold[tier]
-      const actualLimit = inventory.actualLimits[tier]
-      const availableBefore = actualLimit - currentSold
+      const currentSold = inventory.sold[tier];
+      const actualLimit = inventory.actualLimits[tier];
+      const availableBefore = actualLimit - currentSold;
 
       // Check if we have enough inventory
       if (availableBefore < quantity) {
         return {
           success: false,
-          error: `Insufficient inventory. Available: ${availableBefore}, Requested: ${quantity}`
-        }
+          error: `Insufficient inventory. Available: ${availableBefore}, Requested: ${quantity}`,
+        };
       }
 
       // Update sold count
-      inventory.sold[tier] = currentSold + quantity
+      inventory.sold[tier] = currentSold + quantity;
 
       // Create transaction record
       const transaction: InventoryTransaction = {
@@ -258,29 +276,33 @@ export async function decrementInventory(
         quantity,
         operation: 'decrement',
         timestamp: new Date(),
-        metadata
-      }
+        metadata,
+      };
 
-      await inventoryStore.addTransaction(cityId, transaction)
-      await inventoryStore.setCityInventory(cityId, inventory)
+      await inventoryStore.addTransaction(cityId, transaction);
+      await inventoryStore.setCityInventory(cityId, inventory);
 
-      const availableAfter = actualLimit - inventory.sold[tier]
+      const availableAfter = actualLimit - inventory.sold[tier];
 
-      console.log(`Inventory decremented: ${cityId}:${tier} -${quantity} = ${availableAfter} remaining`)
+      console.log(
+        `Inventory decremented: ${cityId}:${tier} -${quantity} = ${availableAfter} remaining`
+      );
 
       return {
         success: true,
-        availableAfter
-      }
-
+        availableAfter,
+      };
     } catch (error) {
-      console.error(`Error decrementing inventory for ${cityId}:${tier}:`, error)
+      console.error(
+        `Error decrementing inventory for ${cityId}:${tier}:`,
+        error
+      );
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  })
+  });
 }
 
 /**
@@ -298,21 +320,24 @@ export async function expandInventory(
     try {
       // Validation
       if (additionalSpots <= 0) {
-        return { success: false, error: 'Additional spots must be positive' }
+        return { success: false, error: 'Additional spots must be positive' };
       }
 
       if (!authorizedBy) {
-        return { success: false, error: 'Authorization required for inventory expansion' }
+        return {
+          success: false,
+          error: 'Authorization required for inventory expansion',
+        };
       }
 
-      const inventory = await inventoryStore.getCityInventory(cityId)
+      const inventory = await inventoryStore.getCityInventory(cityId);
       if (!inventory) {
-        return { success: false, error: `City ${cityId} not found` }
+        return { success: false, error: `City ${cityId} not found` };
       }
 
       // Update actual limits (public limits remain unchanged)
-      const oldLimit = inventory.actualLimits[tier]
-      inventory.actualLimits[tier] = oldLimit + additionalSpots
+      const oldLimit = inventory.actualLimits[tier];
+      inventory.actualLimits[tier] = oldLimit + additionalSpots;
 
       // Create expansion record
       const expansion: InventoryExpansion = {
@@ -321,8 +346,8 @@ export async function expandInventory(
         additionalSpots,
         reason,
         authorizedBy,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      };
 
       // Create transaction record
       const transaction: InventoryTransaction = {
@@ -334,39 +359,42 @@ export async function expandInventory(
         timestamp: new Date(),
         metadata: {
           adminUserId: authorizedBy,
-          reason
-        }
-      }
+          reason,
+        },
+      };
 
-      await inventoryStore.addExpansion(cityId, expansion)
-      await inventoryStore.addTransaction(cityId, transaction)
-      await inventoryStore.setCityInventory(cityId, inventory)
+      await inventoryStore.addExpansion(cityId, expansion);
+      await inventoryStore.addTransaction(cityId, transaction);
+      await inventoryStore.setCityInventory(cityId, inventory);
 
-      console.log(`Inventory expanded: ${cityId}:${tier} +${additionalSpots} = ${inventory.actualLimits[tier]} total`)
+      console.log(
+        `Inventory expanded: ${cityId}:${tier} +${additionalSpots} = ${inventory.actualLimits[tier]} total`
+      );
 
       return {
         success: true,
-        newLimit: inventory.actualLimits[tier]
-      }
-
+        newLimit: inventory.actualLimits[tier],
+      };
     } catch (error) {
-      console.error(`Error expanding inventory for ${cityId}:${tier}:`, error)
+      console.error(`Error expanding inventory for ${cityId}:${tier}:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  })
+  });
 }
 
 /**
  * Get comprehensive inventory status for monitoring
  */
-export async function checkInventoryStatus(cityId: string): Promise<InventoryStatus | null> {
+export async function checkInventoryStatus(
+  cityId: string
+): Promise<InventoryStatus | null> {
   try {
-    const inventory = await inventoryStore.getCityInventory(cityId)
+    const inventory = await inventoryStore.getCityInventory(cityId);
     if (!inventory) {
-      return null
+      return null;
     }
 
     const status: InventoryStatus = {
@@ -376,27 +404,25 @@ export async function checkInventoryStatus(cityId: string): Promise<InventorySta
       sold: { ...inventory.sold },
       publicAvailable: {
         ga: Math.max(0, PUBLIC_LIMITS.ga - inventory.sold.ga),
-        vip: Math.max(0, PUBLIC_LIMITS.vip - inventory.sold.vip)
+        vip: Math.max(0, PUBLIC_LIMITS.vip - inventory.sold.vip),
       },
       actualAvailable: {
         ga: Math.max(0, inventory.actualLimits.ga - inventory.sold.ga),
-        vip: Math.max(0, inventory.actualLimits.vip - inventory.sold.vip)
+        vip: Math.max(0, inventory.actualLimits.vip - inventory.sold.vip),
       },
-      isPublicSoldOut: (
-        (PUBLIC_LIMITS.ga - inventory.sold.ga <= 0) &&
-        (PUBLIC_LIMITS.vip - inventory.sold.vip <= 0)
-      ),
-      isActualSoldOut: (
-        (inventory.actualLimits.ga - inventory.sold.ga <= 0) &&
-        (inventory.actualLimits.vip - inventory.sold.vip <= 0)
-      ),
-      lastUpdated: new Date()
-    }
+      isPublicSoldOut:
+        PUBLIC_LIMITS.ga - inventory.sold.ga <= 0 &&
+        PUBLIC_LIMITS.vip - inventory.sold.vip <= 0,
+      isActualSoldOut:
+        inventory.actualLimits.ga - inventory.sold.ga <= 0 &&
+        inventory.actualLimits.vip - inventory.sold.vip <= 0,
+      lastUpdated: new Date(),
+    };
 
-    return status
+    return status;
   } catch (error) {
-    console.error(`Error checking inventory status for ${cityId}:`, error)
-    return null
+    console.error(`Error checking inventory status for ${cityId}:`, error);
+    return null;
   }
 }
 
@@ -407,22 +433,22 @@ export async function getAllInventoryStatuses(): Promise<InventoryStatus[]> {
   const defaultCities = [
     'dallas-jan-2026',
     'atlanta-feb-2026',
-    'la-mar-2026',
+    'vegas-mar-2026',
     'sf-jun-2026',
     'chicago-may-2026',
-    'nyc-apr-2026'
-  ]
+    'nyc-apr-2026',
+  ];
 
-  const statuses: InventoryStatus[] = []
+  const statuses: InventoryStatus[] = [];
 
   for (const cityId of defaultCities) {
-    const status = await checkInventoryStatus(cityId)
+    const status = await checkInventoryStatus(cityId);
     if (status) {
-      statuses.push(status)
+      statuses.push(status);
     }
   }
 
-  return statuses
+  return statuses;
 }
 
 /**
@@ -435,24 +461,24 @@ export async function validateInventoryForCheckout(
   quantity: number
 ): Promise<{ valid: boolean; available: number; error?: string }> {
   try {
-    const actualAvailable = await getActualAvailableSpots(cityId, tier)
+    const actualAvailable = await getActualAvailableSpots(cityId, tier);
 
     if (actualAvailable >= quantity) {
-      return { valid: true, available: actualAvailable }
+      return { valid: true, available: actualAvailable };
     } else {
       return {
         valid: false,
         available: actualAvailable,
-        error: `Only ${actualAvailable} ${tier.toUpperCase()} tickets available, but ${quantity} requested`
-      }
+        error: `Only ${actualAvailable} ${tier.toUpperCase()} tickets available, but ${quantity} requested`,
+      };
     }
   } catch (error) {
-    console.error(`Error validating inventory for ${cityId}:${tier}:`, error)
+    console.error(`Error validating inventory for ${cityId}:${tier}:`, error);
     return {
       valid: false,
       available: 0,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
@@ -464,35 +490,38 @@ export async function getInventoryTransactions(
   limit: number = 50
 ): Promise<InventoryTransaction[]> {
   try {
-    const inventory = await inventoryStore.getCityInventory(cityId)
+    const inventory = await inventoryStore.getCityInventory(cityId);
     if (!inventory) {
-      return []
+      return [];
     }
 
     return inventory.transactions
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit)
+      .slice(0, limit);
   } catch (error) {
-    console.error(`Error getting transactions for ${cityId}:`, error)
-    return []
+    console.error(`Error getting transactions for ${cityId}:`, error);
+    return [];
   }
 }
 
 /**
  * Get inventory expansion history (admin function)
  */
-export async function getInventoryExpansions(cityId: string): Promise<InventoryExpansion[]> {
+export async function getInventoryExpansions(
+  cityId: string
+): Promise<InventoryExpansion[]> {
   try {
-    const inventory = await inventoryStore.getCityInventory(cityId)
+    const inventory = await inventoryStore.getCityInventory(cityId);
     if (!inventory) {
-      return []
+      return [];
     }
 
-    return inventory.expansions
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    return inventory.expansions.sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
   } catch (error) {
-    console.error(`Error getting expansions for ${cityId}:`, error)
-    return []
+    console.error(`Error getting expansions for ${cityId}:`, error);
+    return [];
   }
 }
 
@@ -507,17 +536,20 @@ export async function resetInventory(
   return inventoryStore.withLock(cityId, async () => {
     try {
       if (!authorizedBy) {
-        return { success: false, error: 'Authorization required for inventory reset' }
+        return {
+          success: false,
+          error: 'Authorization required for inventory reset',
+        };
       }
 
-      const inventory = await inventoryStore.getCityInventory(cityId)
+      const inventory = await inventoryStore.getCityInventory(cityId);
       if (!inventory) {
-        return { success: false, error: `City ${cityId} not found` }
+        return { success: false, error: `City ${cityId} not found` };
       }
 
       // Reset to default values
-      inventory.actualLimits = { ga: PUBLIC_LIMITS.ga, vip: PUBLIC_LIMITS.vip }
-      inventory.sold = { ga: 0, vip: 0 }
+      inventory.actualLimits = { ga: PUBLIC_LIMITS.ga, vip: PUBLIC_LIMITS.vip };
+      inventory.sold = { ga: 0, vip: 0 };
 
       // Create reset transaction
       const transaction: InventoryTransaction = {
@@ -529,26 +561,25 @@ export async function resetInventory(
         timestamp: new Date(),
         metadata: {
           adminUserId: authorizedBy,
-          reason
-        }
-      }
+          reason,
+        },
+      };
 
-      await inventoryStore.addTransaction(cityId, transaction)
-      await inventoryStore.setCityInventory(cityId, inventory)
+      await inventoryStore.addTransaction(cityId, transaction);
+      await inventoryStore.setCityInventory(cityId, inventory);
 
-      console.log(`Inventory reset: ${cityId} by ${authorizedBy} - ${reason}`)
+      console.log(`Inventory reset: ${cityId} by ${authorizedBy} - ${reason}`);
 
-      return { success: true }
-
+      return { success: true };
     } catch (error) {
-      console.error(`Error resetting inventory for ${cityId}:`, error)
+      console.error(`Error resetting inventory for ${cityId}:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  })
+  });
 }
 
 // Export store for testing purposes
-export const _inventoryStore = inventoryStore
+export const _inventoryStore = inventoryStore;

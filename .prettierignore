@@ -1,0 +1,102 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+.next/
+out/
+build/
+dist/
+
+# Environment files
+.env*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package-lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+*.tsbuildinfo
+*.map
+
+# Documentation
+*.md
+!README.md
+
+# Configuration files
+*.config.js
+*.config.mjs
+next.config.*
+tailwind.config.*
+postcss.config.*
+
+# Test files
+__tests__/
+*.test.*
+*.spec.*
+test-*
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Deployment
+.vercel/
+.netlify/
+
+# Storybook
+.storybook/
+storybook-static/
+
+# Playwright
+playwright-report/
+test-results/

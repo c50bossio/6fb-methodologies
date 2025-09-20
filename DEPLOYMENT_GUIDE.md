@@ -233,7 +233,7 @@ The system initializes with these default cities and limits:
 const DEFAULT_CITIES = [
   'dallas-jan-2026',    // Dallas - January 2026
   'atlanta-feb-2026',   // Atlanta - February 2026
-  'la-mar-2026',        // Los Angeles - March 2026
+  'vegas-mar-2026',     // Las Vegas - March 2026
   'sf-jun-2026',        // San Francisco - June 2026
   'chicago-may-2026',   // Chicago - May 2026
   'nyc-apr-2026'        // New York - April 2026

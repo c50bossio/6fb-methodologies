@@ -30,7 +30,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ZapierWebhookPayload'
+              $ref: "#/components/schemas/ZapierWebhookPayload"
             examples:
               member_added:
                 summary: New member joined 6FB community
@@ -62,12 +62,12 @@ paths:
                   tier: "premium"
                   updatedDate: "2025-01-15T10:00:00Z"
       responses:
-        '200':
+        "200":
           description: Webhook processed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookSuccessResponse'
+                $ref: "#/components/schemas/WebhookSuccessResponse"
               examples:
                 member_added:
                   summary: Member successfully added
@@ -81,12 +81,12 @@ paths:
                     success: true
                     message: "Member updated successfully"
                     memberId: "member_001"
-        '400':
+        "400":
           description: Invalid webhook payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookErrorResponse'
+                $ref: "#/components/schemas/WebhookErrorResponse"
               examples:
                 invalid_action:
                   summary: Invalid action type
@@ -98,21 +98,21 @@ paths:
                   value:
                     success: false
                     error: "Missing required fields: email, action"
-        '401':
+        "401":
           description: Invalid webhook signature
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookErrorResponse'
+                $ref: "#/components/schemas/WebhookErrorResponse"
               example:
                 success: false
                 error: "Invalid signature"
-        '500':
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookErrorResponse'
+                $ref: "#/components/schemas/WebhookErrorResponse"
               example:
                 success: false
                 error: "Failed to process webhook"
@@ -133,7 +133,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StripeWebhookPayload'
+              $ref: "#/components/schemas/StripeWebhookPayload"
             examples:
               checkout_completed:
                 summary: Checkout session completed successfully
@@ -171,12 +171,12 @@ paths:
                       amount_total: 80000
                       currency: "usd"
       responses:
-        '200':
+        "200":
           description: Webhook processed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookSuccessResponse'
+                $ref: "#/components/schemas/WebhookSuccessResponse"
               examples:
                 payment_processed:
                   summary: Payment successfully processed
@@ -184,30 +184,30 @@ paths:
                     success: true
                     message: "Payment processed successfully"
                     orderId: "order_001"
-        '400':
+        "400":
           description: Invalid webhook payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookErrorResponse'
+                $ref: "#/components/schemas/WebhookErrorResponse"
               example:
                 success: false
                 error: "Invalid webhook payload"
-        '401':
+        "401":
           description: Invalid webhook signature
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookErrorResponse'
+                $ref: "#/components/schemas/WebhookErrorResponse"
               example:
                 success: false
                 error: "Invalid Stripe signature"
-        '500':
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WebhookErrorResponse'
+                $ref: "#/components/schemas/WebhookErrorResponse"
               example:
                 success: false
                 error: "Failed to process payment webhook"
@@ -300,7 +300,7 @@ components:
             - object
           properties:
             object:
-              $ref: '#/components/schemas/StripeCheckoutSession'
+              $ref: "#/components/schemas/StripeCheckoutSession"
 
     StripeCheckoutSession:
       type: object

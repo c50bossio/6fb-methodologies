@@ -1,28 +1,30 @@
-import dotenv from 'dotenv'
-import sgMail from '@sendgrid/mail'
+import dotenv from 'dotenv';
+import sgMail from '@sendgrid/mail';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' })
+dotenv.config({ path: '.env.local' });
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'support@em3014.6fbmentorship.com'
-const FROM_NAME = process.env.SENDGRID_FROM_NAME || '6FB Methodologies Workshop'
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const FROM_EMAIL =
+  process.env.SENDGRID_FROM_EMAIL || 'support@em3014.6fbmentorship.com';
+const FROM_NAME =
+  process.env.SENDGRID_FROM_NAME || '6FB Methodologies Workshop';
 
 if (!SENDGRID_API_KEY) {
-  console.error('❌ SENDGRID_API_KEY not found in environment')
-  process.exit(1)
+  console.error('❌ SENDGRID_API_KEY not found in environment');
+  process.exit(1);
 }
 
-sgMail.setApiKey(SENDGRID_API_KEY)
+sgMail.setApiKey(SENDGRID_API_KEY);
 
-const discountCode = `6FB-TEST-${Date.now().toString(36).toUpperCase()}-20`
-const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+const discountCode = `6FB-TEST-${Date.now().toString(36).toUpperCase()}-20`;
+const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
 const emailData = {
   to: 'bossio@tomb45.com',
   from: {
     email: FROM_EMAIL,
-    name: FROM_NAME
+    name: FROM_NAME,
   },
   subject: '🎯 Your Exclusive 6FB Workshop Discount Code',
   html: `
@@ -94,12 +96,15 @@ const emailData = {
           <!-- Urgency/expiration -->
           <div style="border-left: 4px solid #667eea; padding-left: 20px; margin: 25px 0;">
             <p style="color: #667eea; font-size: 14px; font-weight: 600; margin: 0;">
-              ⏰ This discount expires on ${expiresAt.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
+              ⏰ This discount expires on ${expiresAt.toLocaleDateString(
+                'en-US',
+                {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }
+              )}
             </p>
           </div>
 
@@ -140,7 +145,7 @@ const emailData = {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })}
 
     Ready to take your business to the next level? Use code ${discountCode} at checkout to save 20%.
@@ -150,31 +155,33 @@ const emailData = {
     Questions? Reply to this email or contact support@em3014.6fbmentorship.com
 
     6FB Methodologies Workshop
-  `
-}
+  `,
+};
 
 async function sendTestEmail() {
   try {
-    console.log('🚀 Sending test email to bossio@tomb45.com...')
-    console.log('📧 From:', FROM_EMAIL)
-    console.log('🎟️ Discount Code:', discountCode)
-    console.log('⏰ Expires:', expiresAt.toLocaleDateString())
+    console.log('🚀 Sending test email to bossio@tomb45.com...');
+    console.log('📧 From:', FROM_EMAIL);
+    console.log('🎟️ Discount Code:', discountCode);
+    console.log('⏰ Expires:', expiresAt.toLocaleDateString());
 
-    const result = await sgMail.send(emailData)
+    const result = await sgMail.send(emailData);
 
-    console.log('✅ Email sent successfully!')
-    console.log('📬 Message ID:', result[0]?.headers?.['x-message-id'] || 'N/A')
-    console.log('📊 Status Code:', result[0]?.statusCode)
-
+    console.log('✅ Email sent successfully!');
+    console.log(
+      '📬 Message ID:',
+      result[0]?.headers?.['x-message-id'] || 'N/A'
+    );
+    console.log('📊 Status Code:', result[0]?.statusCode);
   } catch (error) {
-    console.error('❌ Failed to send email:')
+    console.error('❌ Failed to send email:');
     if (error.response) {
-      console.error('Status:', error.response.status)
-      console.error('Body:', error.response.body)
+      console.error('Status:', error.response.status);
+      console.error('Body:', error.response.body);
     } else {
-      console.error('Error:', error.message)
+      console.error('Error:', error.message);
     }
   }
 }
 
-sendTestEmail()
+sendTestEmail();

@@ -7,52 +7,58 @@ import {
   IServiceContainer,
   ServiceDependencies,
   AudioRecordingConfig,
-  TranscriptionConfig
-} from './interfaces'
+  TranscriptionConfig,
+} from './interfaces';
 
-import { AudioRecordingService } from './AudioRecordingService'
-import { TranscriptionService } from './TranscriptionService'
-import { NotesService } from './NotesService'
-import { SessionService } from './SessionService'
+import { AudioRecordingService } from './AudioRecordingService';
+import { TranscriptionService } from './TranscriptionService';
+import { NotesService } from './NotesService';
+import { SessionService } from './SessionService';
 
 interface ServiceContainerConfig {
-  audioRecording?: Partial<AudioRecordingConfig>
-  transcription?: Partial<TranscriptionConfig>
-  dependencies?: ServiceDependencies
-  enableLogging?: boolean
+  audioRecording?: Partial<AudioRecordingConfig>;
+  transcription?: Partial<TranscriptionConfig>;
+  dependencies?: ServiceDependencies;
+  enableLogging?: boolean;
 }
 
 export class ServiceContainer implements IServiceContainer {
-  public readonly audioRecording: AudioRecordingService
-  public readonly transcription: TranscriptionService
-  public readonly notes: NotesService
-  public readonly session: SessionService
+  public readonly audioRecording: AudioRecordingService;
+  public readonly transcription: TranscriptionService;
+  public readonly notes: NotesService;
+  public readonly session: SessionService;
 
-  private static instance: ServiceContainer | null = null
+  private static instance: ServiceContainer | null = null;
 
   constructor(config: ServiceContainerConfig = {}) {
     const {
       audioRecording: audioConfig = {},
       transcription: transcriptionConfig = {},
       dependencies = {},
-      enableLogging = true
-    } = config
+      enableLogging = true,
+    } = config;
 
     // Create default logger if not provided
-    const logger = dependencies.logger || this.createDefaultLogger()
+    const logger = dependencies.logger || this.createDefaultLogger();
     const enhancedDependencies: ServiceDependencies = {
       ...dependencies,
-      logger
-    }
+      logger,
+    };
 
     // Initialize services with dependency injection
-    this.audioRecording = new AudioRecordingService(audioConfig, enhancedDependencies)
-    this.transcription = new TranscriptionService(transcriptionConfig, enhancedDependencies)
-    this.notes = new NotesService(enhancedDependencies, enableLogging)
-    this.session = new SessionService(enhancedDependencies, enableLogging)
+    this.audioRecording = new AudioRecordingService(
+      audioConfig,
+      enhancedDependencies
+    );
+    this.transcription = new TranscriptionService(
+      transcriptionConfig,
+      enhancedDependencies
+    );
+    this.notes = new NotesService(enhancedDependencies, enableLogging);
+    this.session = new SessionService(enhancedDependencies, enableLogging);
 
     if (enableLogging) {
-      logger?.('ServiceContainer initialized', 'info')
+      logger?.('ServiceContainer initialized', 'info');
     }
   }
 
@@ -61,23 +67,23 @@ export class ServiceContainer implements IServiceContainer {
    */
   static getInstance(config?: ServiceContainerConfig): ServiceContainer {
     if (!ServiceContainer.instance) {
-      ServiceContainer.instance = new ServiceContainer(config)
+      ServiceContainer.instance = new ServiceContainer(config);
     }
-    return ServiceContainer.instance
+    return ServiceContainer.instance;
   }
 
   /**
    * Reset singleton instance (useful for testing)
    */
   static resetInstance(): void {
-    ServiceContainer.instance = null
+    ServiceContainer.instance = null;
   }
 
   /**
    * Create a new service container with custom configuration
    */
   static create(config: ServiceContainerConfig): ServiceContainer {
-    return new ServiceContainer(config)
+    return new ServiceContainer(config);
   }
 
   // ==================== HIGH-LEVEL ORCHESTRATION METHODS ====================
@@ -89,19 +95,23 @@ export class ServiceContainer implements IServiceContainer {
     sessionId: string,
     audioConfig?: Partial<AudioRecordingConfig>
   ) {
-    const recordingResult = await this.audioRecording.startRecording(audioConfig)
+    const recordingResult =
+      await this.audioRecording.startRecording(audioConfig);
     if (!recordingResult.success) {
-      return recordingResult
+      return recordingResult;
     }
 
-    const linkResult = await this.session.linkRecording(sessionId, recordingResult.data)
+    const linkResult = await this.session.linkRecording(
+      sessionId,
+      recordingResult.data
+    );
     if (!linkResult.success) {
       // If linking fails, stop the recording to clean up
-      await this.audioRecording.stopRecording()
-      return linkResult
+      await this.audioRecording.stopRecording();
+      return linkResult;
     }
 
-    return recordingResult
+    return recordingResult;
   }
 
   /**
@@ -114,15 +124,18 @@ export class ServiceContainer implements IServiceContainer {
     transcriptionConfig?: Partial<TranscriptionConfig>
   ) {
     // Stop recording
-    const recordingResult = await this.audioRecording.stopRecording()
+    const recordingResult = await this.audioRecording.stopRecording();
     if (!recordingResult.success) {
-      return recordingResult
+      return recordingResult;
     }
 
-    const recording = recordingResult.data
+    const recording = recordingResult.data;
 
     // Start transcription (async)
-    const transcriptionPromise = this.transcribeRecording(recording.id, transcriptionConfig)
+    const transcriptionPromise = this.transcribeRecording(
+      recording.id,
+      transcriptionConfig
+    );
 
     // Create note immediately
     const noteResult = await this.notes.createNote({
@@ -134,28 +147,34 @@ export class ServiceContainer implements IServiceContainer {
       status: 'draft',
       tags: ['audio-recording'],
       audioRecordingId: recording.id,
-      metadata: {}
-    })
+      metadata: {},
+    });
 
     if (!noteResult.success) {
-      return noteResult
+      return noteResult;
     }
 
     // Link note to session
-    await this.session.linkNote(sessionId, noteResult.data.id)
+    await this.session.linkNote(sessionId, noteResult.data.id);
 
     // Wait for transcription and update note
-    const transcriptionResult = await transcriptionPromise
+    const transcriptionResult = await transcriptionPromise;
     if (transcriptionResult.success) {
-      await this.notes.linkTranscription(noteResult.data.id, transcriptionResult.data.id)
-      await this.session.linkTranscription(sessionId, transcriptionResult.data.id)
+      await this.notes.linkTranscription(
+        noteResult.data.id,
+        transcriptionResult.data.id
+      );
+      await this.session.linkTranscription(
+        sessionId,
+        transcriptionResult.data.id
+      );
 
       // Update note with transcription
       await this.notes.updateNote(noteResult.data.id, {
         content: transcriptionResult.data.text,
         status: 'published',
-        tags: [...noteResult.data.tags, 'transcribed']
-      })
+        tags: [...noteResult.data.tags, 'transcribed'],
+      });
     }
 
     return {
@@ -163,9 +182,11 @@ export class ServiceContainer implements IServiceContainer {
       data: {
         recording: recording,
         note: noteResult.data,
-        transcription: transcriptionResult.success ? transcriptionResult.data : null
-      }
-    }
+        transcription: transcriptionResult.success
+          ? transcriptionResult.data
+          : null,
+      },
+    };
   }
 
   /**
@@ -175,46 +196,46 @@ export class ServiceContainer implements IServiceContainer {
     recordingId: string,
     config?: Partial<TranscriptionConfig>
   ) {
-    const recordingResult = await this.audioRecording.getRecording(recordingId)
+    const recordingResult = await this.audioRecording.getRecording(recordingId);
     if (!recordingResult.success) {
-      return recordingResult
+      return recordingResult;
     }
 
     // Convert recording chunks to single blob
-    const recording = recordingResult.data
+    const recording = recordingResult.data;
     const combinedBlob = new Blob(
       recording.chunks.map(chunk => chunk.blob),
       { type: recording.metadata.mimeType }
-    )
+    );
 
-    return await this.transcription.transcribeAudio(combinedBlob, config)
+    return await this.transcription.transcribeAudio(combinedBlob, config);
   }
 
   /**
    * Get comprehensive session data including all linked content
    */
   async getSessionWithContent(sessionId: string) {
-    const sessionResult = await this.session.getSession(sessionId)
+    const sessionResult = await this.session.getSession(sessionId);
     if (!sessionResult.success) {
-      return sessionResult
+      return sessionResult;
     }
 
-    const session = sessionResult.data
+    const session = sessionResult.data;
 
     // Get all linked recordings
     const recordings = await Promise.all(
       session.recordings.map(id => this.audioRecording.getRecording(id))
-    )
+    );
 
     // Get all linked transcriptions
     const transcriptions = await Promise.all(
       session.transcriptions.map(id => this.transcription.getTranscription(id))
-    )
+    );
 
     // Get all linked notes
     const notes = await Promise.all(
       session.notes.map(id => this.notes.getNote(id))
-    )
+    );
 
     return {
       success: true,
@@ -222,9 +243,9 @@ export class ServiceContainer implements IServiceContainer {
         session,
         recordings: recordings.filter(r => r.success).map(r => r.data),
         transcriptions: transcriptions.filter(t => t.success).map(t => t.data),
-        notes: notes.filter(n => n.success).map(n => n.data)
-      }
-    }
+        notes: notes.filter(n => n.success).map(n => n.data),
+      },
+    };
   }
 
   /**
@@ -238,26 +259,27 @@ export class ServiceContainer implements IServiceContainer {
     const searchResult = await this.notes.searchNotes({
       userId,
       sessionId,
-      status: 'published'
-    })
+      status: 'published',
+    });
 
     if (!searchResult.success) {
-      return searchResult
+      return searchResult;
     }
 
-    let notes = searchResult.data
+    let notes = searchResult.data;
 
     // Filter by search term if provided
     if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      notes = notes.filter(note =>
-        note.title.toLowerCase().includes(term) ||
-        note.content.toLowerCase().includes(term) ||
-        note.tags.some(tag => tag.toLowerCase().includes(term))
-      )
+      const term = searchTerm.toLowerCase();
+      notes = notes.filter(
+        note =>
+          note.title.toLowerCase().includes(term) ||
+          note.content.toLowerCase().includes(term) ||
+          note.tags.some(tag => tag.toLowerCase().includes(term))
+      );
     }
 
-    return { success: true, data: notes }
+    return { success: true, data: notes };
   }
 
   /**
@@ -266,25 +288,25 @@ export class ServiceContainer implements IServiceContainer {
   async getUserDashboard(userId: string) {
     try {
       // Get user sessions
-      const sessionsResult = await this.session.getUserSessions(userId)
+      const sessionsResult = await this.session.getUserSessions(userId);
       if (!sessionsResult.success) {
-        return sessionsResult
+        return sessionsResult;
       }
 
       // Get session stats
-      const sessionStatsResult = await this.session.getSessionStats(userId)
+      const sessionStatsResult = await this.session.getSessionStats(userId);
       if (!sessionStatsResult.success) {
-        return sessionStatsResult
+        return sessionStatsResult;
       }
 
       // Get note stats
-      const noteStatsResult = await this.notes.getNoteStats(userId)
+      const noteStatsResult = await this.notes.getNoteStats(userId);
       if (!noteStatsResult.success) {
-        return noteStatsResult
+        return noteStatsResult;
       }
 
       // Get active session
-      const activeSession = this.session.getActiveSession()
+      const activeSession = this.session.getActiveSession();
 
       return {
         success: true,
@@ -292,13 +314,14 @@ export class ServiceContainer implements IServiceContainer {
           sessions: sessionsResult.data,
           sessionStats: sessionStatsResult.data,
           noteStats: noteStatsResult.data,
-          activeSession: activeSession?.userId === userId ? activeSession : null
-        }
-      }
-
+          activeSession:
+            activeSession?.userId === userId ? activeSession : null,
+        },
+      };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to get dashboard data'
-      return { success: false, error: message, code: 'DASHBOARD_FAILED' }
+      const message =
+        error instanceof Error ? error.message : 'Failed to get dashboard data';
+      return { success: false, error: message, code: 'DASHBOARD_FAILED' };
     }
   }
 
@@ -313,45 +336,48 @@ export class ServiceContainer implements IServiceContainer {
       transcription: await this.transcription.getProviderStatus(),
       notes: true, // NotesService is always healthy in memory
       session: true, // SessionService is always healthy in memory
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    };
 
-    const allHealthy = health.audioRecording &&
-      (health.transcription.success ? Object.values(health.transcription.data || {}).some(status => status) : false) &&
+    const allHealthy =
+      health.audioRecording &&
+      (health.transcription.success
+        ? Object.values(health.transcription.data || {}).some(status => status)
+        : false) &&
       health.notes &&
-      health.session
+      health.session;
 
     return {
       success: allHealthy,
-      data: health
-    }
+      data: health,
+    };
   }
 
   // ==================== PRIVATE METHODS ====================
 
   private createDefaultLogger(): ServiceDependencies['logger'] {
     return (message: string, level: 'info' | 'warn' | 'error') => {
-      const timestamp = new Date().toISOString()
-      const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`
+      const timestamp = new Date().toISOString();
+      const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
       switch (level) {
         case 'error':
-          console.error(formattedMessage)
-          break
+          console.error(formattedMessage);
+          break;
         case 'warn':
-          console.warn(formattedMessage)
-          break
+          console.warn(formattedMessage);
+          break;
         default:
-          console.log(formattedMessage)
-          break
+          console.log(formattedMessage);
+          break;
       }
-    }
+    };
   }
 }
 
 // Export singleton access
-export const services = ServiceContainer.getInstance()
+export const services = ServiceContainer.getInstance();
 
 // Export factory for custom configurations
 export const createServiceContainer = (config: ServiceContainerConfig) =>
-  ServiceContainer.create(config)
+  ServiceContainer.create(config);

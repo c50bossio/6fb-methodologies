@@ -22,8 +22,8 @@ const TEST_CITIES = [
     vipPriceId: 'price_1S8SbHEzoIvSRPoDRp1OaBIk'
   },
   {
-    id: 'la-mar-2026',
-    name: 'Los Angeles',
+    id: 'vegas-mar-2026',
+    name: 'Las Vegas',
     gaPriceId: 'price_1S8SbTEzoIvSPoD4tvEuw5G',
     vipPriceId: 'price_1S8SbfEzoIvSPoD8sPuB9zb'
   }

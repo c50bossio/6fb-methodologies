@@ -34,7 +34,7 @@ const publicDir = path.join(__dirname, '..', 'public');
 const icons = [
   { name: 'icon-192.png', size: 192 },
   { name: 'icon-512.png', size: 512 },
-  { name: 'apple-touch-icon.png', size: 180 }
+  { name: 'apple-touch-icon.png', size: 180 },
 ];
 
 console.log('🎨 Generating PWA icons...');
@@ -52,4 +52,6 @@ icons.forEach(icon => {
 });
 
 console.log('📱 Icon generation complete!');
-console.log('Note: SVG icons created as PNG fallbacks. Consider using proper image tools for production.');
+console.log(
+  'Note: SVG icons created as PNG fallbacks. Consider using proper image tools for production.'
+);

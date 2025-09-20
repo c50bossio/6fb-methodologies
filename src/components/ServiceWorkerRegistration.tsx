@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
+import { useEffect } from 'react';
 
 /**
  * ServiceWorkerRegistration component for enhanced caching and performance
@@ -15,14 +15,14 @@ export function ServiceWorkerRegistration() {
     ) {
       navigator.serviceWorker
         .register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered:', registration)
+        .then(registration => {
+          console.log('Service Worker registered:', registration);
         })
-        .catch((error) => {
-          console.log('Service Worker registration failed:', error)
-        })
+        .catch(error => {
+          console.log('Service Worker registration failed:', error);
+        });
     }
-  }, [])
+  }, []);
 
-  return null
+  return null;
 }
