@@ -149,9 +149,14 @@ function RegisterPageContent() {
           lastName: lastName,
         }));
       } else {
-        // Fallback if no sessionStorage data
+        // Fallback if no sessionStorage data - preserve member status from URL if available
         console.log('No registration data found, using defaults');
         const defaultPrice = type === 'VIP' ? 1500 : 1000;
+
+        // Check if member status is passed via URL parameters
+        const memberStatus = searchParams.get('isMember') === 'true' ||
+                            searchParams.get('isVerified') === 'true' ||
+                            false;
 
         setPricingData({
           originalPrice: defaultPrice,
@@ -166,7 +171,7 @@ function RegisterPageContent() {
           ...prev,
           ticketType: type,
           quantity: quantity,
-          isSixFBMember: false,
+          isSixFBMember: memberStatus,
           firstName: '',
           lastName: '',
         }));
@@ -378,29 +383,40 @@ function RegisterPageContent() {
     setIsLoading(true);
 
     try {
-      // Check CSRF readiness
-      if (!csrfReady) {
+      // Note: CSRF protection is disabled for payment endpoint
+
+      // Validate city selection
+      if (!selectedCity?.cityId) {
         throw new Error(
-          'Security token not ready. Please refresh the page and try again.'
+          'Please select a city first. Go back to the cities section to choose your workshop location.'
         );
       }
 
-      // Create checkout session with CSRF protection
-      const response = await authenticatedFetch(
-        '/api/create-checkout-session',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ticketType: pricingData.ticketType,
-            quantity: pricingData.quantity,
-            customerEmail: formData.email,
-            customerName: `${formData.firstName} ${formData.lastName}`,
-            isSixFBMember: formData.isSixFBMember,
-            registrationData: formData,
-          }),
-        }
-      );
+      // Create checkout session (CSRF-exempt endpoint)
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketType: pricingData.ticketType,
+          quantity: pricingData.quantity,
+          customerEmail: formData.email,
+          customerName: `${formData.firstName} ${formData.lastName}`,
+          isSixFBMember: formData.isSixFBMember,
+          cityId: selectedCity?.cityId,
+          registrationData: {
+            ...formData,
+            ...(selectedCity && {
+              citySelection: {
+                cityId: selectedCity.cityId,
+                cityName: selectedCity.cityName,
+                month: selectedCity.month,
+                dates: selectedCity.dates,
+                location: selectedCity.location,
+              },
+            }),
+          },
+        }),
+      });
 
       const result = await response.json();
 
@@ -408,11 +424,31 @@ function RegisterPageContent() {
         // Redirect to Stripe checkout
         window.location.href = result.checkoutUrl;
       } else {
+        // Handle specific error cases
+        if (result.discountBlocked) {
+          throw new Error(
+            `Member discount not available: ${result.details || result.error}`
+          );
+        }
         throw new Error(result.error || 'Failed to create checkout session');
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Failed to proceed to payment. Please try again.');
+
+      // Provide specific error messages
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to proceed to payment. Please try again.';
+
+      // Show user-friendly alert
+      alert(errorMessage);
+
+      // Log additional debug info
+      console.error('Checkout debug info:', {
+        cityId: selectedCity?.cityId,
+        customerEmail: formData.email,
+        ticketType: pricingData.ticketType,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -850,19 +886,14 @@ function RegisterPageContent() {
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !csrfReady}
+              disabled={isLoading}
               className='flex-1 min-h-[48px] touch-manipulation text-base font-semibold'
-              isLoading={isLoading || !csrfReady}
+              isLoading={isLoading}
             >
               {isLoading ? (
                 <>
                   <Loader2 className='w-4 h-4 mr-2 animate-spin' />
                   Processing...
-                </>
-              ) : !csrfReady ? (
-                <>
-                  <Shield className='w-4 h-4 mr-2 animate-pulse' />
-                  Initializing Security...
                 </>
               ) : (
                 <>

@@ -319,9 +319,10 @@ function PricingPageContent() {
       console.error('Failed to store registration data:', error);
     }
 
-    // Navigate to registration
+    // Navigate to registration with member status as backup URL parameter
+    const memberParam = verificationResult?.isVerified ? '&isVerified=true' : '';
     router.push(
-      `/register?city=${selectedCity?.id}&type=${tierId}&quantity=${quantity}`
+      `/register?city=${selectedCity?.id}&type=${tierId}&quantity=${quantity}${memberParam}`
     );
   };
 
