@@ -33,8 +33,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recent security events (last hour)
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
-    const recentEvents = getSecurityEvents(1000).filter(event => event.timestamp >= oneHourAgo);
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    const recentEvents = getSecurityEvents(1000).filter(
+      event => event.timestamp >= oneHourAgo
+    );
 
     // Calculate security metrics
     const metrics = {
@@ -43,11 +45,17 @@ export async function GET(request: NextRequest) {
       alerts: [] as string[],
       metrics: {
         totalEvents: recentEvents.length,
-        authAttempts: recentEvents.filter(e => e.type === 'auth_attempt').length,
-        authFailures: recentEvents.filter(e => e.type === 'auth_failure').length,
-        authSuccesses: recentEvents.filter(e => e.type === 'auth_success').length,
-        suspiciousActivity: recentEvents.filter(e => e.type === 'suspicious_activity').length,
-        tokenRefreshes: recentEvents.filter(e => e.type === 'token_refresh').length,
+        authAttempts: recentEvents.filter(e => e.type === 'auth_attempt')
+          .length,
+        authFailures: recentEvents.filter(e => e.type === 'auth_failure')
+          .length,
+        authSuccesses: recentEvents.filter(e => e.type === 'auth_success')
+          .length,
+        suspiciousActivity: recentEvents.filter(
+          e => e.type === 'suspicious_activity'
+        ).length,
+        tokenRefreshes: recentEvents.filter(e => e.type === 'token_refresh')
+          .length,
       },
       security: {
         environment: process.env.NODE_ENV || 'unknown',
@@ -65,36 +73,57 @@ export async function GET(request: NextRequest) {
     };
 
     // Analyze security health and generate alerts
-    const failureRate = metrics.metrics.authAttempts > 0
-      ? (metrics.metrics.authFailures / metrics.metrics.authAttempts) * 100
-      : 0;
+    const failureRate =
+      metrics.metrics.authAttempts > 0
+        ? (metrics.metrics.authFailures / metrics.metrics.authAttempts) * 100
+        : 0;
 
     if (failureRate > 50) {
       metrics.status = 'warning';
-      metrics.alerts.push(`High authentication failure rate: ${failureRate.toFixed(1)}%`);
-      metrics.recommendations.push('Review authentication logs for potential brute force attacks');
+      metrics.alerts.push(
+        `High authentication failure rate: ${failureRate.toFixed(1)}%`
+      );
+      metrics.recommendations.push(
+        'Review authentication logs for potential brute force attacks'
+      );
     }
 
     if (metrics.metrics.suspiciousActivity > 10) {
       metrics.status = 'critical';
-      metrics.alerts.push(`High suspicious activity: ${metrics.metrics.suspiciousActivity} events in last hour`);
-      metrics.recommendations.push('Investigate suspicious activity patterns immediately');
+      metrics.alerts.push(
+        `High suspicious activity: ${metrics.metrics.suspiciousActivity} events in last hour`
+      );
+      metrics.recommendations.push(
+        'Investigate suspicious activity patterns immediately'
+      );
     }
 
     if (metrics.metrics.totalEvents > 500) {
       if (metrics.status === 'healthy') metrics.status = 'warning';
-      metrics.alerts.push(`High activity volume: ${metrics.metrics.totalEvents} events in last hour`);
-      metrics.recommendations.push('Monitor for potential DDoS or automated attacks');
+      metrics.alerts.push(
+        `High activity volume: ${metrics.metrics.totalEvents} events in last hour`
+      );
+      metrics.recommendations.push(
+        'Monitor for potential DDoS or automated attacks'
+      );
     }
 
     // Check for missing security configurations
-    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your-secret-key-change-in-production') {
+    if (
+      !process.env.JWT_SECRET ||
+      process.env.JWT_SECRET === 'your-secret-key-change-in-production'
+    ) {
       metrics.status = 'critical';
       metrics.alerts.push('JWT secret not properly configured');
-      metrics.recommendations.push('Configure a strong JWT secret in production');
+      metrics.recommendations.push(
+        'Configure a strong JWT secret in production'
+      );
     }
 
-    if (process.env.NODE_ENV === 'production' && !metrics.security.httpsEnabled) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      !metrics.security.httpsEnabled
+    ) {
       metrics.status = 'critical';
       metrics.alerts.push('HTTPS not enabled in production');
       metrics.recommendations.push('Enable HTTPS for production deployment');
@@ -102,11 +131,15 @@ export async function GET(request: NextRequest) {
 
     // Add general recommendations based on current state
     if (metrics.status === 'healthy') {
-      metrics.recommendations.push('Security posture is good. Continue monitoring regularly.');
+      metrics.recommendations.push(
+        'Security posture is good. Continue monitoring regularly.'
+      );
     }
 
     if (recentEvents.length === 0) {
-      metrics.recommendations.push('No recent activity detected. Verify monitoring is working correctly.');
+      metrics.recommendations.push(
+        'No recent activity detected. Verify monitoring is working correctly.'
+      );
     }
 
     return NextResponse.json(

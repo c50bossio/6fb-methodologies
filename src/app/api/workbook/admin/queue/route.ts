@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     // Get queue statistics from in-memory queue
     const queueStats = getQueueStatistics();
 
-    let response: any = {
+    const response: any = {
       success: true,
       queue_statistics: queueStats,
     };

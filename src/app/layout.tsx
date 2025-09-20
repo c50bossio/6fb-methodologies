@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
-import HydrationOptimizer from '@/components/HydrationOptimizer';
+import ClientWrapper from '@/components/ClientWrapper';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -65,9 +65,9 @@ export default function RootLayout({
         className={`${inter.className} bg-background-primary text-text-primary antialiased`}
       >
         <ServiceWorkerRegistration />
-        <HydrationOptimizer>
+        <ClientWrapper>
           <div className='min-h-screen'>{children}</div>
-        </HydrationOptimizer>
+        </ClientWrapper>
       </body>
     </html>
   );

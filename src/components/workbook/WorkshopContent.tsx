@@ -117,7 +117,9 @@ export default function WorkshopContent({
   });
 
   // Expanded modules state for accordion-style navigation
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(
+    new Set()
+  );
 
   // Initialize component
   useEffect(() => {
@@ -136,13 +138,16 @@ export default function WorkshopContent({
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
-      const response = await fetch('/api/workbook/modules?includeProgress=true', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+      const response = await fetch(
+        '/api/workbook/modules?includeProgress=true',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -161,7 +166,8 @@ export default function WorkshopContent({
         throw new Error(data.error || 'Invalid response format');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load modules';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to load modules';
       setState(prev => ({
         ...prev,
         error: errorMessage,
@@ -174,181 +180,210 @@ export default function WorkshopContent({
   /**
    * Fetch detailed module information including lessons
    */
-  const fetchModuleDetails = useCallback(async (moduleId: string) => {
-    try {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+  const fetchModuleDetails = useCallback(
+    async (moduleId: string) => {
+      try {
+        setState(prev => ({ ...prev, loading: true, error: null }));
 
-      const response = await fetch(`/api/workbook/modules/${moduleId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+        const response = await fetch(`/api/workbook/modules/${moduleId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch module details');
-      }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch module details');
+        }
 
-      const data: ModuleDetailsResponse = await response.json();
+        const data: ModuleDetailsResponse = await response.json();
 
-      if (data.success && data.data) {
+        if (data.success && data.data) {
+          setState(prev => ({
+            ...prev,
+            selectedModule: data.data!,
+            loading: false,
+          }));
+          onModuleSelected?.(moduleId);
+        } else {
+          throw new Error(data.error || 'Invalid response format');
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load module details';
         setState(prev => ({
           ...prev,
-          selectedModule: data.data!,
+          error: errorMessage,
           loading: false,
         }));
-        onModuleSelected?.(moduleId);
-      } else {
-        throw new Error(data.error || 'Invalid response format');
+        onError?.(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load module details';
-      setState(prev => ({
-        ...prev,
-        error: errorMessage,
-        loading: false,
-      }));
-      onError?.(errorMessage);
-    }
-  }, [onModuleSelected, onError]);
+    },
+    [onModuleSelected, onError]
+  );
 
   /**
    * Fetch detailed lesson information
    */
-  const fetchLessonDetails = useCallback(async (lessonId: string) => {
-    try {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+  const fetchLessonDetails = useCallback(
+    async (lessonId: string) => {
+      try {
+        setState(prev => ({ ...prev, loading: true, error: null }));
 
-      const response = await fetch(`/api/workbook/lessons/${lessonId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+        const response = await fetch(`/api/workbook/lessons/${lessonId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch lesson details');
-      }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch lesson details');
+        }
 
-      const data: LessonDetailsResponse = await response.json();
+        const data: LessonDetailsResponse = await response.json();
 
-      if (data.success && data.data) {
+        if (data.success && data.data) {
+          setState(prev => ({
+            ...prev,
+            selectedLesson: data.data!,
+            loading: false,
+          }));
+        } else {
+          throw new Error(data.error || 'Invalid response format');
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load lesson details';
         setState(prev => ({
           ...prev,
-          selectedLesson: data.data!,
+          error: errorMessage,
           loading: false,
         }));
-      } else {
-        throw new Error(data.error || 'Invalid response format');
+        onError?.(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load lesson details';
-      setState(prev => ({
-        ...prev,
-        error: errorMessage,
-        loading: false,
-      }));
-      onError?.(errorMessage);
-    }
-  }, [onError]);
+    },
+    [onError]
+  );
 
   /**
    * Update module progress
    */
-  const updateModuleProgress = useCallback(async (
-    moduleId: string,
-    progressPercent: number,
-    timeSpentMinutes: number = 0
-  ) => {
-    try {
-      const updateData: UpdateProgressRequestBody = {
-        moduleId,
-        progressPercent: Math.min(100, Math.max(0, progressPercent)),
-        timeSpentMinutes,
-        lastPosition: 0, // Could be enhanced to track specific lesson position
-      };
+  const updateModuleProgress = useCallback(
+    async (
+      moduleId: string,
+      progressPercent: number,
+      timeSpentMinutes: number = 0
+    ) => {
+      try {
+        const updateData: UpdateProgressRequestBody = {
+          moduleId,
+          progressPercent: Math.min(100, Math.max(0, progressPercent)),
+          timeSpentMinutes,
+          lastPosition: 0, // Could be enhanced to track specific lesson position
+        };
 
-      const response = await fetch('/api/workbook/progress/enhanced', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(updateData),
-      });
+        const response = await fetch('/api/workbook/progress/enhanced', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(updateData),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update progress');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update progress');
+        }
+
+        // Refresh modules to get updated progress
+        await fetchModules();
+
+        // If we have the module selected, refresh its details too
+        if (state.selectedModule?.id === moduleId) {
+          await fetchModuleDetails(moduleId);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to update progress';
+        setState(prev => ({ ...prev, error: errorMessage }));
+        onError?.(errorMessage);
       }
-
-      // Refresh modules to get updated progress
-      await fetchModules();
-
-      // If we have the module selected, refresh its details too
-      if (state.selectedModule?.id === moduleId) {
-        await fetchModuleDetails(moduleId);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update progress';
-      setState(prev => ({ ...prev, error: errorMessage }));
-      onError?.(errorMessage);
-    }
-  }, [state.selectedModule?.id, fetchModules, fetchModuleDetails, onError]);
+    },
+    [state.selectedModule?.id, fetchModules, fetchModuleDetails, onError]
+  );
 
   /**
    * Complete a lesson and update progress
    */
-  const completeLesson = useCallback(async (
-    lessonId: string,
-    score?: number,
-    timeSpentSeconds: number = 0
-  ) => {
-    try {
-      const completionData: CompleteLessonRequestBody = {
-        timeSpentSeconds,
-        completedAt: new Date().toISOString(),
-        ...(score !== undefined && { quizScore: score }),
-        ...(state.selectedLesson && {
-          noteContent: `Completed lesson: ${state.selectedLesson.title}`,
-        }),
-      };
+  const completeLesson = useCallback(
+    async (lessonId: string, score?: number, timeSpentSeconds: number = 0) => {
+      try {
+        const completionData: CompleteLessonRequestBody = {
+          timeSpentSeconds,
+          completedAt: new Date().toISOString(),
+          ...(score !== undefined && { quizScore: score }),
+          ...(state.selectedLesson && {
+            noteContent: `Completed lesson: ${state.selectedLesson.title}`,
+          }),
+        };
 
-      const response = await fetch(`/api/workbook/lessons/${lessonId}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(completionData),
-      });
+        const response = await fetch(
+          `/api/workbook/lessons/${lessonId}/complete`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(completionData),
+          }
+        );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to complete lesson');
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Refresh data
-        await fetchModules();
-        if (state.selectedModule) {
-          await fetchModuleDetails(state.selectedModule.id);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to complete lesson');
         }
 
-        onLessonCompleted?.(lessonId, data.data?.moduleId || state.selectedModule?.id || '');
+        const data = await response.json();
+
+        if (data.success) {
+          // Refresh data
+          await fetchModules();
+          if (state.selectedModule) {
+            await fetchModuleDetails(state.selectedModule.id);
+          }
+
+          onLessonCompleted?.(
+            lessonId,
+            data.data?.moduleId || state.selectedModule?.id || ''
+          );
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to complete lesson';
+        setState(prev => ({ ...prev, error: errorMessage }));
+        onError?.(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to complete lesson';
-      setState(prev => ({ ...prev, error: errorMessage }));
-      onError?.(errorMessage);
-    }
-  }, [state.selectedLesson, state.selectedModule, fetchModules, fetchModuleDetails, onLessonCompleted, onError]);
+    },
+    [
+      state.selectedLesson,
+      state.selectedModule,
+      fetchModules,
+      fetchModuleDetails,
+      onLessonCompleted,
+      onError,
+    ]
+  );
 
   /**
    * Get difficulty badge color
@@ -404,25 +439,31 @@ export default function WorkshopContent({
   /**
    * Handle module selection and navigation
    */
-  const handleModuleSelect = useCallback(async (moduleId: string) => {
-    await fetchModuleDetails(moduleId);
+  const handleModuleSelect = useCallback(
+    async (moduleId: string) => {
+      await fetchModuleDetails(moduleId);
 
-    // Expand the module in the accordion view
-    setExpandedModules(prev => new Set([...prev, moduleId]));
+      // Expand the module in the accordion view
+      setExpandedModules(prev => new Set([...prev, moduleId]));
 
-    // If module hasn't been started, mark it as started
-    const module = state.modules.find(m => m.id === moduleId);
-    if (module?.progressStatus === 'not_started') {
-      await updateModuleProgress(moduleId, 5); // Mark as started with minimal progress
-    }
-  }, [state.modules, fetchModuleDetails, updateModuleProgress]);
+      // If module hasn't been started, mark it as started
+      const module = state.modules.find(m => m.id === moduleId);
+      if (module?.progressStatus === 'not_started') {
+        await updateModuleProgress(moduleId, 5); // Mark as started with minimal progress
+      }
+    },
+    [state.modules, fetchModuleDetails, updateModuleProgress]
+  );
 
   /**
    * Handle lesson selection
    */
-  const handleLessonSelect = useCallback(async (lessonId: string) => {
-    await fetchLessonDetails(lessonId);
-  }, [fetchLessonDetails]);
+  const handleLessonSelect = useCallback(
+    async (lessonId: string) => {
+      await fetchLessonDetails(lessonId);
+    },
+    [fetchLessonDetails]
+  );
 
   /**
    * Toggle module expansion in accordion view
@@ -458,7 +499,9 @@ export default function WorkshopContent({
 
     // Apply status filter
     if (state.filterBy !== 'all') {
-      filtered = filtered.filter(module => module.progressStatus === state.filterBy);
+      filtered = filtered.filter(
+        module => module.progressStatus === state.filterBy
+      );
     }
 
     // Apply sorting
@@ -485,14 +528,27 @@ export default function WorkshopContent({
    */
   const workshopStats = useMemo(() => {
     const totalModules = state.modules.length;
-    const completedModules = state.modules.filter(m => m.progressStatus === 'completed').length;
-    const inProgressModules = state.modules.filter(m => m.progressStatus === 'in_progress').length;
-    const notStartedModules = state.modules.filter(m => m.progressStatus === 'not_started').length;
+    const completedModules = state.modules.filter(
+      m => m.progressStatus === 'completed'
+    ).length;
+    const inProgressModules = state.modules.filter(
+      m => m.progressStatus === 'in_progress'
+    ).length;
+    const notStartedModules = state.modules.filter(
+      m => m.progressStatus === 'not_started'
+    ).length;
 
-    const totalProgress = state.modules.reduce((sum, m) => sum + m.progressPercentage, 0);
-    const overallProgress = totalModules > 0 ? Math.round(totalProgress / totalModules) : 0;
+    const totalProgress = state.modules.reduce(
+      (sum, m) => sum + m.progressPercentage,
+      0
+    );
+    const overallProgress =
+      totalModules > 0 ? Math.round(totalProgress / totalModules) : 0;
 
-    const totalDuration = state.modules.reduce((sum, m) => sum + m.durationMinutes, 0);
+    const totalDuration = state.modules.reduce(
+      (sum, m) => sum + m.durationMinutes,
+      0
+    );
 
     return {
       totalModules,
@@ -501,7 +557,10 @@ export default function WorkshopContent({
       notStartedModules,
       overallProgress,
       totalDuration,
-      completionRate: totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0,
+      completionRate:
+        totalModules > 0
+          ? Math.round((completedModules / totalModules) * 100)
+          : 0,
     };
   }, [state.modules]);
 
@@ -512,8 +571,12 @@ export default function WorkshopContent({
         <Card className='bg-background-secondary border-border-primary'>
           <CardContent className='p-8 text-center'>
             <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-tomb45-green mx-auto mb-6'></div>
-            <h3 className='text-lg font-semibold text-text-primary mb-2'>Loading Workshop Content</h3>
-            <p className='text-text-secondary'>Fetching your personalized workshop modules and progress...</p>
+            <h3 className='text-lg font-semibold text-text-primary mb-2'>
+              Loading Workshop Content
+            </h3>
+            <p className='text-text-secondary'>
+              Fetching your personalized workshop modules and progress...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -527,7 +590,9 @@ export default function WorkshopContent({
         <Card className='bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'>
           <CardContent className='p-8 text-center'>
             <AlertCircle className='w-12 h-12 text-red-500 mx-auto mb-4' />
-            <h3 className='text-lg font-semibold text-red-700 dark:text-red-300 mb-2'>Unable to Load Workshop</h3>
+            <h3 className='text-lg font-semibold text-red-700 dark:text-red-300 mb-2'>
+              Unable to Load Workshop
+            </h3>
             <p className='text-red-600 dark:text-red-400 mb-6'>{state.error}</p>
             <div className='flex justify-center gap-4'>
               <Button onClick={fetchModules} variant='outline'>
@@ -535,7 +600,10 @@ export default function WorkshopContent({
                 Try Again
               </Button>
               {onError && (
-                <Button onClick={() => onError('Workshop loading failed')} variant='ghost'>
+                <Button
+                  onClick={() => onError('Workshop loading failed')}
+                  variant='ghost'
+                >
                   Report Issue
                 </Button>
               )}
@@ -553,7 +621,9 @@ export default function WorkshopContent({
         <Card className='bg-background-secondary border-border-primary'>
           <CardContent className='p-8 text-center'>
             <GraduationCap className='w-16 h-16 text-tomb45-green mx-auto mb-6' />
-            <h3 className='text-xl font-semibold text-text-primary mb-2'>No Workshop Content Available</h3>
+            <h3 className='text-xl font-semibold text-text-primary mb-2'>
+              No Workshop Content Available
+            </h3>
             <p className='text-text-secondary mb-6'>
               We're preparing amazing workshop content for you. Check back soon!
             </p>
@@ -583,24 +653,26 @@ export default function WorkshopContent({
                   6FB Workshop Progress
                 </CardTitle>
                 <p className='text-text-secondary mt-1'>
-                  Master the Six Figure Barber methodology through interactive content
+                  Master the Six Figure Barber methodology through interactive
+                  content
                 </p>
               </div>
             </div>
             {showAnalytics && (
               <div className='flex gap-2'>
                 <Button
-                  onClick={() => setState(prev => ({ ...prev, viewMode: prev.viewMode === 'grid' ? 'list' : 'grid' }))}
+                  onClick={() =>
+                    setState(prev => ({
+                      ...prev,
+                      viewMode: prev.viewMode === 'grid' ? 'list' : 'grid',
+                    }))
+                  }
                   variant='outline'
                   size='sm'
                 >
                   {state.viewMode === 'grid' ? 'List View' : 'Grid View'}
                 </Button>
-                <Button
-                  onClick={() => {}}
-                  variant='ghost'
-                  size='sm'
-                >
+                <Button onClick={() => {}} variant='ghost' size='sm'>
                   <Download className='w-4 h-4 mr-2' />
                   Export Progress
                 </Button>
@@ -615,13 +687,17 @@ export default function WorkshopContent({
               <div className='text-3xl font-bold text-tomb45-green mb-1'>
                 {workshopStats.overallProgress}%
               </div>
-              <div className='text-sm text-text-secondary'>Overall Progress</div>
+              <div className='text-sm text-text-secondary'>
+                Overall Progress
+              </div>
             </div>
             <div className='text-center'>
               <div className='text-3xl font-bold text-blue-600 mb-1'>
                 {workshopStats.completedModules}
               </div>
-              <div className='text-sm text-text-secondary'>Completed Modules</div>
+              <div className='text-sm text-text-secondary'>
+                Completed Modules
+              </div>
             </div>
             <div className='text-center'>
               <div className='text-3xl font-bold text-yellow-600 mb-1'>
@@ -642,7 +718,8 @@ export default function WorkshopContent({
             <div className='flex items-center justify-between text-sm'>
               <span className='text-text-secondary'>Workshop Completion</span>
               <span className='font-semibold text-text-primary'>
-                {workshopStats.completedModules} / {workshopStats.totalModules} modules
+                {workshopStats.completedModules} / {workshopStats.totalModules}{' '}
+                modules
               </span>
             </div>
             <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4'>
@@ -671,7 +748,9 @@ export default function WorkshopContent({
                 type='text'
                 placeholder='Search modules by title, description, or tags...'
                 value={state.searchQuery}
-                onChange={(e) => setState(prev => ({ ...prev, searchQuery: e.target.value }))}
+                onChange={e =>
+                  setState(prev => ({ ...prev, searchQuery: e.target.value }))
+                }
                 className='w-full px-4 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-tomb45-green focus:border-transparent'
               />
             </div>
@@ -680,7 +759,12 @@ export default function WorkshopContent({
             <div className='flex gap-2'>
               <select
                 value={state.filterBy}
-                onChange={(e) => setState(prev => ({ ...prev, filterBy: e.target.value as any }))}
+                onChange={e =>
+                  setState(prev => ({
+                    ...prev,
+                    filterBy: e.target.value as any,
+                  }))
+                }
                 className='px-3 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
               >
                 <option value='all'>All Modules</option>
@@ -691,7 +775,9 @@ export default function WorkshopContent({
 
               <select
                 value={state.sortBy}
-                onChange={(e) => setState(prev => ({ ...prev, sortBy: e.target.value as any }))}
+                onChange={e =>
+                  setState(prev => ({ ...prev, sortBy: e.target.value as any }))
+                }
                 className='px-3 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
               >
                 <option value='order'>Module Order</option>
@@ -704,8 +790,14 @@ export default function WorkshopContent({
       </Card>
 
       {/* Module List/Grid */}
-      <div className={state.viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-4'}>
-        {filteredAndSortedModules.map((module) => (
+      <div
+        className={
+          state.viewMode === 'grid'
+            ? 'grid grid-cols-1 lg:grid-cols-2 gap-6'
+            : 'space-y-4'
+        }
+      >
+        {filteredAndSortedModules.map(module => (
           <Card
             key={module.id}
             className={`bg-background-secondary border-border-primary transition-all duration-200 hover:shadow-lg hover:border-tomb45-green/30 cursor-pointer ${
@@ -726,7 +818,9 @@ export default function WorkshopContent({
                         Module {module.moduleOrder}
                       </Badge>
                       {module.difficultyLevel && (
-                        <Badge className={`text-xs ${getDifficultyColor(module.difficultyLevel)}`}>
+                        <Badge
+                          className={`text-xs ${getDifficultyColor(module.difficultyLevel)}`}
+                        >
                           {module.difficultyLevel}
                         </Badge>
                       )}
@@ -742,20 +836,33 @@ export default function WorkshopContent({
                   )}
                 </div>
                 <Button
-                  variant={module.progressStatus === 'completed' ? 'outline' : 'primary'}
+                  variant={
+                    module.progressStatus === 'completed'
+                      ? 'outline'
+                      : 'primary'
+                  }
                   size='sm'
                   className='ml-4'
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     handleModuleSelect(module.id);
                   }}
                 >
                   {module.progressStatus === 'completed' ? (
-                    <><Trophy className='w-4 h-4 mr-2' />Review</>
+                    <>
+                      <Trophy className='w-4 h-4 mr-2' />
+                      Review
+                    </>
                   ) : module.progressStatus === 'in_progress' ? (
-                    <><PlayCircle className='w-4 h-4 mr-2' />Continue</>
+                    <>
+                      <PlayCircle className='w-4 h-4 mr-2' />
+                      Continue
+                    </>
                   ) : (
-                    <><PlayCircle className='w-4 h-4 mr-2' />Start</>
+                    <>
+                      <PlayCircle className='w-4 h-4 mr-2' />
+                      Start
+                    </>
                   )}
                 </Button>
               </div>
@@ -786,12 +893,15 @@ export default function WorkshopContent({
                   {module.lastAccessedAt && (
                     <div className='flex items-center gap-1'>
                       <Calendar className='w-4 h-4' />
-                      <span>Last: {new Date(module.lastAccessedAt).toLocaleDateString()}</span>
+                      <span>
+                        Last:{' '}
+                        {new Date(module.lastAccessedAt).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
                 </div>
                 <div className='flex items-center gap-2'>
-                  {module.tags.slice(0, 2).map((tag) => (
+                  {module.tags.slice(0, 2).map(tag => (
                     <Badge key={tag} variant='outline' className='text-xs'>
                       {tag}
                     </Badge>
@@ -827,7 +937,9 @@ export default function WorkshopContent({
                 {state.selectedModule.title}
               </CardTitle>
               <Button
-                onClick={() => setState(prev => ({ ...prev, selectedModule: null }))}
+                onClick={() =>
+                  setState(prev => ({ ...prev, selectedModule: null }))
+                }
                 variant='ghost'
                 size='sm'
               >
@@ -843,9 +955,12 @@ export default function WorkshopContent({
           <CardContent>
             {/* Module Content & Lessons would be rendered here */}
             <div className='space-y-4'>
-              {state.selectedModule.lessons && state.selectedModule.lessons.length > 0 ? (
+              {state.selectedModule.lessons &&
+              state.selectedModule.lessons.length > 0 ? (
                 <div className='space-y-3'>
-                  <h4 className='font-semibold text-text-primary mb-3'>Module Lessons</h4>
+                  <h4 className='font-semibold text-text-primary mb-3'>
+                    Module Lessons
+                  </h4>
                   {state.selectedModule.lessons.map((lesson, index) => (
                     <Card
                       key={lesson.id}
@@ -866,7 +981,9 @@ export default function WorkshopContent({
                                 </span>
                                 {lesson.progress && (
                                   <Badge variant='outline' className='text-xs'>
-                                    {lesson.progress.completed ? 'Completed' : `${lesson.progress.progressPercentage}%`}
+                                    {lesson.progress.completed
+                                      ? 'Completed'
+                                      : `${lesson.progress.progressPercentage}%`}
                                   </Badge>
                                 )}
                               </div>
@@ -893,25 +1010,32 @@ export default function WorkshopContent({
                     Module Content Loading
                   </h3>
                   <p className='text-text-secondary mb-4'>
-                    This module's content is being prepared for an optimal learning experience.
+                    This module's content is being prepared for an optimal
+                    learning experience.
                   </p>
                   <div className='flex justify-center gap-3'>
                     <Button
-                      onClick={() => updateModuleProgress(state.selectedModule!.id, 25)}
+                      onClick={() =>
+                        updateModuleProgress(state.selectedModule!.id, 25)
+                      }
                       variant='outline'
                       size='sm'
                     >
                       Mark 25% Complete
                     </Button>
                     <Button
-                      onClick={() => updateModuleProgress(state.selectedModule!.id, 50)}
+                      onClick={() =>
+                        updateModuleProgress(state.selectedModule!.id, 50)
+                      }
                       variant='outline'
                       size='sm'
                     >
                       Mark 50% Complete
                     </Button>
                     <Button
-                      onClick={() => updateModuleProgress(state.selectedModule!.id, 100)}
+                      onClick={() =>
+                        updateModuleProgress(state.selectedModule!.id, 100)
+                      }
                       className='bg-tomb45-green hover:bg-tomb45-green/90'
                       size='sm'
                     >
@@ -938,12 +1062,15 @@ export default function WorkshopContent({
                     {state.selectedLesson.title}
                   </CardTitle>
                   <p className='text-text-secondary'>
-                    {state.selectedLesson.module.title} • {state.selectedLesson.durationMinutes} minutes
+                    {state.selectedLesson.module.title} •{' '}
+                    {state.selectedLesson.durationMinutes} minutes
                   </p>
                 </div>
               </div>
               <Button
-                onClick={() => setState(prev => ({ ...prev, selectedLesson: null }))}
+                onClick={() =>
+                  setState(prev => ({ ...prev, selectedLesson: null }))
+                }
                 variant='ghost'
                 size='sm'
               >
@@ -961,7 +1088,8 @@ export default function WorkshopContent({
                 Interactive Lesson Content
               </h3>
               <p className='text-text-secondary mb-6'>
-                This lesson's interactive content will be displayed here based on the lesson type: {state.selectedLesson.lessonType}
+                This lesson's interactive content will be displayed here based
+                on the lesson type: {state.selectedLesson.lessonType}
               </p>
               <Button
                 onClick={() => completeLesson(state.selectedLesson!.id)}

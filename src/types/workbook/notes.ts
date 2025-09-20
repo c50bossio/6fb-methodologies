@@ -3,7 +3,7 @@
  * Complete types for rich text notes, organization, and collaboration
  */
 
-import { UUID, Timestamp, JSONObject } from './core';
+import type { UUID, Timestamp, JSONObject } from './core';
 
 // Core Note Types
 export interface WorkbookNote {

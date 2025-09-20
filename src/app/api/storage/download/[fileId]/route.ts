@@ -45,9 +45,10 @@ export async function GET(
   try {
     // Get client information for audit logging
     const headersList = headers();
-    clientIp = headersList.get('x-forwarded-for') ||
-               headersList.get('x-real-ip') ||
-               'unknown';
+    clientIp =
+      headersList.get('x-forwarded-for') ||
+      headersList.get('x-real-ip') ||
+      'unknown';
 
     const userAgent = headersList.get('user-agent') || 'unknown';
 
@@ -178,7 +179,6 @@ export async function GET(
         expiresAt,
       },
     });
-
   } catch (error) {
     console.error('Download endpoint error:', error);
 
@@ -196,9 +196,12 @@ export async function GET(
       {
         success: false,
         error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ?
-          (error instanceof Error ? error.message : 'Unknown error') :
-          'An unexpected error occurred'
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : 'Unknown error'
+            : 'An unexpected error occurred',
       },
       { status: 500 }
     );
@@ -232,18 +235,12 @@ export async function POST(
     // Get file metadata from database
     const fileRecord = await getFileFromDatabase(fileId);
     if (!fileRecord) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
     // Check access permissions
     if (fileRecord.user_id !== userId) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Parse request body for streaming options
@@ -253,10 +250,7 @@ export async function POST(
     // Extract S3 key from file URL
     const s3Key = extractS3KeyFromUrl(fileRecord.file_url);
     if (!s3Key) {
-      return NextResponse.json(
-        { error: 'Invalid file URL' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Invalid file URL' }, { status: 500 });
     }
 
     // For now, redirect to signed URL
@@ -276,7 +270,6 @@ export async function POST(
     });
 
     return NextResponse.redirect(downloadUrl);
-
   } catch (error) {
     console.error('Streaming endpoint error:', error);
 
@@ -288,10 +281,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json(
-      { error: 'Streaming failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Streaming failed' }, { status: 500 });
   }
 }
 
@@ -303,18 +293,23 @@ function extractS3KeyFromUrl(url: string): string | null {
     const urlObj = new URL(url);
 
     // Handle S3 direct URLs
-    if (urlObj.hostname.includes('.s3.') || urlObj.hostname.includes('s3.amazonaws.com')) {
+    if (
+      urlObj.hostname.includes('.s3.') ||
+      urlObj.hostname.includes('s3.amazonaws.com')
+    ) {
       return urlObj.pathname.substring(1); // Remove leading slash
     }
 
     // Handle CloudFront URLs
-    if (urlObj.hostname.includes('cloudfront.net') || urlObj.hostname.includes('amazonaws.com')) {
+    if (
+      urlObj.hostname.includes('cloudfront.net') ||
+      urlObj.hostname.includes('amazonaws.com')
+    ) {
       return urlObj.pathname.substring(1); // Remove leading slash
     }
 
     // Handle custom domain URLs
     return urlObj.pathname.substring(1); // Remove leading slash
-
   } catch (error) {
     console.error('Failed to extract S3 key from URL:', url, error);
     return null;

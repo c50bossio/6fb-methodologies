@@ -103,11 +103,13 @@ export class WorkbookError extends Error {
       timestamp: this.timestamp,
       requestId: this.requestId,
       stack: this.stack,
-      originalError: this.originalError ? {
-        name: this.originalError.name,
-        message: this.originalError.message,
-        stack: this.originalError.stack,
-      } : undefined,
+      originalError: this.originalError
+        ? {
+            name: this.originalError.name,
+            message: this.originalError.message,
+            stack: this.originalError.stack,
+          }
+        : undefined,
     };
   }
 
@@ -213,11 +215,7 @@ export class NotFoundError extends WorkbookError {
  * Rate limit errors
  */
 export class RateLimitError extends WorkbookError {
-  constructor(
-    limit: number,
-    windowMs: number,
-    requestId?: string
-  ) {
+  constructor(limit: number, windowMs: number, requestId?: string) {
     super('Rate limit exceeded', {
       code: 'RATE_LIMIT_EXCEEDED',
       category: ErrorCategory.RATE_LIMIT,
@@ -367,8 +365,16 @@ export interface Logger {
   debug(message: string, metadata?: Record<string, any>): void;
   info(message: string, metadata?: Record<string, any>): void;
   warn(message: string, metadata?: Record<string, any>): void;
-  error(message: string, error?: Error | WorkbookError, metadata?: Record<string, any>): void;
-  fatal(message: string, error?: Error | WorkbookError, metadata?: Record<string, any>): void;
+  error(
+    message: string,
+    error?: Error | WorkbookError,
+    metadata?: Record<string, any>
+  ): void;
+  fatal(
+    message: string,
+    error?: Error | WorkbookError,
+    metadata?: Record<string, any>
+  ): void;
 }
 
 /**
@@ -425,44 +431,60 @@ class ConsoleLogger implements Logger {
     console.warn(this.formatLog(entry));
   }
 
-  error(message: string, error?: Error | WorkbookError, metadata?: Record<string, any>): void {
+  error(
+    message: string,
+    error?: Error | WorkbookError,
+    metadata?: Record<string, any>
+  ): void {
     const entry: LogEntry = {
       timestamp: Date.now(),
       level: LogLevel.ERROR,
       message,
       metadata,
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        ...(error instanceof WorkbookError ? {
-          code: error.code,
-          category: error.category,
-          severity: error.severity,
-          details: error.details,
-        } : {}),
-      } : undefined,
+      error: error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            ...(error instanceof WorkbookError
+              ? {
+                  code: error.code,
+                  category: error.category,
+                  severity: error.severity,
+                  details: error.details,
+                }
+              : {}),
+          }
+        : undefined,
     };
     console.error(this.formatLog(entry));
   }
 
-  fatal(message: string, error?: Error | WorkbookError, metadata?: Record<string, any>): void {
+  fatal(
+    message: string,
+    error?: Error | WorkbookError,
+    metadata?: Record<string, any>
+  ): void {
     const entry: LogEntry = {
       timestamp: Date.now(),
       level: LogLevel.FATAL,
       message,
       metadata,
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        ...(error instanceof WorkbookError ? {
-          code: error.code,
-          category: error.category,
-          severity: error.severity,
-          details: error.details,
-        } : {}),
-      } : undefined,
+      error: error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            ...(error instanceof WorkbookError
+              ? {
+                  code: error.code,
+                  category: error.category,
+                  severity: error.severity,
+                  details: error.details,
+                }
+              : {}),
+          }
+        : undefined,
     };
     console.error(this.formatLog(entry));
 
@@ -593,35 +615,25 @@ export function normalizeError(
   if (error instanceof Error) {
     // Handle specific error types
     if (error.name === 'ValidationError') {
-      return new ValidationError(
-        error.message,
-        undefined,
-        requestId
-      );
+      return new ValidationError(error.message, undefined, requestId);
     }
 
     if (error.name === 'DatabaseError') {
-      return new DatabaseError(
-        'Database operation failed',
-        error,
-        requestId
-      );
+      return new DatabaseError('Database operation failed', error, requestId);
     }
 
-    if (error.message.includes('permission') || error.message.includes('authorization')) {
-      return new AuthorizationError(
-        error.message,
-        undefined,
-        requestId
-      );
+    if (
+      error.message.includes('permission') ||
+      error.message.includes('authorization')
+    ) {
+      return new AuthorizationError(error.message, undefined, requestId);
     }
 
-    if (error.message.includes('authentication') || error.message.includes('unauthorized')) {
-      return new AuthenticationError(
-        error.message,
-        undefined,
-        requestId
-      );
+    if (
+      error.message.includes('authentication') ||
+      error.message.includes('unauthorized')
+    ) {
+      return new AuthenticationError(error.message, undefined, requestId);
     }
 
     // Generic error
@@ -671,16 +683,27 @@ export function handleError(
     if (normalizedError.severity === ErrorSeverity.CRITICAL) {
       logger.fatal('Critical error occurred', normalizedError, logMetadata);
     } else if (normalizedError.severity === ErrorSeverity.HIGH) {
-      logger.error('High severity error occurred', normalizedError, logMetadata);
+      logger.error(
+        'High severity error occurred',
+        normalizedError,
+        logMetadata
+      );
     } else if (normalizedError.severity === ErrorSeverity.MEDIUM) {
-      logger.warn('Medium severity error occurred', normalizedError, logMetadata);
+      logger.warn(
+        'Medium severity error occurred',
+        normalizedError,
+        logMetadata
+      );
     } else {
       logger.info('Low severity error occurred', normalizedError, logMetadata);
     }
   }
 
   // Alert on critical errors
-  if (errorConfig.alertOnCritical && normalizedError.severity === ErrorSeverity.CRITICAL) {
+  if (
+    errorConfig.alertOnCritical &&
+    normalizedError.severity === ErrorSeverity.CRITICAL
+  ) {
     // In production, trigger alerts here
     // sendAlert(normalizedError, context);
   }
@@ -713,7 +736,9 @@ export function withErrorHandling<T extends any[], R>(
 
     try {
       // Extract request from arguments if available
-      const request = args.find(arg => arg && typeof arg.url === 'string') as NextRequest;
+      const request = args.find(
+        arg => arg && typeof arg.url === 'string'
+      ) as NextRequest;
       if (request) {
         context = createRequestContext(request);
       }
@@ -721,7 +746,9 @@ export function withErrorHandling<T extends any[], R>(
       return await handler(...args);
     } catch (error) {
       const errorResponse = handleError(error, context, config);
-      return NextResponse.json(errorResponse, { status: errorResponse.statusCode || 500 });
+      return NextResponse.json(errorResponse, {
+        status: errorResponse.statusCode || 500,
+      });
     }
   };
 }
@@ -733,7 +760,9 @@ export async function safeApiCall<T>(
   operation: () => Promise<T>,
   context?: RequestContext,
   config?: Partial<ErrorHandlerConfig>
-): Promise<{ success: true; data: T } | { success: false; error: ErrorResponse }> {
+): Promise<
+  { success: true; data: T } | { success: false; error: ErrorResponse }
+> {
   try {
     const data = await operation();
     return { success: true, data };
@@ -760,11 +789,7 @@ export function createValidationError(
     code: err.code,
   }));
 
-  return new ValidationError(
-    'Validation failed',
-    validationErrors,
-    requestId
-  );
+  return new ValidationError('Validation failed', validationErrors, requestId);
 }
 
 /**
@@ -833,9 +858,4 @@ export function recordMetrics(
 }
 
 // Export utility functions
-export {
-  generateRequestId,
-  createRequestContext,
-  recordMetrics,
-  logger,
-};
+export { generateRequestId, createRequestContext, recordMetrics, logger };

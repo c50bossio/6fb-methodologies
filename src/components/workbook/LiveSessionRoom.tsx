@@ -68,7 +68,10 @@ interface Participant {
   connectionStatus: 'connected' | 'reconnecting' | 'disconnected';
 }
 
-export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomProps) {
+export default function LiveSessionRoom({
+  sessionId,
+  onLeave,
+}: LiveSessionRoomProps) {
   const {
     socket,
     connectionState,
@@ -93,7 +96,9 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
 
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'chat' | 'participants' | 'polls' | 'qa'>('chat');
+  const [activeTab, setActiveTab] = useState<
+    'chat' | 'participants' | 'polls' | 'qa'
+  >('chat');
   const [chatMessage, setChatMessage] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
@@ -133,7 +138,11 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
         localVideoRef.current.srcObject = stream;
       }
 
-      setMediaState(prev => ({ ...prev, audioEnabled: true, videoEnabled: true }));
+      setMediaState(prev => ({
+        ...prev,
+        audioEnabled: true,
+        videoEnabled: true,
+      }));
     } catch (error) {
       console.error('Failed to initialize media:', error);
     }
@@ -214,12 +223,15 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
     }
   }, [chatMessage, emit, socket]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
-    }
-  }, [sendChatMessage]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+      }
+    },
+    [sendChatMessage]
+  );
 
   const leaveSessionAndReturn = useCallback(() => {
     leaveSession();
@@ -244,7 +256,8 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
   // Auto-scroll chat
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
     }
   }, [sessionMessages]);
 
@@ -254,190 +267,214 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
   }, [initializeMedia]);
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className='flex h-screen bg-gray-900 text-white'>
       {/* Main video area */}
-      <div className="flex-1 flex flex-col">
+      <div className='flex-1 flex flex-col'>
         {/* Header */}
-        <div className="bg-gray-800 px-6 py-4 flex items-center justify-between border-b border-gray-700">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${connectionState.isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="font-medium">Live Session</span>
+        <div className='bg-gray-800 px-6 py-4 flex items-center justify-between border-b border-gray-700'>
+          <div className='flex items-center space-x-4'>
+            <div className='flex items-center space-x-2'>
+              <div
+                className={`w-3 h-3 rounded-full ${connectionState.isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+              />
+              <span className='font-medium'>Live Session</span>
               {connectionState.latency && (
-                <Badge variant="secondary">{connectionState.latency}ms</Badge>
+                <Badge variant='secondary'>{connectionState.latency}ms</Badge>
               )}
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-400">
-              <Users className="w-4 h-4" />
+            <div className='flex items-center space-x-2 text-sm text-gray-400'>
+              <Users className='w-4 h-4' />
               <span>{sessionParticipants.length} participants</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className='flex items-center space-x-2'>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={copySessionLink}
-              className="text-gray-400 hover:text-white"
+              className='text-gray-400 hover:text-white'
             >
-              <Share className="w-4 h-4" />
+              <Share className='w-4 h-4' />
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={toggleFullscreen}
-              className="text-gray-400 hover:text-white"
+              className='text-gray-400 hover:text-white'
             >
-              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              {isFullscreen ? (
+                <Minimize className='w-4 h-4' />
+              ) : (
+                <Maximize className='w-4 h-4' />
+              )}
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white"
+              variant='ghost'
+              size='sm'
+              className='text-gray-400 hover:text-white'
             >
-              <Settings className="w-4 h-4" />
+              <Settings className='w-4 h-4' />
             </Button>
           </div>
         </div>
 
         {/* Video grid */}
-        <div className="flex-1 bg-black p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className='flex-1 bg-black p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
           {/* Local video */}
-          <div className="relative bg-gray-800 rounded-lg overflow-hidden">
+          <div className='relative bg-gray-800 rounded-lg overflow-hidden'>
             <video
               ref={localVideoRef}
               autoPlay
               muted
               playsInline
-              className="w-full h-full object-cover"
+              className='w-full h-full object-cover'
             />
-            <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-sm">
+            <div className='absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-sm'>
               You {handRaised && '🤚'}
             </div>
-            <div className="absolute top-2 right-2 flex space-x-2">
+            <div className='absolute top-2 right-2 flex space-x-2'>
               {!mediaState.audioEnabled && (
-                <div className="bg-red-500 p-1 rounded-full">
-                  <MicOff className="w-3 h-3" />
+                <div className='bg-red-500 p-1 rounded-full'>
+                  <MicOff className='w-3 h-3' />
                 </div>
               )}
               {!mediaState.videoEnabled && (
-                <div className="bg-red-500 p-1 rounded-full">
-                  <VideoOff className="w-3 h-3" />
+                <div className='bg-red-500 p-1 rounded-full'>
+                  <VideoOff className='w-3 h-3' />
                 </div>
               )}
             </div>
           </div>
 
           {/* Remote participants */}
-          {sessionParticipants.map((participant) => (
-            <div key={participant.connectionId} className="relative bg-gray-800 rounded-lg overflow-hidden">
-              <div className="w-full h-full flex items-center justify-center">
+          {sessionParticipants.map(participant => (
+            <div
+              key={participant.connectionId}
+              className='relative bg-gray-800 rounded-lg overflow-hidden'
+            >
+              <div className='w-full h-full flex items-center justify-center'>
                 {participant.userData.avatar ? (
                   <img
                     src={participant.userData.avatar}
                     alt={participant.userData.name}
-                    className="w-16 h-16 rounded-full"
+                    className='w-16 h-16 rounded-full'
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-xl font-bold">
+                  <div className='w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-xl font-bold'>
                     {participant.userData.name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-sm">
-                {participant.userData.name} {participant.mediaState.handRaised && '🤚'}
+              <div className='absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-sm'>
+                {participant.userData.name}{' '}
+                {participant.mediaState.handRaised && '🤚'}
               </div>
-              <div className="absolute top-2 right-2 flex space-x-2">
+              <div className='absolute top-2 right-2 flex space-x-2'>
                 {!participant.mediaState.audioEnabled && (
-                  <div className="bg-red-500 p-1 rounded-full">
-                    <MicOff className="w-3 h-3" />
+                  <div className='bg-red-500 p-1 rounded-full'>
+                    <MicOff className='w-3 h-3' />
                   </div>
                 )}
                 {!participant.mediaState.videoEnabled && (
-                  <div className="bg-red-500 p-1 rounded-full">
-                    <VideoOff className="w-3 h-3" />
+                  <div className='bg-red-500 p-1 rounded-full'>
+                    <VideoOff className='w-3 h-3' />
                   </div>
                 )}
                 {participant.mediaState.isSpeaking && (
-                  <div className="bg-green-500 p-1 rounded-full animate-pulse">
-                    <Mic className="w-3 h-3" />
+                  <div className='bg-green-500 p-1 rounded-full animate-pulse'>
+                    <Mic className='w-3 h-3' />
                   </div>
                 )}
               </div>
-              <div className={`absolute inset-0 border-2 rounded-lg ${
-                participant.connectionStatus === 'connected'
-                  ? 'border-transparent'
-                  : participant.connectionStatus === 'reconnecting'
-                  ? 'border-yellow-500'
-                  : 'border-red-500'
-              }`} />
+              <div
+                className={`absolute inset-0 border-2 rounded-lg ${
+                  participant.connectionStatus === 'connected'
+                    ? 'border-transparent'
+                    : participant.connectionStatus === 'reconnecting'
+                      ? 'border-yellow-500'
+                      : 'border-red-500'
+                }`}
+              />
             </div>
           ))}
         </div>
 
         {/* Controls */}
-        <div className="bg-gray-800 px-6 py-4 flex items-center justify-center space-x-4 border-t border-gray-700">
+        <div className='bg-gray-800 px-6 py-4 flex items-center justify-center space-x-4 border-t border-gray-700'>
           <Button
-            variant={mediaState.audioEnabled ? "default" : "destructive"}
-            size="lg"
+            variant={mediaState.audioEnabled ? 'default' : 'destructive'}
+            size='lg'
             onClick={toggleAudio}
-            className="rounded-full p-3"
+            className='rounded-full p-3'
           >
-            {mediaState.audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+            {mediaState.audioEnabled ? (
+              <Mic className='w-5 h-5' />
+            ) : (
+              <MicOff className='w-5 h-5' />
+            )}
           </Button>
 
           <Button
-            variant={mediaState.videoEnabled ? "default" : "destructive"}
-            size="lg"
+            variant={mediaState.videoEnabled ? 'default' : 'destructive'}
+            size='lg'
             onClick={toggleVideo}
-            className="rounded-full p-3"
+            className='rounded-full p-3'
           >
-            {mediaState.videoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+            {mediaState.videoEnabled ? (
+              <Video className='w-5 h-5' />
+            ) : (
+              <VideoOff className='w-5 h-5' />
+            )}
           </Button>
 
           <Button
-            variant={mediaState.screenSharing ? "secondary" : "ghost"}
-            size="lg"
+            variant={mediaState.screenSharing ? 'secondary' : 'ghost'}
+            size='lg'
             onClick={toggleScreenShare}
-            className="rounded-full p-3"
+            className='rounded-full p-3'
           >
-            {mediaState.screenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+            {mediaState.screenSharing ? (
+              <MonitorOff className='w-5 h-5' />
+            ) : (
+              <Monitor className='w-5 h-5' />
+            )}
           </Button>
 
           <Button
-            variant={handRaised ? "secondary" : "ghost"}
-            size="lg"
+            variant={handRaised ? 'secondary' : 'ghost'}
+            size='lg'
             onClick={toggleHandRaise}
-            className="rounded-full p-3"
+            className='rounded-full p-3'
           >
-            <Hand className="w-5 h-5" />
+            <Hand className='w-5 h-5' />
           </Button>
 
           <Button
-            variant="ghost"
-            size="lg"
+            variant='ghost'
+            size='lg'
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="rounded-full p-3"
+            className='rounded-full p-3'
           >
-            <MessageCircle className="w-5 h-5" />
+            <MessageCircle className='w-5 h-5' />
           </Button>
 
           <Button
-            variant="destructive"
-            size="lg"
+            variant='destructive'
+            size='lg'
             onClick={leaveSessionAndReturn}
-            className="rounded-full p-3"
+            className='rounded-full p-3'
           >
-            <PhoneOff className="w-5 h-5" />
+            <PhoneOff className='w-5 h-5' />
           </Button>
         </div>
       </div>
 
       {/* Sidebar */}
       {sidebarOpen && (
-        <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+        <div className='w-80 bg-gray-800 border-l border-gray-700 flex flex-col'>
           {/* Tabs */}
-          <div className="flex border-b border-gray-700">
+          <div className='flex border-b border-gray-700'>
             {[
               { id: 'chat', label: 'Chat', icon: MessageCircle },
               { id: 'participants', label: 'People', icon: Users },
@@ -453,43 +490,43 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
                     : 'border-transparent text-gray-400 hover:text-white'
                 }`}
               >
-                <Icon className="w-4 h-4 mx-auto mb-1" />
+                <Icon className='w-4 h-4 mx-auto mb-1' />
                 {label}
               </button>
             ))}
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 overflow-hidden">
+          <div className='flex-1 overflow-hidden'>
             {activeTab === 'chat' && (
-              <div className="h-full flex flex-col">
+              <div className='h-full flex flex-col'>
                 <div
                   ref={chatContainerRef}
-                  className="flex-1 overflow-y-auto p-4 space-y-3"
+                  className='flex-1 overflow-y-auto p-4 space-y-3'
                 >
                   {sessionMessages.map((message, index) => (
-                    <div key={index} className="text-sm">
-                      <div className="font-medium text-blue-400 mb-1">
+                    <div key={index} className='text-sm'>
+                      <div className='font-medium text-blue-400 mb-1'>
                         {message.senderName}
                       </div>
-                      <div className="text-gray-300">{message.content}</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className='text-gray-300'>{message.content}</div>
+                      <div className='text-xs text-gray-500 mt-1'>
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="p-4 border-t border-gray-700">
-                  <div className="flex space-x-2">
+                <div className='p-4 border-t border-gray-700'>
+                  <div className='flex space-x-2'>
                     <Input
                       value={chatMessage}
-                      onChange={(e) => setChatMessage(e.target.value)}
+                      onChange={e => setChatMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Type a message..."
-                      className="flex-1"
+                      placeholder='Type a message...'
+                      className='flex-1'
                     />
-                    <Button onClick={sendChatMessage} size="sm">
-                      <Send className="w-4 h-4" />
+                    <Button onClick={sendChatMessage} size='sm'>
+                      <Send className='w-4 h-4' />
                     </Button>
                   </div>
                 </div>
@@ -497,20 +534,31 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
             )}
 
             {activeTab === 'participants' && (
-              <div className="p-4 space-y-3">
-                {sessionParticipants.map((participant) => (
-                  <div key={participant.connectionId} className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
+              <div className='p-4 space-y-3'>
+                {sessionParticipants.map(participant => (
+                  <div
+                    key={participant.connectionId}
+                    className='flex items-center space-x-3'
+                  >
+                    <div className='w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold'>
                       {participant.userData.name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{participant.userData.name}</div>
-                      <div className="text-xs text-gray-400">{participant.userData.role}</div>
+                    <div className='flex-1'>
+                      <div className='text-sm font-medium'>
+                        {participant.userData.name}
+                      </div>
+                      <div className='text-xs text-gray-400'>
+                        {participant.userData.role}
+                      </div>
                     </div>
-                    <div className="flex space-x-1">
+                    <div className='flex space-x-1'>
                       {participant.mediaState.handRaised && <span>🤚</span>}
-                      {!participant.mediaState.audioEnabled && <MicOff className="w-3 h-3 text-red-500" />}
-                      {!participant.mediaState.videoEnabled && <VideoOff className="w-3 h-3 text-red-500" />}
+                      {!participant.mediaState.audioEnabled && (
+                        <MicOff className='w-3 h-3 text-red-500' />
+                      )}
+                      {!participant.mediaState.videoEnabled && (
+                        <VideoOff className='w-3 h-3 text-red-500' />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -518,20 +566,22 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
             )}
 
             {activeTab === 'polls' && (
-              <div className="p-4">
+              <div className='p-4'>
                 {currentPoll ? (
-                  <Card className="p-4">
-                    <h3 className="font-medium mb-3">{currentPoll.question}</h3>
-                    <div className="space-y-2">
+                  <Card className='p-4'>
+                    <h3 className='font-medium mb-3'>{currentPoll.question}</h3>
+                    <div className='space-y-2'>
                       {currentPoll.options?.map((option: any) => (
                         <Button
                           key={option.id}
-                          variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => emit('poll:vote', {
-                            pollId: currentPoll.id,
-                            selectedOptions: [option.id],
-                          })}
+                          variant='outline'
+                          className='w-full justify-start'
+                          onClick={() =>
+                            emit('poll:vote', {
+                              pollId: currentPoll.id,
+                              selectedOptions: [option.id],
+                            })
+                          }
                         >
                           {option.text}
                         </Button>
@@ -539,7 +589,7 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
                     </div>
                   </Card>
                 ) : (
-                  <div className="text-center text-gray-400">
+                  <div className='text-center text-gray-400'>
                     No active polls
                   </div>
                 )}
@@ -547,7 +597,7 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
             )}
 
             {activeTab === 'qa' && (
-              <div className="p-4">
+              <div className='p-4'>
                 <Button
                   onClick={() => {
                     const question = prompt('Ask a question:');
@@ -558,11 +608,11 @@ export default function LiveSessionRoom({ sessionId, onLeave }: LiveSessionRoomP
                       });
                     }
                   }}
-                  className="w-full mb-4"
+                  className='w-full mb-4'
                 >
                   Ask Question
                 </Button>
-                <div className="text-center text-gray-400">
+                <div className='text-center text-gray-400'>
                   Q&A feature coming soon
                 </div>
               </div>

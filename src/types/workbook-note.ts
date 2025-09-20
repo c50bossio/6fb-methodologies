@@ -24,7 +24,7 @@ export const NoteFormat = {
   RICH_TEXT: 'rich_text', // JSON-based rich text format
 } as const;
 
-export type NoteFormatType = typeof NoteFormat[keyof typeof NoteFormat];
+export type NoteFormatType = (typeof NoteFormat)[keyof typeof NoteFormat];
 
 export const NoteStatus = {
   DRAFT: 'draft',
@@ -33,7 +33,7 @@ export const NoteStatus = {
   DELETED: 'deleted',
 } as const;
 
-export type NoteStatusType = typeof NoteStatus[keyof typeof NoteStatus];
+export type NoteStatusType = (typeof NoteStatus)[keyof typeof NoteStatus];
 
 export const NoteType = {
   GENERAL: 'general',
@@ -47,7 +47,7 @@ export const NoteType = {
   BOOKMARK: 'bookmark',
 } as const;
 
-export type NoteTypeType = typeof NoteType[keyof typeof NoteType];
+export type NoteTypeType = (typeof NoteType)[keyof typeof NoteType];
 
 export const VisibilityLevel = {
   PRIVATE: 'private',
@@ -56,7 +56,8 @@ export const VisibilityLevel = {
   TEAM: 'team',
 } as const;
 
-export type VisibilityLevelType = typeof VisibilityLevel[keyof typeof VisibilityLevel];
+export type VisibilityLevelType =
+  (typeof VisibilityLevel)[keyof typeof VisibilityLevel];
 
 export const ExportFormat = {
   PDF: 'pdf',
@@ -67,7 +68,7 @@ export const ExportFormat = {
   JSON: 'json',
 } as const;
 
-export type ExportFormatType = typeof ExportFormat[keyof typeof ExportFormat];
+export type ExportFormatType = (typeof ExportFormat)[keyof typeof ExportFormat];
 
 // =============================================================================
 // Rich Text Content Structure
@@ -96,7 +97,14 @@ export interface TextNode extends RichTextNode {
   type: 'text';
   text: string;
   marks?: Array<{
-    type: 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'link' | 'highlight';
+    type:
+      | 'bold'
+      | 'italic'
+      | 'underline'
+      | 'strike'
+      | 'code'
+      | 'link'
+      | 'highlight';
     attrs?: {
       href?: string; // for links
       color?: string; // for highlights
@@ -391,11 +399,24 @@ export interface NoteTemplate {
 export interface NoteLink {
   id: UUID;
   sourceNoteId: UUID;
-  targetType: 'note' | 'module' | 'lesson' | 'audio' | 'transcription' | 'user' | 'external';
+  targetType:
+    | 'note'
+    | 'module'
+    | 'lesson'
+    | 'audio'
+    | 'transcription'
+    | 'user'
+    | 'external';
   targetId: UUID | string;
 
   // Link details
-  linkType: 'reference' | 'citation' | 'related' | 'parent' | 'child' | 'duplicate';
+  linkType:
+    | 'reference'
+    | 'citation'
+    | 'related'
+    | 'parent'
+    | 'child'
+    | 'duplicate';
   context?: string; // where in the note this link appears
   description?: string;
 
@@ -806,11 +827,43 @@ export interface WorkbookNote {
 // Base schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const NoteFormatSchema = z.enum(['plain_text', 'markdown', 'html', 'rich_text']);
-export const NoteStatusSchema = z.enum(['draft', 'published', 'archived', 'deleted']);
-export const NoteTypeSchema = z.enum(['general', 'lesson_notes', 'audio_notes', 'meeting_notes', 'reflection', 'todo', 'question', 'summary', 'bookmark']);
-export const VisibilityLevelSchema = z.enum(['private', 'shared', 'public', 'team']);
-export const ExportFormatSchema = z.enum(['pdf', 'docx', 'html', 'markdown', 'text', 'json']);
+export const NoteFormatSchema = z.enum([
+  'plain_text',
+  'markdown',
+  'html',
+  'rich_text',
+]);
+export const NoteStatusSchema = z.enum([
+  'draft',
+  'published',
+  'archived',
+  'deleted',
+]);
+export const NoteTypeSchema = z.enum([
+  'general',
+  'lesson_notes',
+  'audio_notes',
+  'meeting_notes',
+  'reflection',
+  'todo',
+  'question',
+  'summary',
+  'bookmark',
+]);
+export const VisibilityLevelSchema = z.enum([
+  'private',
+  'shared',
+  'public',
+  'team',
+]);
+export const ExportFormatSchema = z.enum([
+  'pdf',
+  'docx',
+  'html',
+  'markdown',
+  'text',
+  'json',
+]);
 
 // Rich text schemas
 export const RichTextMarkSchema = z.object({
@@ -875,16 +928,33 @@ export const NoteCategorySchema = z.object({
 export const NoteLinkSchema = z.object({
   id: UUIDSchema,
   sourceNoteId: UUIDSchema,
-  targetType: z.enum(['note', 'module', 'lesson', 'audio', 'transcription', 'user', 'external']),
+  targetType: z.enum([
+    'note',
+    'module',
+    'lesson',
+    'audio',
+    'transcription',
+    'user',
+    'external',
+  ]),
   targetId: z.string(),
-  linkType: z.enum(['reference', 'citation', 'related', 'parent', 'child', 'duplicate']),
+  linkType: z.enum([
+    'reference',
+    'citation',
+    'related',
+    'parent',
+    'child',
+    'duplicate',
+  ]),
   context: z.string().optional(),
   description: z.string().optional(),
-  position: z.object({
-    nodeId: z.string().optional(),
-    offset: z.number().optional(),
-    length: z.number().optional(),
-  }).optional(),
+  position: z
+    .object({
+      nodeId: z.string().optional(),
+      offset: z.number().optional(),
+      length: z.number().optional(),
+    })
+    .optional(),
   metadata: z.record(z.any()),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
@@ -908,21 +978,27 @@ export const NoteCommentSchema = z.object({
   parentCommentId: UUIDSchema.optional(),
   content: z.string().min(1),
   format: z.enum(['text', 'markdown']),
-  position: z.object({
-    nodeId: z.string().optional(),
-    selection: z.object({
-      from: z.number(),
-      to: z.number(),
-    }).optional(),
-  }).optional(),
+  position: z
+    .object({
+      nodeId: z.string().optional(),
+      selection: z
+        .object({
+          from: z.number(),
+          to: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
   isResolved: z.boolean(),
   resolvedBy: UUIDSchema.optional(),
   resolvedAt: TimestampSchema.optional(),
-  reactions: z.array(z.object({
-    userId: UUIDSchema,
-    type: z.enum(['like', 'agree', 'disagree', 'laugh', 'confused']),
-    createdAt: TimestampSchema,
-  })),
+  reactions: z.array(
+    z.object({
+      userId: UUIDSchema,
+      type: z.enum(['like', 'agree', 'disagree', 'laugh', 'confused']),
+      createdAt: TimestampSchema,
+    })
+  ),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   deletedAt: TimestampSchema.optional(),
@@ -932,37 +1008,45 @@ export const NoteCommentSchema = z.object({
 export const NoteSearchQuerySchema = z.object({
   query: z.string().optional(),
   searchIn: z.array(z.enum(['title', 'content', 'tags', 'metadata'])),
-  filters: z.object({
-    userId: UUIDSchema.optional(),
-    categoryId: UUIDSchema.optional(),
-    tags: z.array(z.string()).optional(),
-    type: NoteTypeSchema.optional(),
-    status: NoteStatusSchema.optional(),
-    format: NoteFormatSchema.optional(),
-    visibility: VisibilityLevelSchema.optional(),
-    dateRange: z.object({
-      field: z.enum(['createdAt', 'updatedAt', 'lastViewedAt']),
-      start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    }).optional(),
-    hasLinks: z.boolean().optional(),
-    hasAudio: z.boolean().optional(),
-    hasImages: z.boolean().optional(),
-    minWordCount: z.number().min(0).optional(),
-    maxWordCount: z.number().min(0).optional(),
-  }).optional(),
-  sortBy: z.enum(['relevance', 'createdAt', 'updatedAt', 'title', 'wordCount']).optional(),
+  filters: z
+    .object({
+      userId: UUIDSchema.optional(),
+      categoryId: UUIDSchema.optional(),
+      tags: z.array(z.string()).optional(),
+      type: NoteTypeSchema.optional(),
+      status: NoteStatusSchema.optional(),
+      format: NoteFormatSchema.optional(),
+      visibility: VisibilityLevelSchema.optional(),
+      dateRange: z
+        .object({
+          field: z.enum(['createdAt', 'updatedAt', 'lastViewedAt']),
+          start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        })
+        .optional(),
+      hasLinks: z.boolean().optional(),
+      hasAudio: z.boolean().optional(),
+      hasImages: z.boolean().optional(),
+      minWordCount: z.number().min(0).optional(),
+      maxWordCount: z.number().min(0).optional(),
+    })
+    .optional(),
+  sortBy: z
+    .enum(['relevance', 'createdAt', 'updatedAt', 'title', 'wordCount'])
+    .optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
-  options: z.object({
-    fuzzy: z.boolean().optional(),
-    caseSensitive: z.boolean().optional(),
-    wholeWords: z.boolean().optional(),
-    includeArchived: z.boolean().optional(),
-    includeContent: z.boolean().optional(),
-    highlightMatches: z.boolean().optional(),
-  }).optional(),
+  options: z
+    .object({
+      fuzzy: z.boolean().optional(),
+      caseSensitive: z.boolean().optional(),
+      wholeWords: z.boolean().optional(),
+      includeArchived: z.boolean().optional(),
+      includeContent: z.boolean().optional(),
+      highlightMatches: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 // Export schema
@@ -973,28 +1057,36 @@ export const NoteExportOptionsSchema = z.object({
   includeComments: z.boolean(),
   includeMetadata: z.boolean(),
   includeBacklinks: z.boolean(),
-  formatting: z.object({
-    pageSize: z.enum(['A4', 'letter', 'legal']).optional(),
-    margins: z.object({
-      top: z.number(),
-      right: z.number(),
-      bottom: z.number(),
-      left: z.number(),
-    }).optional(),
-    fontSize: z.number().min(8).max(24).optional(),
-    fontFamily: z.string().optional(),
-    includeTableOfContents: z.boolean().optional(),
-    includeIndex: z.boolean().optional(),
-  }).optional(),
-  filters: z.object({
-    dateRange: z.object({
-      start: z.string(),
-      end: z.string(),
-    }).optional(),
-    categories: z.array(UUIDSchema).optional(),
-    tags: z.array(z.string()).optional(),
-    status: z.array(NoteStatusSchema).optional(),
-  }).optional(),
+  formatting: z
+    .object({
+      pageSize: z.enum(['A4', 'letter', 'legal']).optional(),
+      margins: z
+        .object({
+          top: z.number(),
+          right: z.number(),
+          bottom: z.number(),
+          left: z.number(),
+        })
+        .optional(),
+      fontSize: z.number().min(8).max(24).optional(),
+      fontFamily: z.string().optional(),
+      includeTableOfContents: z.boolean().optional(),
+      includeIndex: z.boolean().optional(),
+    })
+    .optional(),
+  filters: z
+    .object({
+      dateRange: z
+        .object({
+          start: z.string(),
+          end: z.string(),
+        })
+        .optional(),
+      categories: z.array(UUIDSchema).optional(),
+      tags: z.array(z.string()).optional(),
+      status: z.array(NoteStatusSchema).optional(),
+    })
+    .optional(),
 });
 
 // Main workbook note schema
@@ -1021,13 +1113,15 @@ export const WorkbookNoteSchema = z.object({
   collaborators: z.array(NoteCollaboratorSchema),
   version: z.number().min(1),
   parentNoteId: UUIDSchema.optional(),
-  revisionHistory: z.array(z.object({
-    version: z.number(),
-    changedBy: UUIDSchema,
-    changes: z.string(),
-    timestamp: TimestampSchema,
-    contentSnapshot: z.string().optional(),
-  })),
+  revisionHistory: z.array(
+    z.object({
+      version: z.number(),
+      changedBy: UUIDSchema,
+      changes: z.string(),
+      timestamp: TimestampSchema,
+      contentSnapshot: z.string().optional(),
+    })
+  ),
   analytics: z.object({
     viewCount: z.number().min(0),
     editCount: z.number().min(0),
@@ -1038,42 +1132,54 @@ export const WorkbookNoteSchema = z.object({
     totalTimeSpent: z.number().min(0),
     averageReadingTime: z.number().min(0),
   }),
-  aiInsights: z.object({
-    summary: z.string().optional(),
-    keyPoints: z.array(z.string()).optional(),
-    suggestedTags: z.array(z.string()).optional(),
-    relatedNotes: z.array(UUIDSchema).optional(),
-    sentiment: z.enum(['positive', 'neutral', 'negative']).optional(),
-    topics: z.array(z.object({
-      topic: z.string(),
-      confidence: z.number().min(0).max(1),
-    })).optional(),
-    language: z.string().optional(),
-    readabilityScore: z.number().min(0).max(100).optional(),
-  }).optional(),
-  attachments: z.array(z.object({
-    id: UUIDSchema,
-    type: z.enum(['image', 'video', 'audio', 'document', 'link']),
-    url: z.string().url(),
-    filename: z.string(),
-    fileSize: z.number().min(0),
-    mimeType: z.string(),
-    metadata: z.record(z.any()),
-    uploadedAt: TimestampSchema,
-  })),
-  reminders: z.array(z.object({
-    id: UUIDSchema,
-    type: z.enum(['review', 'follow_up', 'deadline', 'custom']),
-    reminderAt: TimestampSchema,
-    message: z.string(),
-    isCompleted: z.boolean(),
-    completedAt: TimestampSchema.optional(),
-  })),
-  encryption: z.object({
-    isEncrypted: z.boolean(),
-    algorithm: z.string().optional(),
-    keyId: z.string().optional(),
-  }).optional(),
+  aiInsights: z
+    .object({
+      summary: z.string().optional(),
+      keyPoints: z.array(z.string()).optional(),
+      suggestedTags: z.array(z.string()).optional(),
+      relatedNotes: z.array(UUIDSchema).optional(),
+      sentiment: z.enum(['positive', 'neutral', 'negative']).optional(),
+      topics: z
+        .array(
+          z.object({
+            topic: z.string(),
+            confidence: z.number().min(0).max(1),
+          })
+        )
+        .optional(),
+      language: z.string().optional(),
+      readabilityScore: z.number().min(0).max(100).optional(),
+    })
+    .optional(),
+  attachments: z.array(
+    z.object({
+      id: UUIDSchema,
+      type: z.enum(['image', 'video', 'audio', 'document', 'link']),
+      url: z.string().url(),
+      filename: z.string(),
+      fileSize: z.number().min(0),
+      mimeType: z.string(),
+      metadata: z.record(z.any()),
+      uploadedAt: TimestampSchema,
+    })
+  ),
+  reminders: z.array(
+    z.object({
+      id: UUIDSchema,
+      type: z.enum(['review', 'follow_up', 'deadline', 'custom']),
+      reminderAt: TimestampSchema,
+      message: z.string(),
+      isCompleted: z.boolean(),
+      completedAt: TimestampSchema.optional(),
+    })
+  ),
+  encryption: z
+    .object({
+      isEncrypted: z.boolean(),
+      algorithm: z.string().optional(),
+      keyId: z.string().optional(),
+    })
+    .optional(),
   metadata: z.record(z.any()),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
@@ -1136,7 +1242,10 @@ export function extractPlainText(content: RichTextDocument | string): string {
  * Count words in text
  */
 export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter(word => word.length > 0).length;
 }
 
 /**
@@ -1149,7 +1258,10 @@ export function countCharacters(text: string): number {
 /**
  * Generate note excerpt
  */
-export function generateExcerpt(content: string, maxLength: number = 200): string {
+export function generateExcerpt(
+  content: string,
+  maxLength: number = 200
+): string {
   const plainText = content.replace(/<[^>]*>/g, ''); // Remove HTML tags
   if (plainText.length <= maxLength) {
     return plainText;
@@ -1157,7 +1269,9 @@ export function generateExcerpt(content: string, maxLength: number = 200): strin
 
   const truncated = plainText.substring(0, maxLength);
   const lastSpace = truncated.lastIndexOf(' ');
-  return (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated) + '...';
+  return (
+    (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated) + '...'
+  );
 }
 
 /**
@@ -1172,7 +1286,9 @@ export function extractHashtags(text: string): string[] {
 /**
  * Extract mentions from rich text
  */
-export function extractMentions(content: RichTextDocument): Array<{ userId: UUID; displayName: string }> {
+export function extractMentions(
+  content: RichTextDocument
+): Array<{ userId: UUID; displayName: string }> {
   const mentions: Array<{ userId: UUID; displayName: string }> = [];
 
   function extractFromNode(node: RichTextNode): void {
@@ -1269,14 +1385,23 @@ export function richTextToMarkdown(content: RichTextDocument): string {
         return `${paragraphText}\n\n`;
 
       case 'bulletList':
-        return node.content?.map(item =>
-          `- ${item.content?.map(nodeToMarkdown).join('') || ''}\n`
-        ).join('') + '\n';
+        return (
+          node.content
+            ?.map(
+              item => `- ${item.content?.map(nodeToMarkdown).join('') || ''}\n`
+            )
+            .join('') + '\n'
+        );
 
       case 'orderedList':
-        return node.content?.map((item, index) =>
-          `${index + 1}. ${item.content?.map(nodeToMarkdown).join('') || ''}\n`
-        ).join('') + '\n';
+        return (
+          node.content
+            ?.map(
+              (item, index) =>
+                `${index + 1}. ${item.content?.map(nodeToMarkdown).join('') || ''}\n`
+            )
+            .join('') + '\n'
+        );
 
       case 'codeBlock':
         const code = node.content?.map(nodeToMarkdown).join('') || '';
@@ -1308,12 +1433,26 @@ export function searchNotes(
   for (const note of notes) {
     // Apply filters
     if (query.filters) {
-      if (query.filters.userId && note.userId !== query.filters.userId) continue;
-      if (query.filters.categoryId && note.categoryId !== query.filters.categoryId) continue;
+      if (query.filters.userId && note.userId !== query.filters.userId)
+        continue;
+      if (
+        query.filters.categoryId &&
+        note.categoryId !== query.filters.categoryId
+      )
+        continue;
       if (query.filters.type && note.type !== query.filters.type) continue;
-      if (query.filters.status && note.status !== query.filters.status) continue;
-      if (query.filters.visibility && note.visibility !== query.filters.visibility) continue;
-      if (query.filters.tags && !query.filters.tags.some(tag => note.tags.includes(tag))) continue;
+      if (query.filters.status && note.status !== query.filters.status)
+        continue;
+      if (
+        query.filters.visibility &&
+        note.visibility !== query.filters.visibility
+      )
+        continue;
+      if (
+        query.filters.tags &&
+        !query.filters.tags.some(tag => note.tags.includes(tag))
+      )
+        continue;
     }
 
     // Calculate relevance score
@@ -1348,7 +1487,10 @@ export function searchNotes(
           matches.push({
             field: 'content',
             text: generateExcerpt(note.plainTextContent),
-            highlightedText: highlightText(generateExcerpt(note.plainTextContent), searchTerms),
+            highlightedText: highlightText(
+              generateExcerpt(note.plainTextContent),
+              searchTerms
+            ),
           });
         }
       }
@@ -1387,7 +1529,9 @@ export function searchNotes(
         categoryId: note.categoryId,
         tags: note.tags,
         linkedItems: note.links
-          .filter(link => ['module', 'lesson', 'audio'].includes(link.targetType))
+          .filter(link =>
+            ['module', 'lesson', 'audio'].includes(link.targetType)
+          )
           .map(link => ({
             type: link.targetType as 'module' | 'lesson' | 'audio',
             id: link.targetId,
@@ -1414,10 +1558,12 @@ export function searchNotes(
         comparison = a.title.localeCompare(b.title);
         break;
       case 'createdAt':
-        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        comparison =
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         break;
       case 'updatedAt':
-        comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        comparison =
+          new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
         break;
       case 'wordCount':
         comparison = a.wordCount - b.wordCount;
@@ -1453,7 +1599,11 @@ function highlightText(text: string, searchTerms: string[]): string {
 /**
  * Validate note data
  */
-export function validateNote(data: unknown): { valid: boolean; errors?: string[]; data?: WorkbookNote } {
+export function validateNote(data: unknown): {
+  valid: boolean;
+  errors?: string[];
+  data?: WorkbookNote;
+} {
   try {
     const validData = WorkbookNoteSchema.parse(data);
     return { valid: true, data: validData };
@@ -1461,7 +1611,9 @@ export function validateNote(data: unknown): { valid: boolean; errors?: string[]
     if (error instanceof z.ZodError) {
       return {
         valid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.errors.map(
+          err => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return { valid: false, errors: ['Invalid data format'] };
@@ -1523,25 +1675,31 @@ export function generateBacklinks(
 // =============================================================================
 
 export function isWorkbookNote(obj: any): obj is WorkbookNote {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.title === 'string' &&
-         typeof obj.type === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.title === 'string' &&
+    typeof obj.type === 'string'
+  );
 }
 
 export function isRichTextDocument(obj: any): obj is RichTextDocument {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         obj.type === 'doc' &&
-         Array.isArray(obj.content);
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    obj.type === 'doc' &&
+    Array.isArray(obj.content)
+  );
 }
 
 export function isNoteSearchResult(obj: any): obj is NoteSearchResult {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.noteId === 'string' &&
-         typeof obj.relevanceScore === 'number';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.noteId === 'string' &&
+    typeof obj.relevanceScore === 'number'
+  );
 }
 
 // =============================================================================

@@ -52,7 +52,12 @@ async function authenticateRequest(request: NextRequest) {
 
 interface SearchResult {
   id: string;
-  type: 'note' | 'transcription' | 'module_content' | 'lesson_content' | 'session';
+  type:
+    | 'note'
+    | 'transcription'
+    | 'module_content'
+    | 'lesson_content'
+    | 'session';
   title: string;
   content: string;
   snippet: string;
@@ -91,14 +96,23 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const query = url.searchParams.get('q');
-    const types = url.searchParams.get('types')?.split(',') || ['note', 'transcription', 'module_content', 'lesson_content', 'session'];
+    const types = url.searchParams.get('types')?.split(',') || [
+      'note',
+      'transcription',
+      'module_content',
+      'lesson_content',
+      'session',
+    ];
     const sessionId = url.searchParams.get('sessionId');
     const moduleId = url.searchParams.get('moduleId');
     const tags = url.searchParams.get('tags')?.split(',').filter(Boolean);
     const dateFrom = url.searchParams.get('dateFrom');
     const dateTo = url.searchParams.get('dateTo');
     const minScore = parseFloat(url.searchParams.get('minScore') || '0.1');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '20'),
+      100
+    );
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0);
 
     if (!query || query.length < 2) {
@@ -201,7 +215,11 @@ export async function GET(request: NextRequest) {
           AND (to_tsvector('english', t.text) @@ plainto_tsquery('english', $1)
                OR t.text ILIKE $3)
       `;
-      const transcriptionParams: any[] = [query, auth.session.userId, `%${searchTerm}%`];
+      const transcriptionParams: any[] = [
+        query,
+        auth.session.userId,
+        `%${searchTerm}%`,
+      ];
 
       if (sessionId) {
         transcriptionQuery += ` AND t.session_id = $${transcriptionParams.length + 1}`;
@@ -221,7 +239,10 @@ export async function GET(request: NextRequest) {
       transcriptionQuery += ` AND ts_rank(to_tsvector('english', t.text), plainto_tsquery('english', $1)) >= $${transcriptionParams.length + 1}`;
       transcriptionParams.push(minScore);
 
-      const transcriptionResults = await db.query(transcriptionQuery, transcriptionParams);
+      const transcriptionResults = await db.query(
+        transcriptionQuery,
+        transcriptionParams
+      );
       results.push(...transcriptionResults);
     }
 
@@ -324,7 +345,11 @@ export async function GET(request: NextRequest) {
           AND (to_tsvector('english', ws.title || ' ' || coalesce(ws.notes, '')) @@ plainto_tsquery('english', $1)
                OR ws.title ILIKE $3 OR ws.notes ILIKE $3)
       `;
-      const sessionParams: any[] = [query, auth.session.userId, `%${searchTerm}%`];
+      const sessionParams: any[] = [
+        query,
+        auth.session.userId,
+        `%${searchTerm}%`,
+      ];
 
       if (sessionId) {
         sessionQuery += ` AND ws.id = $${sessionParams.length + 1}`;
@@ -370,10 +395,13 @@ export async function GET(request: NextRequest) {
         metadata: {
           searchTerm,
           minScore,
-          resultsByType: types.reduce((acc, type) => {
-            acc[type] = results.filter(r => r.type === type).length;
-            return acc;
-          }, {} as Record<string, number>),
+          resultsByType: types.reduce(
+            (acc, type) => {
+              acc[type] = results.filter(r => r.type === type).length;
+              return acc;
+            },
+            {} as Record<string, number>
+          ),
           searchDuration: Date.now() - Date.now(), // This would be calculated properly in real implementation
         },
       },
@@ -434,7 +462,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!query || typeof query !== 'string' || query.length < 2) {
-      throw new ValidationError('Search query must be at least 2 characters long');
+      throw new ValidationError(
+        'Search query must be at least 2 characters long'
+      );
     }
 
     if (query.length > 500) {
@@ -485,7 +515,10 @@ export async function OPTIONS(request: NextRequest) {
     status: 200,
     headers: {
       ...WORKBOOK_SECURITY_HEADERS,
-      'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://6fbmethodologies.com',
+      'Access-Control-Allow-Origin':
+        process.env.NODE_ENV === 'development'
+          ? '*'
+          : 'https://6fbmethodologies.com',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',

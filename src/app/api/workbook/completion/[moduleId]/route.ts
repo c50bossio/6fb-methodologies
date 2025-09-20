@@ -231,7 +231,8 @@ async function validateModuleCompletion(
   if (!progress) {
     return {
       isValid: false,
-      error: 'No progress found for this module. Please start the module first.',
+      error:
+        'No progress found for this module. Please start the module first.',
       code: 'NO_PROGRESS_FOUND',
       module,
     };
@@ -266,11 +267,13 @@ async function validateModuleCompletion(
 
   const totalLessons = parseInt(lessonStats?.total_lessons || '0');
   const completedLessons = parseInt(lessonStats?.completed_lessons || '0');
-  const incompleteLessons = lessonStats?.incomplete_lessons?.filter((id: any) => id !== null) || [];
+  const incompleteLessons =
+    lessonStats?.incomplete_lessons?.filter((id: any) => id !== null) || [];
 
   // Require at least 80% lesson completion for module completion
   const requiredCompletionRate = 0.8;
-  const currentCompletionRate = totalLessons > 0 ? completedLessons / totalLessons : 1;
+  const currentCompletionRate =
+    totalLessons > 0 ? completedLessons / totalLessons : 1;
 
   if (currentCompletionRate < requiredCompletionRate) {
     return {
@@ -304,7 +307,10 @@ async function validateModuleCompletion(
 /**
  * Get existing completion record
  */
-async function getExistingCompletion(userId: string, moduleId: string): Promise<any> {
+async function getExistingCompletion(
+  userId: string,
+  moduleId: string
+): Promise<any> {
   return await db.queryOne(
     `
     SELECT
@@ -411,7 +417,7 @@ export async function GET(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -457,7 +463,10 @@ export async function GET(
     }
 
     // Get existing completion record
-    const existingCompletion = await getExistingCompletion(workbookUser.id, moduleId);
+    const existingCompletion = await getExistingCompletion(
+      workbookUser.id,
+      moduleId
+    );
 
     if (!existingCompletion) {
       // Check if module exists and is accessible
@@ -517,10 +526,12 @@ export async function GET(
         moduleName: existingCompletion.module_title,
         isCompleted: true,
         completion: validatedCompletion,
-        certificate: validatedCompletion.certificateUrl ? {
-          url: validatedCompletion.certificateUrl,
-          issuedAt: validatedCompletion.completedAt,
-        } : null,
+        certificate: validatedCompletion.certificateUrl
+          ? {
+              url: validatedCompletion.certificateUrl,
+              issuedAt: validatedCompletion.completedAt,
+            }
+          : null,
       },
       message: 'Module completion status retrieved successfully',
       timestamp: Date.now(),
@@ -529,11 +540,12 @@ export async function GET(
     // Add performance metrics in development
     if (process.env.NODE_ENV === 'development') {
       const responseTime = Date.now() - startTime;
-      console.log(`Module completion status API response time: ${responseTime}ms`);
+      console.log(
+        `Module completion status API response time: ${responseTime}ms`
+      );
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Module completion status GET error:', error);
 
@@ -608,7 +620,7 @@ export async function POST(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -631,7 +643,8 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'Rate limit exceeded. Module completion requests are limited to prevent abuse.',
+          error:
+            'Rate limit exceeded. Module completion requests are limited to prevent abuse.',
           timestamp: Date.now(),
         },
         { status: 429 }
@@ -677,8 +690,12 @@ export async function POST(
     );
 
     if (!validationResult.isValid) {
-      const statusCode = validationResult.code === 'MODULE_NOT_FOUND' ? 404 :
-                         validationResult.code === 'ALREADY_COMPLETED' ? 409 : 403;
+      const statusCode =
+        validationResult.code === 'MODULE_NOT_FOUND'
+          ? 404
+          : validationResult.code === 'ALREADY_COMPLETED'
+            ? 409
+            : 403;
 
       return NextResponse.json(
         {
@@ -693,17 +710,20 @@ export async function POST(
     }
 
     const module = validationResult.module!;
-    const userName = `${workbookUser.firstName} ${workbookUser.lastName}`.trim();
+    const userName =
+      `${workbookUser.firstName} ${workbookUser.lastName}`.trim();
 
     // Create completion record using transaction
-    const completion = await db.transaction(async (client) => {
+    const completion = await db.transaction(async client => {
       const now = new Date();
       const completionId = uuidv4();
 
       // Calculate completion score
       let completionScore = 100;
       if (validationResult.lessonStats) {
-        completionScore = Math.round(validationResult.lessonStats.completionRate * 100);
+        completionScore = Math.round(
+          validationResult.lessonStats.completionRate * 100
+        );
       }
 
       // Generate certificate if requested
@@ -810,11 +830,13 @@ export async function POST(
           difficultyLevel: module.difficulty_level,
           moduleOrder: module.module_order,
         },
-        certificate: validatedCompletion.certificateUrl ? {
-          url: validatedCompletion.certificateUrl,
-          issuedAt: validatedCompletion.completedAt,
-          issuedTo: userName,
-        } : null,
+        certificate: validatedCompletion.certificateUrl
+          ? {
+              url: validatedCompletion.certificateUrl,
+              issuedAt: validatedCompletion.completedAt,
+              issuedTo: userName,
+            }
+          : null,
         achievement: {
           type: 'module_completed',
           title: 'Module Master',
@@ -832,7 +854,6 @@ export async function POST(
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Module completion POST error:', error);
 

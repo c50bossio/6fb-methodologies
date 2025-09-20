@@ -3,7 +3,7 @@
  * Real-time learning sessions, collaboration, and interactive features
  */
 
-import { UUID, Timestamp, JSONObject } from './core';
+import type { UUID, Timestamp, JSONObject } from './core';
 
 // Live Session Types
 export interface LiveSession {

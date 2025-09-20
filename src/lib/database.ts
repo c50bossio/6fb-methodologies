@@ -85,7 +85,7 @@ class DatabaseConnection {
   private backupConfig: BackupConfig;
   private performanceThresholds = {
     slowQueryMs: 1000,
-    verySlowQueryMs: 5000
+    verySlowQueryMs: 5000,
   };
 
   constructor() {
@@ -93,14 +93,14 @@ class DatabaseConnection {
       maxRetries: 3,
       retryDelay: 1000,
       backoffMultiplier: 2,
-      maxRetryDelay: 10000
+      maxRetryDelay: 10000,
     };
 
     this.backupConfig = {
       enabled: process.env.NODE_ENV === 'production',
       retentionDays: 30,
       backupPath: process.env.BACKUP_PATH || './backups',
-      compression: true
+      compression: true,
     };
 
     this.initializePool();
@@ -112,18 +112,26 @@ class DatabaseConnection {
       port: parseInt(process.env.DB_PORT || '5432'),
       database: process.env.DB_NAME || 'postgres',
       user: process.env.DB_USER || 'app_user',
-      password: process.env.DB_PASSWORD || 'secure_app_password_change_in_production',
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      password:
+        process.env.DB_PASSWORD || 'secure_app_password_change_in_production',
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
       max: parseInt(process.env.DB_POOL_MAX || '20'),
       min: parseInt(process.env.DB_POOL_MIN || '2'),
       idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'),
-      connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '5000'),
+      connectionTimeoutMillis: parseInt(
+        process.env.DB_CONNECTION_TIMEOUT || '5000'
+      ),
       acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '60000'),
       createTimeoutMillis: parseInt(process.env.DB_CREATE_TIMEOUT || '30000'),
       destroyTimeoutMillis: parseInt(process.env.DB_DESTROY_TIMEOUT || '5000'),
       reapIntervalMillis: parseInt(process.env.DB_REAP_INTERVAL || '1000'),
-      createRetryIntervalMillis: parseInt(process.env.DB_CREATE_RETRY_INTERVAL || '200'),
-      propagateCreateError: false
+      createRetryIntervalMillis: parseInt(
+        process.env.DB_CREATE_RETRY_INTERVAL || '200'
+      ),
+      propagateCreateError: false,
     };
 
     this.pool = new Pool(config);
@@ -134,7 +142,7 @@ class DatabaseConnection {
         error: err.message,
         stack: err.stack,
         client: client ? 'client-specific' : 'pool-wide',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       this.isConnected = false;
 
@@ -143,14 +151,16 @@ class DatabaseConnection {
     });
 
     // Connection lifecycle events
-    this.pool.on('connect', (client) => {
+    this.pool.on('connect', client => {
       this.isConnected = true;
       console.log('Database connection established');
 
       // Set connection-level settings
-      client.query('SET application_name = \'6fb-workbook\'').catch(console.error);
-      client.query('SET statement_timeout = \'30s\'').catch(console.error);
-      client.query('SET timezone = \'UTC\'').catch(console.error);
+      client
+        .query("SET application_name = '6fb-workbook'")
+        .catch(console.error);
+      client.query("SET statement_timeout = '30s'").catch(console.error);
+      client.query("SET timezone = 'UTC'").catch(console.error);
     });
 
     this.pool.on('acquire', () => {
@@ -173,11 +183,14 @@ class DatabaseConnection {
     }
 
     const delay = Math.min(
-      this.retryConfig.retryDelay * Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
+      this.retryConfig.retryDelay *
+        Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
       this.retryConfig.maxRetryDelay
     );
 
-    console.log(`Attempting database reconnection (attempt ${attempt}/${this.retryConfig.maxRetries}) in ${delay}ms`);
+    console.log(
+      `Attempting database reconnection (attempt ${attempt}/${this.retryConfig.maxRetries}) in ${delay}ms`
+    );
 
     await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -212,7 +225,7 @@ class DatabaseConnection {
         duration,
         timestamp: new Date(),
         success: true,
-        rowCount: result.rowCount
+        rowCount: result.rowCount,
       });
 
       // Log slow queries
@@ -220,7 +233,7 @@ class DatabaseConnection {
         console.warn('Slow query detected:', {
           query: this.sanitizeQuery(text),
           duration: `${duration}ms`,
-          rowCount: result.rowCount
+          rowCount: result.rowCount,
         });
       }
 
@@ -234,13 +247,13 @@ class DatabaseConnection {
         duration,
         timestamp: new Date(),
         success: false,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
       });
 
       console.error('Database query error:', {
         query: this.sanitizeQuery(text),
         error: error instanceof Error ? error.message : 'Unknown error',
-        duration: `${duration}ms`
+        duration: `${duration}ms`,
       });
 
       throw new DatabaseError(
@@ -254,10 +267,12 @@ class DatabaseConnection {
 
   private sanitizeQuery(query: string): string {
     // Remove sensitive data from query for logging
-    return query
-      .replace(/password\s*=\s*'[^']*'/gi, "password = '[REDACTED]'")
-      .replace(/token\s*=\s*'[^']*'/gi, "token = '[REDACTED]'")
-      .substring(0, 200) + (query.length > 200 ? '...' : '');
+    return (
+      query
+        .replace(/password\s*=\s*'[^']*'/gi, "password = '[REDACTED]'")
+        .replace(/token\s*=\s*'[^']*'/gi, "token = '[REDACTED]'")
+        .substring(0, 200) + (query.length > 200 ? '...' : '')
+    );
   }
 
   private recordQueryMetrics(metrics: QueryMetrics): void {
@@ -311,12 +326,15 @@ class DatabaseConnection {
 
   getStatus() {
     const recentMetrics = this.queryMetrics.slice(-100);
-    const avgDuration = recentMetrics.length > 0
-      ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length
-      : 0;
-    const errorRate = recentMetrics.length > 0
-      ? recentMetrics.filter(m => !m.success).length / recentMetrics.length
-      : 0;
+    const avgDuration =
+      recentMetrics.length > 0
+        ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) /
+          recentMetrics.length
+        : 0;
+    const errorRate =
+      recentMetrics.length > 0
+        ? recentMetrics.filter(m => !m.success).length / recentMetrics.length
+        : 0;
 
     return {
       isConnected: this.isConnected,
@@ -329,9 +347,13 @@ class DatabaseConnection {
         avgQueryDuration: Math.round(avgDuration),
         errorRate: Math.round(errorRate * 100),
         totalQueries: this.queryMetrics.length,
-        slowQueries: recentMetrics.filter(m => m.duration > this.performanceThresholds.slowQueryMs).length,
-        verySlowQueries: recentMetrics.filter(m => m.duration > this.performanceThresholds.verySlowQueryMs).length
-      }
+        slowQueries: recentMetrics.filter(
+          m => m.duration > this.performanceThresholds.slowQueryMs
+        ).length,
+        verySlowQueries: recentMetrics.filter(
+          m => m.duration > this.performanceThresholds.verySlowQueryMs
+        ).length,
+      },
     };
   }
 
@@ -342,7 +364,8 @@ class DatabaseConnection {
 
   // Migration Management
   async runMigrations(migrationsPath?: string): Promise<void> {
-    const migrationDir = migrationsPath || path.join(process.cwd(), 'database', 'migrations');
+    const migrationDir =
+      migrationsPath || path.join(process.cwd(), 'database', 'migrations');
 
     try {
       // Ensure migrations table exists
@@ -355,16 +378,14 @@ class DatabaseConnection {
       `);
 
       // Get applied migrations
-      const appliedMigrations = await this.query<{version: string}>(
+      const appliedMigrations = await this.query<{ version: string }>(
         'SELECT version FROM schema_migrations ORDER BY version'
       );
       const appliedVersions = new Set(appliedMigrations.map(m => m.version));
 
       // Read migration files
       const files = await fs.readdir(migrationDir);
-      const migrationFiles = files
-        .filter(f => f.endsWith('.sql'))
-        .sort();
+      const migrationFiles = files.filter(f => f.endsWith('.sql')).sort();
 
       for (const file of migrationFiles) {
         const version = file.replace('.sql', '');
@@ -377,7 +398,7 @@ class DatabaseConnection {
             'utf-8'
           );
 
-          await this.transaction(async (client) => {
+          await this.transaction(async client => {
             await client.query(migrationContent);
             await client.query(
               'INSERT INTO schema_migrations (version, name) VALUES ($1, $2)',
@@ -415,25 +436,29 @@ class DatabaseConnection {
       const { spawn } = await import('child_process');
 
       return new Promise((resolve, reject) => {
-        const pgDump = spawn('pg_dump', [
-          `--host=${process.env.DB_HOST || 'localhost'}`,
-          `--port=${process.env.DB_PORT || '5432'}`,
-          `--username=${process.env.DB_USER || 'app_user'}`,
-          `--dbname=${process.env.DB_NAME || 'postgres'}`,
-          '--no-password',
-          '--clean',
-          '--create'
-        ], {
-          env: {
-            ...process.env,
-            PGPASSWORD: process.env.DB_PASSWORD
+        const pgDump = spawn(
+          'pg_dump',
+          [
+            `--host=${process.env.DB_HOST || 'localhost'}`,
+            `--port=${process.env.DB_PORT || '5432'}`,
+            `--username=${process.env.DB_USER || 'app_user'}`,
+            `--dbname=${process.env.DB_NAME || 'postgres'}`,
+            '--no-password',
+            '--clean',
+            '--create',
+          ],
+          {
+            env: {
+              ...process.env,
+              PGPASSWORD: process.env.DB_PASSWORD,
+            },
           }
-        });
+        );
 
         const writeStream = require('fs').createWriteStream(backupPath);
         pgDump.stdout.pipe(writeStream);
 
-        pgDump.on('close', (code) => {
+        pgDump.on('close', code => {
           if (code === 0) {
             console.log(`Backup created: ${backupPath}`);
             resolve(backupPath);
@@ -442,7 +467,7 @@ class DatabaseConnection {
           }
         });
 
-        pgDump.on('error', (error) => {
+        pgDump.on('error', error => {
           reject(new DatabaseError('Backup process failed', error));
         });
       });
@@ -473,26 +498,35 @@ class DatabaseConnection {
       totalQueries: recentMetrics.length,
       successRate: Math.round((successful.length / recentMetrics.length) * 100),
       performance: {
-        avgDuration: Math.round(durations.reduce((a, b) => a + b, 0) / durations.length),
+        avgDuration: Math.round(
+          durations.reduce((a, b) => a + b, 0) / durations.length
+        ),
         medianDuration: durations[Math.floor(durations.length / 2)],
         p95Duration: durations[Math.floor(durations.length * 0.95)],
         p99Duration: durations[Math.floor(durations.length * 0.99)],
-        slowQueries: successful.filter(m => m.duration > this.performanceThresholds.slowQueryMs).length
+        slowQueries: successful.filter(
+          m => m.duration > this.performanceThresholds.slowQueryMs
+        ).length,
       },
       errors: {
         count: failed.length,
         uniqueErrors: [...new Set(failed.map(m => m.errorMessage))].length,
-        mostCommon: this.getMostCommonErrors(failed)
-      }
+        mostCommon: this.getMostCommonErrors(failed),
+      },
     };
   }
 
-  private getMostCommonErrors(failedMetrics: QueryMetrics[]): Array<{error: string, count: number}> {
-    const errorCounts = failedMetrics.reduce((acc, m) => {
-      const error = m.errorMessage || 'Unknown error';
-      acc[error] = (acc[error] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  private getMostCommonErrors(
+    failedMetrics: QueryMetrics[]
+  ): Array<{ error: string; count: number }> {
+    const errorCounts = failedMetrics.reduce(
+      (acc, m) => {
+        const error = m.errorMessage || 'Unknown error';
+        acc[error] = (acc[error] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return Object.entries(errorCounts)
       .map(([error, count]) => ({ error, count }))
@@ -671,7 +705,13 @@ export interface SessionNote {
   transcription_id?: string;
   lesson_id?: string;
   module_id?: string;
-  type: 'session-note' | 'manual' | 'transcription-highlight' | 'action-item' | 'lesson-note' | 'reflection';
+  type:
+    | 'session-note'
+    | 'manual'
+    | 'transcription-highlight'
+    | 'action-item'
+    | 'lesson-note'
+    | 'reflection';
   title?: string;
   content: string;
   rich_content?: Record<string, any>;
@@ -799,7 +839,11 @@ export interface RateLimit {
 
 export interface SystemMetrics {
   id: string;
-  metric_type: 'query_performance' | 'user_activity' | 'cost_tracking' | 'error_rate';
+  metric_type:
+    | 'query_performance'
+    | 'user_activity'
+    | 'cost_tracking'
+    | 'error_rate';
   metric_name: string;
   value: number;
   unit: string;
@@ -869,13 +913,13 @@ export class ValidationError extends Error {
 class SQLQueryBuilder implements QueryBuilder {
   private selectClause: string[] = [];
   private fromClause = '';
-  private whereConditions: Array<{condition: string, value?: any}> = [];
+  private whereConditions: Array<{ condition: string; value?: any }> = [];
   private joinClauses: string[] = [];
   private orderByClause: string[] = [];
   private limitClause?: number;
   private offsetClause?: number;
   private groupByClause: string[] = [];
-  private havingConditions: Array<{condition: string, value?: any}> = [];
+  private havingConditions: Array<{ condition: string; value?: any }> = [];
   private parameterIndex = 1;
   private parameters: any[] = [];
 
@@ -894,7 +938,7 @@ class SQLQueryBuilder implements QueryBuilder {
       const paramPlaceholder = `$${this.parameterIndex++}`;
       this.whereConditions.push({
         condition: condition.replace('?', paramPlaceholder),
-        value
+        value,
       });
       this.parameters.push(value);
     } else {
@@ -938,7 +982,7 @@ class SQLQueryBuilder implements QueryBuilder {
       const paramPlaceholder = `$${this.parameterIndex++}`;
       this.havingConditions.push({
         condition: condition.replace('?', paramPlaceholder),
-        value
+        value,
       });
       this.parameters.push(value);
     } else {
@@ -959,7 +1003,9 @@ class SQLQueryBuilder implements QueryBuilder {
     }
 
     if (this.whereConditions.length > 0) {
-      const conditions = this.whereConditions.map(w => w.condition).join(' AND ');
+      const conditions = this.whereConditions
+        .map(w => w.condition)
+        .join(' AND ');
       query += ` WHERE ${conditions}`;
     }
 
@@ -968,7 +1014,9 @@ class SQLQueryBuilder implements QueryBuilder {
     }
 
     if (this.havingConditions.length > 0) {
-      const conditions = this.havingConditions.map(h => h.condition).join(' AND ');
+      const conditions = this.havingConditions
+        .map(h => h.condition)
+        .join(' AND ');
       query += ` HAVING ${conditions}`;
     }
 
@@ -986,7 +1034,7 @@ class SQLQueryBuilder implements QueryBuilder {
 
     return {
       text: query,
-      values: this.parameters
+      values: this.parameters,
     };
   }
 }
@@ -1001,10 +1049,12 @@ export const dbUtils = {
 
   // Search helper for full-text search
   buildSearchQuery: (searchTerm: string, columns: string[]) => {
-    const searchVector = columns.map(col => `coalesce(${col}, '')`).join(' || \' \' || ');
+    const searchVector = columns
+      .map(col => `coalesce(${col}, '')`)
+      .join(" || ' ' || ");
     return {
       condition: `(${searchVector}) ILIKE ?`,
-      value: `%${searchTerm}%`
+      value: `%${searchTerm}%`,
     };
   },
 
@@ -1012,7 +1062,7 @@ export const dbUtils = {
   dateRange: (startDate: Date, endDate: Date) => {
     return {
       condition: 'created_at BETWEEN ? AND ?',
-      values: [startDate, endDate]
+      values: [startDate, endDate],
     };
   },
 
@@ -1023,17 +1073,20 @@ export const dbUtils = {
     }
 
     const columns = Object.keys(records[0]);
-    const placeholders = records.map((_, recordIndex) =>
-      `(${columns.map((_, colIndex) => `$${recordIndex * columns.length + colIndex + 1}`).join(', ')})`
-    ).join(', ');
+    const placeholders = records
+      .map(
+        (_, recordIndex) =>
+          `(${columns.map((_, colIndex) => `$${recordIndex * columns.length + colIndex + 1}`).join(', ')})`
+      )
+      .join(', ');
 
     const values = records.flatMap(record => columns.map(col => record[col]));
 
     return {
       text: `INSERT INTO ${table} (${columns.join(', ')}) VALUES ${placeholders}`,
-      values
+      values,
     };
-  }
+  },
 };
 
 // Singleton instance
@@ -1057,9 +1110,9 @@ export const getHealthCheckData = async () => {
     database: {
       connected: status.isConnected,
       pool: status.poolStatus,
-      performance: status.performance
+      performance: status.performance,
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 };
 

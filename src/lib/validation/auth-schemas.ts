@@ -38,7 +38,7 @@ export const UserSessionSchema = z.object({
   email: z.string().email('Invalid email format'),
   name: z.string().min(1, 'Name is required'),
   role: z.enum(['basic', 'premium', 'vip'], {
-    errorMap: () => ({ message: 'Invalid user role' })
+    errorMap: () => ({ message: 'Invalid user role' }),
   }),
   permissions: z.array(z.string()).min(1, 'At least one permission required'),
 });
@@ -65,9 +65,11 @@ export const VerifyResponseSchema = z.object({
 export type VerifyResponse = z.infer<typeof VerifyResponseSchema>;
 
 // Refresh token request schema (optional body)
-export const RefreshRequestSchema = z.object({
-  refreshToken: z.string().optional(),
-}).optional();
+export const RefreshRequestSchema = z
+  .object({
+    refreshToken: z.string().optional(),
+  })
+  .optional();
 
 export type RefreshRequest = z.infer<typeof RefreshRequestSchema>;
 
@@ -98,7 +100,7 @@ export const SecurityEventSchema = z.object({
     'auth_success',
     'auth_failure',
     'token_refresh',
-    'suspicious_activity'
+    'suspicious_activity',
   ]),
   userId: z.string().optional(),
   email: z.string().email().optional(),
@@ -122,8 +124,14 @@ export const validateClientIP = (ip: string): boolean => {
 export const validateUserAgent = (userAgent: string): boolean => {
   // Check for suspicious user agents
   const suspiciousPatterns = [
-    /bot/i, /crawler/i, /spider/i, /scraper/i,
-    /curl/i, /wget/i, /python-requests/i, /go-http/i
+    /bot/i,
+    /crawler/i,
+    /spider/i,
+    /scraper/i,
+    /curl/i,
+    /wget/i,
+    /python-requests/i,
+    /go-http/i,
   ];
 
   return !suspiciousPatterns.some(pattern => pattern.test(userAgent));
@@ -221,7 +229,11 @@ export const corsOriginSchema = z.enum([
 export type CorsOrigin = z.infer<typeof corsOriginSchema>;
 
 // Environment validation
-export const environmentSchema = z.enum(['development', 'staging', 'production']);
+export const environmentSchema = z.enum([
+  'development',
+  'staging',
+  'production',
+]);
 export type Environment = z.infer<typeof environmentSchema>;
 
 // Security headers validation
@@ -234,7 +246,9 @@ export const createValidationMiddleware = <T extends z.ZodType>(schema: T) => {
     const result = schema.safeParse(data);
 
     if (!result.success) {
-      const errors = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      const errors = result.error.errors.map(
+        err => `${err.path.join('.')}: ${err.message}`
+      );
       throw new Error(`Validation failed: ${errors.join(', ')}`);
     }
 
@@ -243,6 +257,9 @@ export const createValidationMiddleware = <T extends z.ZodType>(schema: T) => {
 };
 
 // Request body validation middleware
-export const validateLoginRequest = createValidationMiddleware(LoginRequestSchema);
-export const validateRefreshRequest = createValidationMiddleware(RefreshRequestSchema);
-export const validateSecurityEvent = createValidationMiddleware(SecurityEventSchema);
+export const validateLoginRequest =
+  createValidationMiddleware(LoginRequestSchema);
+export const validateRefreshRequest =
+  createValidationMiddleware(RefreshRequestSchema);
+export const validateSecurityEvent =
+  createValidationMiddleware(SecurityEventSchema);

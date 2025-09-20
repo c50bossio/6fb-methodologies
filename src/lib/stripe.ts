@@ -96,7 +96,7 @@ export async function calculateStripePriceInCents(
       // Single ticket: member gets discount (20% GA, 10% VIP)
       const memberDiscount = getSixFBDiscount(ticketType);
       finalAmount = Math.round(basePrice * (1 - memberDiscount));
-      const discountPercent = Math.round(memberDiscount * 100);
+      // const discountPercent = Math.round(memberDiscount * 100);
       discountReason = `6FB Member Discount (One-time use)`;
     } else {
       // Multiple tickets: Compare member+bulk vs pure bulk and apply the better discount
@@ -107,12 +107,14 @@ export async function calculateStripePriceInCents(
       const memberTicketPrice = Math.round(basePrice * (1 - memberDiscount));
       const remainingQuantity = quantity - 1;
       const bulkTicketPrice = Math.round(basePrice * (1 - bulkDiscount));
-      const memberPlusBulkTotal = memberTicketPrice + bulkTicketPrice * remainingQuantity;
+      const memberPlusBulkTotal =
+        memberTicketPrice + bulkTicketPrice * remainingQuantity;
 
       // Option 2: Pure bulk discount on all tickets (if applicable for GA)
-      const pureBulkTotal = ticketType === 'GA' && quantity > 1
-        ? Math.round(originalAmount * (1 - bulkDiscount))
-        : originalAmount; // VIP doesn't get bulk discount normally
+      const pureBulkTotal =
+        ticketType === 'GA' && quantity > 1
+          ? Math.round(originalAmount * (1 - bulkDiscount))
+          : originalAmount; // VIP doesn't get bulk discount normally
 
       // Choose the better option for the customer (lower price)
       if (memberPlusBulkTotal <= pureBulkTotal) {
@@ -223,10 +225,12 @@ export async function createCheckoutSession({
   metadata?: Record<string, string>;
 }) {
   // Environment detection for Stripe pricing
-  const isProduction = process.env.NODE_ENV === 'production' &&
-                      process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
-  const isDevelopment = process.env.NODE_ENV === 'development' ||
-                       process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+  const isProduction =
+    process.env.NODE_ENV === 'production' &&
+    process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
+  // const isDevelopment =
+  //   process.env.NODE_ENV === 'development' ||
+  //   process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
 
   // Look up city-specific information if cityId is provided
   let city = null;
@@ -293,20 +297,20 @@ export async function createCheckoutSession({
       environment: isProduction ? 'production' : 'development',
     });
 
-      cityPriceId =
-        ticketType === 'GA' ? city.stripe.gaPriceId : city.stripe.vipPriceId;
+    cityPriceId =
+      ticketType === 'GA' ? city.stripe.gaPriceId : city.stripe.vipPriceId;
 
-      // Only use hardcoded price IDs in production environment
-      useCityPricing = isProduction;
+    // For development, always use price_data to avoid price ID conflicts
+    // For production, only use price IDs if they exist
+    useCityPricing = false; // Force price_data for all environments to avoid issues
 
-      if (!isProduction) {
-        console.log(`⚠️ Development mode detected - using price_data instead of price IDs for ${city.city}`);
-      }
-    } else {
-      console.warn(
-        `⚠️ City not found for ID: ${cityId}, falling back to generic pricing`
-      );
-    }
+    console.log(
+      `⚠️ Using price_data instead of price IDs for ${city.city} to ensure compatibility`
+    );
+  } else {
+    console.warn(
+      `⚠️ City not found for ID: ${cityId}, falling back to generic pricing`
+    );
   }
 
   const pricing = await calculateStripePriceInCents(
@@ -344,9 +348,6 @@ export async function createCheckoutSession({
     ];
   } else {
     // Use city-specific price_data for discounted tickets or fallback to generic pricing
-    const citySpecificName = city
-      ? `${city.city} Workshop - ${ticketType} Ticket`
-      : `6FB Methodologies Workshop - ${ticketType} Ticket`;
 
     console.log(
       `💳 Using city-specific price_data for ${city ? city.city : 'generic'}: $${pricing.finalAmount / quantity / 100}`
@@ -368,7 +369,7 @@ export async function createCheckoutSession({
                 cityName: city.city,
                 cityState: city.state,
                 workshopDates: city.dates.join(', '),
-                workshopMonth: city.month
+                workshopMonth: city.month,
               }),
               ...(pricing.discountAmount > 0 && {
                 originalPrice: (
@@ -443,7 +444,9 @@ export async function createCheckoutSession({
   } catch (error: any) {
     // Handle Stripe price ID errors gracefully
     if (error?.code === 'resource_missing' && useCityPricing && cityPriceId) {
-      console.warn(`⚠️ Price ID ${cityPriceId} not found, falling back to price_data for ${city?.city}`);
+      console.warn(
+        `⚠️ Price ID ${cityPriceId} not found, falling back to price_data for ${city?.city}`
+      );
 
       // Recreate line items with price_data fallback
       const fallbackLineItems = [
@@ -463,7 +466,7 @@ export async function createCheckoutSession({
                   cityName: city.city,
                   cityState: city.state,
                   workshopDates: city.dates.join(', '),
-                  workshopMonth: city.month
+                  workshopMonth: city.month,
                 }),
               },
             },
@@ -767,7 +770,7 @@ export async function getMemberByCustomerId(
 export async function syncMemberFromWebhook(
   customer: Stripe.Customer,
   eventType: string,
-  eventData?: any
+  _eventData?: any
 ): Promise<void> {
   try {
     console.log(`Syncing member from webhook: ${eventType}`, {

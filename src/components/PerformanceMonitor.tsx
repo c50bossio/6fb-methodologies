@@ -66,8 +66,8 @@ export function PerformanceMonitor() {
     };
   }, []);
 
-  // Don't render anything in production
-  if (process.env.NODE_ENV !== 'development') {
+  // Don't render anything in production or unless explicitly enabled in development
+  if (process.env.NODE_ENV !== 'development' || !process.env.NEXT_PUBLIC_SHOW_PERFORMANCE_MONITOR) {
     return null;
   }
 

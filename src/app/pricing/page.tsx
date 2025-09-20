@@ -15,7 +15,6 @@ import {
   Calendar,
   Clock,
   Coffee,
-  Utensils,
   Award,
   Mail,
   Loader2,
@@ -320,7 +319,9 @@ function PricingPageContent() {
     }
 
     // Navigate to registration with member status as backup URL parameter
-    const memberParam = verificationResult?.isVerified ? '&isVerified=true' : '';
+    const memberParam = verificationResult?.isVerified
+      ? '&isVerified=true'
+      : '';
     router.push(
       `/register?city=${selectedCity?.id}&type=${tierId}&quantity=${quantity}${memberParam}`
     );

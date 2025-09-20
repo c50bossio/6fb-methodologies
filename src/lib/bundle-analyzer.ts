@@ -66,10 +66,10 @@ class BundleAnalyzer {
     if (!window.PerformanceObserver) return;
 
     try {
-      this.performanceObserver = new PerformanceObserver((list) => {
+      this.performanceObserver = new PerformanceObserver(list => {
         const entries = list.getEntries();
 
-        entries.forEach((entry) => {
+        entries.forEach(entry => {
           if (entry.entryType === 'resource') {
             this.trackResourceLoad(entry as PerformanceResourceTiming);
           } else if (entry.entryType === 'navigation') {
@@ -93,9 +93,9 @@ class BundleAnalyzer {
   private setupMutationObserver() {
     if (!window.MutationObserver) return;
 
-    this.mutationObserver = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
+    this.mutationObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const element = node as Element;
             if (element.tagName === 'SCRIPT' && element.getAttribute('src')) {
@@ -118,8 +118,10 @@ class BundleAnalyzer {
   private trackInitialLoad() {
     if (!window.performance || !window.performance.getEntriesByType) return;
 
-    const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    resources.forEach((resource) => {
+    const resources = performance.getEntriesByType(
+      'resource'
+    ) as PerformanceResourceTiming[];
+    resources.forEach(resource => {
       this.trackResourceLoad(resource);
     });
   }
@@ -132,8 +134,10 @@ class BundleAnalyzer {
     const pathname = url.pathname;
 
     // Only track JS and CSS bundles
-    if (!pathname.includes('/_next/static/') ||
-        (!pathname.endsWith('.js') && !pathname.endsWith('.css'))) {
+    if (
+      !pathname.includes('/_next/static/') ||
+      (!pathname.endsWith('.js') && !pathname.endsWith('.css'))
+    ) {
       return;
     }
 
@@ -249,7 +253,8 @@ class BundleAnalyzer {
 
     const totalLoadTime = Math.max(...chunks.map(chunk => chunk.loadTime));
     const cachedChunks = chunks.filter(chunk => chunk.cached).length;
-    const cacheHitRate = chunks.length > 0 ? (cachedChunks / chunks.length) * 100 : 0;
+    const cacheHitRate =
+      chunks.length > 0 ? (cachedChunks / chunks.length) * 100 : 0;
 
     const recommendations = this.generateRecommendations(chunks, metrics);
 
@@ -269,10 +274,14 @@ class BundleAnalyzer {
    * Collect performance metrics
    */
   private async collectMetrics(): Promise<BundleMetrics> {
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const navigation = performance.getEntriesByType(
+      'navigation'
+    )[0] as PerformanceNavigationTiming;
     const paint = performance.getEntriesByType('paint');
 
-    const fcp = paint.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0;
+    const fcp =
+      paint.find(entry => entry.name === 'first-contentful-paint')?.startTime ||
+      0;
     const lcp = await this.getLargestContentfulPaint();
     const cls = await this.getCumulativeLayoutShift();
     const tti = await this.getTimeToInteractive();
@@ -292,14 +301,14 @@ class BundleAnalyzer {
    * Get Largest Contentful Paint
    */
   private getLargestContentfulPaint(): Promise<number> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (!window.PerformanceObserver) {
         resolve(0);
         return;
       }
 
       try {
-        const observer = new PerformanceObserver((list) => {
+        const observer = new PerformanceObserver(list => {
           const entries = list.getEntries();
           const lastEntry = entries[entries.length - 1];
           resolve(lastEntry?.startTime || 0);
@@ -323,7 +332,7 @@ class BundleAnalyzer {
    * Get Cumulative Layout Shift
    */
   private getCumulativeLayoutShift(): Promise<number> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (!window.PerformanceObserver) {
         resolve(0);
         return;
@@ -332,9 +341,9 @@ class BundleAnalyzer {
       let cls = 0;
 
       try {
-        const observer = new PerformanceObserver((list) => {
+        const observer = new PerformanceObserver(list => {
           const entries = list.getEntries();
-          entries.forEach((entry) => {
+          entries.forEach(entry => {
             if (!(entry as any).hadRecentInput) {
               cls += (entry as any).value;
             }
@@ -357,9 +366,11 @@ class BundleAnalyzer {
    * Estimate Time to Interactive
    */
   private getTimeToInteractive(): Promise<number> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // Simplified TTI calculation
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const navigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming;
       const tti = navigation.domInteractive - navigation.navigationStart;
       resolve(tti);
     });
@@ -384,11 +395,16 @@ class BundleAnalyzer {
   /**
    * Generate optimization recommendations
    */
-  private generateRecommendations(chunks: BundleChunk[], metrics: BundleMetrics): BundleRecommendation[] {
+  private generateRecommendations(
+    chunks: BundleChunk[],
+    metrics: BundleMetrics
+  ): BundleRecommendation[] {
     const recommendations: BundleRecommendation[] = [];
 
     // Large bundle size recommendations
-    const largeCriticalChunks = chunks.filter(chunk => chunk.critical && chunk.size > 250000); // 250KB
+    const largeCriticalChunks = chunks.filter(
+      chunk => chunk.critical && chunk.size > 250000
+    ); // 250KB
     if (largeCriticalChunks.length > 0) {
       recommendations.push({
         type: 'size',
@@ -396,16 +412,21 @@ class BundleAnalyzer {
         title: 'Large Critical Bundles Detected',
         description: `${largeCriticalChunks.length} critical chunks are larger than 250KB`,
         impact: 'Delays initial page render and increases Time to Interactive',
-        solution: 'Split large chunks, remove unused dependencies, or defer non-critical code',
+        solution:
+          'Split large chunks, remove unused dependencies, or defer non-critical code',
         estimatedSavings: {
-          size: largeCriticalChunks.reduce((sum, chunk) => sum + Math.max(0, chunk.size - 250000), 0),
+          size: largeCriticalChunks.reduce(
+            (sum, chunk) => sum + Math.max(0, chunk.size - 250000),
+            0
+          ),
           loadTime: largeCriticalChunks.length * 200, // Rough estimate
         },
       });
     }
 
     // Poor cache hit rate
-    const cacheHitRate = chunks.filter(chunk => chunk.cached).length / chunks.length * 100;
+    const cacheHitRate =
+      (chunks.filter(chunk => chunk.cached).length / chunks.length) * 100;
     if (cacheHitRate < 60 && chunks.length > 5) {
       recommendations.push({
         type: 'caching',
@@ -425,7 +446,8 @@ class BundleAnalyzer {
         title: 'Poor Largest Contentful Paint',
         description: `LCP is ${Math.round(metrics.largestContentfulPaint)}ms (should be < 2.5s)`,
         impact: 'Poor user experience and SEO ranking',
-        solution: 'Optimize critical resources, preload important content, or improve server response times',
+        solution:
+          'Optimize critical resources, preload important content, or improve server response times',
         estimatedSavings: {
           loadTime: metrics.largestContentfulPaint - 2500,
         },
@@ -440,12 +462,15 @@ class BundleAnalyzer {
         title: 'High Cumulative Layout Shift',
         description: `CLS is ${metrics.cumulativeLayoutShift.toFixed(3)} (should be < 0.1)`,
         impact: 'Poor user experience due to unexpected layout changes',
-        solution: 'Add dimensions to images, avoid dynamic content insertion, or use CSS transforms',
+        solution:
+          'Add dimensions to images, avoid dynamic content insertion, or use CSS transforms',
       });
     }
 
     // Too many small chunks
-    const smallChunks = chunks.filter(chunk => chunk.size < 10000 && !chunk.critical); // 10KB
+    const smallChunks = chunks.filter(
+      chunk => chunk.size < 10000 && !chunk.critical
+    ); // 10KB
     if (smallChunks.length > 10) {
       recommendations.push({
         type: 'splitting',
@@ -463,8 +488,9 @@ class BundleAnalyzer {
     // Unused route chunks
     const routeChunks = chunks.filter(chunk => chunk.route && !chunk.critical);
     const currentRoute = window.location.pathname;
-    const unusedRouteChunks = routeChunks.filter(chunk =>
-      chunk.route !== currentRoute && !chunk.route?.startsWith(currentRoute)
+    const unusedRouteChunks = routeChunks.filter(
+      chunk =>
+        chunk.route !== currentRoute && !chunk.route?.startsWith(currentRoute)
     );
 
     if (unusedRouteChunks.length > 3) {
@@ -497,8 +523,14 @@ class BundleAnalyzer {
       totalChunks: chunks.length,
       criticalChunks: chunks.filter(chunk => chunk.critical).length,
       totalSize: chunks.reduce((sum, chunk) => sum + chunk.size, 0),
-      averageChunkSize: chunks.length > 0 ? chunks.reduce((sum, chunk) => sum + chunk.size, 0) / chunks.length : 0,
-      cacheHitRate: chunks.length > 0 ? (chunks.filter(chunk => chunk.cached).length / chunks.length) * 100 : 0,
+      averageChunkSize:
+        chunks.length > 0
+          ? chunks.reduce((sum, chunk) => sum + chunk.size, 0) / chunks.length
+          : 0,
+      cacheHitRate:
+        chunks.length > 0
+          ? (chunks.filter(chunk => chunk.cached).length / chunks.length) * 100
+          : 0,
     };
   }
 

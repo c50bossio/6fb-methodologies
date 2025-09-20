@@ -6,7 +6,7 @@ import {
   hasPermission,
   WORKBOOK_PERMISSIONS,
   WORKBOOK_SECURITY_HEADERS,
-  getRateLimits
+  getRateLimits,
 } from '@/lib/workbook-auth';
 import db, { DatabaseError, ValidationError } from '@/lib/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ import {
   getStorageService,
   type AudioFileMetadata,
   type UploadResult,
-  type UploadProgress
+  type UploadProgress,
 } from '@/lib/storage';
 
 // Rate limiting store (in production, use Redis)
@@ -79,11 +79,13 @@ export async function POST(request: NextRequest) {
 
     // Enhanced rate limiting based on user role
     const rateLimits = getRateLimits(auth.session.role);
-    if (!checkRateLimit(
-      auth.session.userId,
-      rateLimits.audioRecordings.limit,
-      rateLimits.audioRecordings.window * 1000
-    )) {
+    if (
+      !checkRateLimit(
+        auth.session.userId,
+        rateLimits.audioRecordings.limit,
+        rateLimits.audioRecordings.window * 1000
+      )
+    ) {
       return NextResponse.json(
         { error: 'Recording rate limit exceeded for your subscription level' },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
@@ -96,9 +98,13 @@ export async function POST(request: NextRequest) {
     const sessionId = formData.get('sessionId') as string;
     const moduleId = formData.get('moduleId') as string;
     const lessonId = formData.get('lessonId') as string;
-    const title = (formData.get('title') as string) || `Recording ${new Date().toISOString()}`;
+    const title =
+      (formData.get('title') as string) ||
+      `Recording ${new Date().toISOString()}`;
     const description = formData.get('description') as string;
-    const tags = formData.get('tags') ? JSON.parse(formData.get('tags') as string) : [];
+    const tags = formData.get('tags')
+      ? JSON.parse(formData.get('tags') as string)
+      : [];
     const isPublic = formData.get('isPublic') === 'true';
 
     if (!audioFile) {
@@ -126,22 +132,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to S3 using the storage service
-    const uploadResult: UploadResult = await uploadAudioFile(audioFile, auth.session.userId, {
-      moduleId,
-      lessonId,
-      sessionId,
-      tags,
-      metadata: {
-        title,
-        description,
-        userAgent: request.headers.get('user-agent'),
-        uploadTimestamp: new Date().toISOString(),
-        uploadedBy: auth.session.name
-      },
-      extractWaveform: true,
-      compress: true,
-      isPublic
-    });
+    const uploadResult: UploadResult = await uploadAudioFile(
+      audioFile,
+      auth.session.userId,
+      {
+        moduleId,
+        lessonId,
+        sessionId,
+        tags,
+        metadata: {
+          title,
+          description,
+          userAgent: request.headers.get('user-agent'),
+          uploadTimestamp: new Date().toISOString(),
+          uploadedBy: auth.session.name,
+        },
+        extractWaveform: true,
+        compress: true,
+        isPublic,
+      }
+    );
 
     if (!uploadResult.success || !uploadResult.fileMetadata) {
       return NextResponse.json(
@@ -185,7 +195,7 @@ export async function POST(request: NextRequest) {
         JSON.stringify({
           originalName: audioFile.name,
           s3Metadata: s3FileMetadata.metadata,
-          uploadedAt: s3FileMetadata.uploadedAt.toISOString()
+          uploadedAt: s3FileMetadata.uploadedAt.toISOString(),
         }),
         new Date(),
         new Date(),
@@ -209,13 +219,12 @@ export async function POST(request: NextRequest) {
           duration_seconds: s3FileMetadata.duration,
           tags,
           is_public: isPublic,
-          created_at: audioRecord.created_at
+          created_at: audioRecord.created_at,
         },
         message: 'Audio uploaded successfully',
       },
       { status: 201, headers: WORKBOOK_SECURITY_HEADERS }
     );
-
   } catch (error) {
     console.error('Audio upload error:', error);
 
@@ -239,7 +248,10 @@ export async function OPTIONS(request: NextRequest) {
     status: 200,
     headers: {
       ...WORKBOOK_SECURITY_HEADERS,
-      'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://6fbmethodologies.com',
+      'Access-Control-Allow-Origin':
+        process.env.NODE_ENV === 'development'
+          ? '*'
+          : 'https://6fbmethodologies.com',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',

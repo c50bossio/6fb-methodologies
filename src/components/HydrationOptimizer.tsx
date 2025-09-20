@@ -20,8 +20,7 @@ export default function HydrationOptimizer({
     }
   }, []);
 
-  // For server-side rendering, show content immediately
-  // For client-side, wait for hydration to complete
+  // Simple wrapper component - no router dependencies
   return (
     <div
       className='contents'

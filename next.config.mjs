@@ -13,14 +13,15 @@ const nextConfig = {
       'react-syntax-highlighter'
     ],
     serverComponentsExternalPackages: ['pg', '@aws-sdk/client-s3'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+    // Temporarily disable Turbo mode to prevent HMR conflicts with custom server
+    // turbo: {
+    //   rules: {
+    //     '*.svg': {
+    //       loaders: ['@svgr/webpack'],
+    //       as: '*.js',
+    //     },
+    //   },
+    // },
   },
 
   // Performance Optimizations

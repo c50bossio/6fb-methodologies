@@ -139,7 +139,10 @@ async function getUserCompletedLessons(userId: string): Promise<string[]> {
 /**
  * Get lesson progress for user
  */
-async function getLessonProgress(userId: string, lessonIds?: string[]): Promise<Map<string, any>> {
+async function getLessonProgress(
+  userId: string,
+  lessonIds?: string[]
+): Promise<Map<string, any>> {
   let query = `
     SELECT
       lesson_id,
@@ -252,7 +255,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -316,7 +319,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate and sanitize pagination
-    const { page, limit } = validatePagination(validatedQuery.page, validatedQuery.limit);
+    const { page, limit } = validatePagination(
+      validatedQuery.page,
+      validatedQuery.limit
+    );
     const offset = (page - 1) * limit;
 
     // Build query conditions
@@ -450,25 +456,27 @@ export async function GET(request: NextRequest) {
           difficultyLevel: lesson.module_difficulty_level,
           isPublished: lesson.module_is_published,
         },
-        progress: progress ? {
-          progressPercentage: progress.progress_percentage || 0,
-          completed: progress.completed || false,
-          completedAt: progress.completed_at,
-          timeSpentSeconds: progress.time_spent_seconds || 0,
-          lastPosition: progress.last_position || 0,
-          quizScore: progress.quiz_score,
-          attemptsCount: progress.attempts_count || 0,
-          notesCount: progress.notes_count || 0,
-        } : {
-          progressPercentage: 0,
-          completed: false,
-          completedAt: null,
-          timeSpentSeconds: 0,
-          lastPosition: 0,
-          quizScore: null,
-          attemptsCount: 0,
-          notesCount: 0,
-        },
+        progress: progress
+          ? {
+              progressPercentage: progress.progress_percentage || 0,
+              completed: progress.completed || false,
+              completedAt: progress.completed_at,
+              timeSpentSeconds: progress.time_spent_seconds || 0,
+              lastPosition: progress.last_position || 0,
+              quizScore: progress.quiz_score,
+              attemptsCount: progress.attempts_count || 0,
+              notesCount: progress.notes_count || 0,
+            }
+          : {
+              progressPercentage: 0,
+              completed: false,
+              completedAt: null,
+              timeSpentSeconds: 0,
+              lastPosition: 0,
+              quizScore: null,
+              attemptsCount: 0,
+              notesCount: 0,
+            },
         prerequisitesMet,
         accessGranted: hasAccess,
         createdAt: lesson.created_at,
@@ -504,7 +512,6 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Lessons GET error:', error);
 
@@ -557,7 +564,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -596,7 +603,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Lessons POST error:', error);
     return NextResponse.json(

@@ -134,9 +134,18 @@ export async function POST(request: NextRequest) {
 
     // Enhanced rate limiting based on user role
     const rateLimits = getRateLimits(auth.session.role);
-    if (!checkRateLimit(auth.session.userId, rateLimits.transcriptions.limit, rateLimits.transcriptions.window * 1000)) {
+    if (
+      !checkRateLimit(
+        auth.session.userId,
+        rateLimits.transcriptions.limit,
+        rateLimits.transcriptions.window * 1000
+      )
+    ) {
       return NextResponse.json(
-        { error: 'Transcription rate limit exceeded for your subscription level' },
+        {
+          error:
+            'Transcription rate limit exceeded for your subscription level',
+        },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
       );
     }
@@ -149,16 +158,24 @@ export async function POST(request: NextRequest) {
     const language = (formData.get('language') as string) || 'en';
     const model = (formData.get('model') as string) || 'whisper-1';
     const prompt = formData.get('prompt') as string;
-    const temperature = parseFloat((formData.get('temperature') as string) || '0');
-    const responseFormat = (formData.get('responseFormat') as string) || 'verbose_json';
-    const enableChunking = (formData.get('enableChunking') as string) === 'true';
-    const chunkSizeMinutes = parseInt((formData.get('chunkSizeMinutes') as string) || '5');
+    const temperature = parseFloat(
+      (formData.get('temperature') as string) || '0'
+    );
+    const responseFormat =
+      (formData.get('responseFormat') as string) || 'verbose_json';
+    const enableChunking =
+      (formData.get('enableChunking') as string) === 'true';
+    const chunkSizeMinutes = parseInt(
+      (formData.get('chunkSizeMinutes') as string) || '5'
+    );
 
     if (!audioFile && !recordingId) {
-      throw new ValidationError('Either audio file or recording ID is required');
+      throw new ValidationError(
+        'Either audio file or recording ID is required'
+      );
     }
 
-    let audioFileToProcess = audioFile;
+    const audioFileToProcess = audioFile;
     let estimatedDurationMinutes = 0;
 
     // If recordingId is provided, get the file from database
@@ -178,13 +195,19 @@ export async function POST(request: NextRequest) {
       // For now, we'll require the audio file to be uploaded again
       // In production, you'd fetch it from S3
       if (!audioFile) {
-        throw new ValidationError('Audio file is required when using recordingId');
+        throw new ValidationError(
+          'Audio file is required when using recordingId'
+        );
       }
 
-      estimatedDurationMinutes = Math.ceil((recording.duration_seconds || 0) / 60);
+      estimatedDurationMinutes = Math.ceil(
+        (recording.duration_seconds || 0) / 60
+      );
     } else {
       // Estimate duration from file size (rough approximation)
-      estimatedDurationMinutes = Math.ceil(audioFile.size / (1024 * 1024 * 0.5));
+      estimatedDurationMinutes = Math.ceil(
+        audioFile.size / (1024 * 1024 * 0.5)
+      );
     }
 
     // Validate file if provided
@@ -208,7 +231,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate user limits
-    await validateTranscriptionLimits(auth.session.userId, estimatedDurationMinutes);
+    await validateTranscriptionLimits(
+      auth.session.userId,
+      estimatedDurationMinutes
+    );
 
     // Verify session ownership if provided
     if (sessionId) {
@@ -276,14 +302,16 @@ export async function POST(request: NextRequest) {
       const arrayBuffer = await audioFileToProcess.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      let transcriptionResults: any[] = [];
+      const transcriptionResults: any[] = [];
       let totalDuration = 0;
       let totalCost = 0;
 
       if (enableChunking && audioFileToProcess.size > 10 * 1024 * 1024) {
         // For chunked processing, we'd need to implement audio splitting
         // For now, we'll process the whole file and add chunking support later
-        console.log('Chunked processing requested but not yet implemented, processing whole file');
+        console.log(
+          'Chunked processing requested but not yet implemented, processing whole file'
+        );
       }
 
       // Create a File-like object for OpenAI API
@@ -310,9 +338,12 @@ export async function POST(request: NextRequest) {
         transcriptionParams.timestamp_granularities = ['word', 'segment'];
       }
 
-      const transcriptionResponse = await openai.audio.transcriptions.create(transcriptionParams);
+      const transcriptionResponse =
+        await openai.audio.transcriptions.create(transcriptionParams);
 
-      const actualDurationMinutes = Math.ceil((transcriptionResponse.duration || estimatedDurationMinutes * 60) / 60);
+      const actualDurationMinutes = Math.ceil(
+        (transcriptionResponse.duration || estimatedDurationMinutes * 60) / 60
+      );
       const actualCostCents = Math.round(actualDurationMinutes * 0.6);
 
       totalDuration = transcriptionResponse.duration || 0;
@@ -325,12 +356,19 @@ export async function POST(request: NextRequest) {
           duration: transcriptionResponse.duration,
           language: transcriptionResponse.language,
           task: transcriptionResponse.task,
-          segments: responseFormat === 'verbose_json' ? transcriptionResponse.segments?.slice(0, 5) : undefined,
-          words: responseFormat === 'verbose_json' ? transcriptionResponse.words?.slice(0, 20) : undefined,
+          segments:
+            responseFormat === 'verbose_json'
+              ? transcriptionResponse.segments?.slice(0, 5)
+              : undefined,
+          words:
+            responseFormat === 'verbose_json'
+              ? transcriptionResponse.words?.slice(0, 20)
+              : undefined,
         },
         processing: {
           chunkCount: 1,
-          totalProcessingTime: Date.now() - new Date(transcriptionRecord.created_at).getTime(),
+          totalProcessingTime:
+            Date.now() - new Date(transcriptionRecord.created_at).getTime(),
         },
       };
 
@@ -428,8 +466,14 @@ export async function POST(request: NextRequest) {
             text: transcriptionResponse.text,
             duration: totalDuration,
             language: transcriptionResponse.language,
-            segments: responseFormat === 'verbose_json' ? transcriptionResponse.segments : undefined,
-            words: responseFormat === 'verbose_json' ? transcriptionResponse.words : undefined,
+            segments:
+              responseFormat === 'verbose_json'
+                ? transcriptionResponse.segments
+                : undefined,
+            words:
+              responseFormat === 'verbose_json'
+                ? transcriptionResponse.words
+                : undefined,
             cost_cents: totalCost,
             status: 'completed',
             provider: 'openai-whisper',
@@ -438,10 +482,13 @@ export async function POST(request: NextRequest) {
           usage: {
             duration_minutes: actualDurationMinutes,
             cost_cents: totalCost,
-            daily_remaining_minutes: (await db.queryOne(
-              'SELECT daily_transcription_limit_minutes - daily_transcription_used_minutes as remaining FROM workbook_users WHERE id = $1',
-              [auth.session.userId]
-            ))?.remaining || 0,
+            daily_remaining_minutes:
+              (
+                await db.queryOne(
+                  'SELECT daily_transcription_limit_minutes - daily_transcription_used_minutes as remaining FROM workbook_users WHERE id = $1',
+                  [auth.session.userId]
+                )
+              )?.remaining || 0,
           },
           message: 'Audio transcribed successfully',
         },
@@ -472,7 +519,9 @@ export async function POST(request: NextRequest) {
       // Check if we should retry
       if (transcriptionRecord.retry_count < transcriptionRecord.max_retries) {
         // In production, you'd queue this for retry
-        console.log(`Transcription ${transcriptionId} will be retried (attempt ${transcriptionRecord.retry_count + 1}/${transcriptionRecord.max_retries})`);
+        console.log(
+          `Transcription ${transcriptionId} will be retried (attempt ${transcriptionRecord.retry_count + 1}/${transcriptionRecord.max_retries})`
+        );
       }
 
       throw new Error(

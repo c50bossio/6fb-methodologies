@@ -69,10 +69,18 @@ interface ExportOptions {
   onlyCompletedItems?: boolean;
 }
 
-async function generatePDFExport(userId: string, options: ExportOptions): Promise<string> {
+async function generatePDFExport(
+  userId: string,
+  options: ExportOptions
+): Promise<string> {
   // PDF generation would use a library like jsPDF or Puppeteer
   // For now, return a placeholder
-  console.log('PDF export requested for user:', userId, 'with options:', options);
+  console.log(
+    'PDF export requested for user:',
+    userId,
+    'with options:',
+    options
+  );
 
   // This would generate a comprehensive PDF report including:
   // - User progress summary
@@ -85,7 +93,10 @@ async function generatePDFExport(userId: string, options: ExportOptions): Promis
   return 'PDF export functionality is under development';
 }
 
-async function generateJSONExport(userId: string, options: ExportOptions): Promise<any> {
+async function generateJSONExport(
+  userId: string,
+  options: ExportOptions
+): Promise<any> {
   const exportData: any = {
     exportId: uuidv4(),
     userId,
@@ -137,7 +148,10 @@ async function generateJSONExport(userId: string, options: ExportOptions): Promi
 
     if (options.dateRange) {
       notesQuery += ` AND sn.created_at >= $${notesParams.length + 1} AND sn.created_at <= $${notesParams.length + 2}`;
-      notesParams.push(new Date(options.dateRange.start), new Date(options.dateRange.end));
+      notesParams.push(
+        new Date(options.dateRange.start),
+        new Date(options.dateRange.end)
+      );
     }
 
     notesQuery += ` ORDER BY sn.created_at DESC`;
@@ -163,12 +177,18 @@ async function generateJSONExport(userId: string, options: ExportOptions): Promi
 
     if (options.dateRange) {
       transcriptionsQuery += ` AND t.created_at >= $${transcriptionsParams.length + 1} AND t.created_at <= $${transcriptionsParams.length + 2}`;
-      transcriptionsParams.push(new Date(options.dateRange.start), new Date(options.dateRange.end));
+      transcriptionsParams.push(
+        new Date(options.dateRange.start),
+        new Date(options.dateRange.end)
+      );
     }
 
     transcriptionsQuery += ` ORDER BY t.created_at DESC`;
 
-    const transcriptions = await db.query(transcriptionsQuery, transcriptionsParams);
+    const transcriptions = await db.query(
+      transcriptionsQuery,
+      transcriptionsParams
+    );
     exportData.data.transcriptions = transcriptions;
   }
 
@@ -195,7 +215,10 @@ async function generateJSONExport(userId: string, options: ExportOptions): Promi
 
     if (options.dateRange) {
       sessionsQuery += ` AND ws.created_at >= $${sessionsParams.length + 1} AND ws.created_at <= $${sessionsParams.length + 2}`;
-      sessionsParams.push(new Date(options.dateRange.start), new Date(options.dateRange.end));
+      sessionsParams.push(
+        new Date(options.dateRange.start),
+        new Date(options.dateRange.end)
+      );
     }
 
     sessionsQuery += ` GROUP BY ws.id ORDER BY ws.created_at DESC`;
@@ -221,7 +244,10 @@ async function generateJSONExport(userId: string, options: ExportOptions): Promi
 
     if (options.dateRange) {
       audioQuery += ` AND ar.created_at >= $${audioParams.length + 1} AND ar.created_at <= $${audioParams.length + 2}`;
-      audioParams.push(new Date(options.dateRange.start), new Date(options.dateRange.end));
+      audioParams.push(
+        new Date(options.dateRange.start),
+        new Date(options.dateRange.end)
+      );
     }
 
     audioQuery += ` ORDER BY ar.created_at DESC`;
@@ -233,7 +259,10 @@ async function generateJSONExport(userId: string, options: ExportOptions): Promi
   return exportData;
 }
 
-async function generateMarkdownExport(userId: string, options: ExportOptions): Promise<string> {
+async function generateMarkdownExport(
+  userId: string,
+  options: ExportOptions
+): Promise<string> {
   let markdown = '# 6FB Workshop Data Export\n\n';
   markdown += `**Exported on:** ${new Date().toISOString()}\n\n`;
 
@@ -297,7 +326,10 @@ async function generateMarkdownExport(userId: string, options: ExportOptions): P
   return markdown;
 }
 
-async function generateCSVExport(userId: string, options: ExportOptions): Promise<string> {
+async function generateCSVExport(
+  userId: string,
+  options: ExportOptions
+): Promise<string> {
   // Generate CSV based on the primary data type requested
   if (options.includeNotes) {
     const notes = await db.query(
@@ -311,7 +343,8 @@ async function generateCSVExport(userId: string, options: ExportOptions): Promis
       [userId]
     );
 
-    let csv = 'Title,Content,Type,Tags,Is Action Item,Completed,Importance,Created At,Session\n';
+    let csv =
+      'Title,Content,Type,Tags,Is Action Item,Completed,Importance,Created At,Session\n';
     for (const note of notes) {
       const row = [
         `"${(note.title || '').replace(/"/g, '""')}"`,
@@ -352,9 +385,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limiting (exports can be resource-intensive)
-    if (!checkRateLimit(auth.session.userId, 3, 300000)) { // 3 exports per 5 minutes
+    if (!checkRateLimit(auth.session.userId, 3, 300000)) {
+      // 3 exports per 5 minutes
       return NextResponse.json(
-        { error: 'Export rate limit exceeded. Please wait before requesting another export.' },
+        {
+          error:
+            'Export rate limit exceeded. Please wait before requesting another export.',
+        },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
       );
     }
@@ -393,13 +430,17 @@ export async function POST(request: NextRequest) {
     // Validate format
     const validFormats = ['pdf', 'json', 'markdown', 'csv'];
     if (!validFormats.includes(format)) {
-      throw new ValidationError('Invalid export format. Supported formats: pdf, json, markdown, csv');
+      throw new ValidationError(
+        'Invalid export format. Supported formats: pdf, json, markdown, csv'
+      );
     }
 
     // Validate date range if provided
     if (dateRange) {
       if (!dateRange.start || !dateRange.end) {
-        throw new ValidationError('Date range must include both start and end dates');
+        throw new ValidationError(
+          'Date range must include both start and end dates'
+        );
       }
 
       const startDate = new Date(dateRange.start);
@@ -415,15 +456,26 @@ export async function POST(request: NextRequest) {
 
       // Limit export range to prevent abuse
       const maxDays = 365; // 1 year
-      const daysDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+      const daysDiff =
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
       if (daysDiff > maxDays) {
-        throw new ValidationError(`Date range too large. Maximum ${maxDays} days allowed.`);
+        throw new ValidationError(
+          `Date range too large. Maximum ${maxDays} days allowed.`
+        );
       }
     }
 
     // Validate that at least one data type is included
-    if (!includeNotes && !includeTranscriptions && !includeProgress && !includeSessions && !includeAudioMetadata) {
-      throw new ValidationError('At least one data type must be included in the export');
+    if (
+      !includeNotes &&
+      !includeTranscriptions &&
+      !includeProgress &&
+      !includeSessions &&
+      !includeAudioMetadata
+    ) {
+      throw new ValidationError(
+        'At least one data type must be included in the export'
+      );
     }
 
     // Create export record
@@ -464,7 +516,10 @@ export async function POST(request: NextRequest) {
           break;
 
         case 'markdown':
-          exportData = await generateMarkdownExport(auth.session.userId, options);
+          exportData = await generateMarkdownExport(
+            auth.session.userId,
+            options
+          );
           contentType = 'text/markdown';
           filename = `6fb-export-${new Date().toISOString().split('T')[0]}.md`;
           break;
@@ -487,7 +542,9 @@ export async function POST(request: NextRequest) {
         [
           'completed',
           new Date(),
-          typeof exportData === 'string' ? Buffer.byteLength(exportData, 'utf8') : JSON.stringify(exportData).length,
+          typeof exportData === 'string'
+            ? Buffer.byteLength(exportData, 'utf8')
+            : JSON.stringify(exportData).length,
           new Date(),
           exportId,
         ]
@@ -518,7 +575,9 @@ export async function POST(request: NextRequest) {
          WHERE id = $4`,
         [
           'failed',
-          exportError instanceof Error ? exportError.message : 'Unknown export error',
+          exportError instanceof Error
+            ? exportError.message
+            : 'Unknown export error',
           new Date(),
           exportId,
         ]
@@ -564,7 +623,10 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const exportId = url.searchParams.get('exportId');
     const status = url.searchParams.get('status');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '20'),
+      100
+    );
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0);
 
     if (exportId) {
@@ -605,7 +667,8 @@ export async function GET(request: NextRequest) {
     const exports = await db.query(query, params);
 
     // Get total count
-    let countQuery = 'SELECT COUNT(*) as total FROM data_exports WHERE user_id = $1';
+    let countQuery =
+      'SELECT COUNT(*) as total FROM data_exports WHERE user_id = $1';
     const countParams = [auth.session.userId];
 
     if (status) {
@@ -644,7 +707,10 @@ export async function OPTIONS(request: NextRequest) {
     status: 200,
     headers: {
       ...WORKBOOK_SECURITY_HEADERS,
-      'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://6fbmethodologies.com',
+      'Access-Control-Allow-Origin':
+        process.env.NODE_ENV === 'development'
+          ? '*'
+          : 'https://6fbmethodologies.com',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',

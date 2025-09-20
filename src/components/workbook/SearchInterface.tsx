@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Search,
   Filter,
@@ -64,7 +70,13 @@ import {
 interface ExtendedSearchFilters extends APISearchFilters {
   // UI-specific filters
   showFilters: boolean;
-  activeTab: 'all' | 'modules' | 'lessons' | 'notes' | 'transcriptions' | 'recordings';
+  activeTab:
+    | 'all'
+    | 'modules'
+    | 'lessons'
+    | 'notes'
+    | 'transcriptions'
+    | 'recordings';
   viewMode: 'grid' | 'list';
   groupBy: 'none' | 'contentType' | 'moduleId' | 'date' | 'category';
 
@@ -173,11 +185,22 @@ const SearchResultItem: React.FC<{
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     } else if (diffInHours < 24 * 7) {
-      return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      return date.toLocaleDateString([], {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      return date.toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
     }
   };
 
@@ -195,14 +218,19 @@ const SearchResultItem: React.FC<{
                 {result.contentType}
               </Badge>
               {result.relevanceScore && (
-                <Badge variant='outline' className={`text-xs ${getRelevanceColor(result.relevanceScore)}`}>
+                <Badge
+                  variant='outline'
+                  className={`text-xs ${getRelevanceColor(result.relevanceScore)}`}
+                >
                   {Math.round(result.relevanceScore * 100)}%
                 </Badge>
               )}
             </div>
 
             <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
-              {result.metadata?.isBookmarked && <Star className='w-4 h-4 text-yellow-500' />}
+              {result.metadata?.isBookmarked && (
+                <Star className='w-4 h-4 text-yellow-500' />
+              )}
               <Button variant='ghost' size='sm' className='w-6 h-6 p-0'>
                 <MoreHorizontal className='w-3 h-3' />
               </Button>
@@ -237,7 +265,10 @@ const SearchResultItem: React.FC<{
               <div className='text-xs text-text-secondary mb-1'>Matches:</div>
               <div className='space-y-1'>
                 {result.highlights.slice(0, 2).map((highlight, index) => (
-                  <div key={index} className='text-xs text-text-primary bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded'>
+                  <div
+                    key={index}
+                    className='text-xs text-text-primary bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded'
+                  >
                     <span dangerouslySetInnerHTML={{ __html: highlight }} />
                   </div>
                 ))}
@@ -275,14 +306,19 @@ const SearchResultItem: React.FC<{
                   {result.contentType}
                 </Badge>
                 {result.relevanceScore && (
-                  <Badge variant='outline' className={`text-xs ${getRelevanceColor(result.relevanceScore)}`}>
+                  <Badge
+                    variant='outline'
+                    className={`text-xs ${getRelevanceColor(result.relevanceScore)}`}
+                  >
                     {Math.round(result.relevanceScore * 100)}%
                   </Badge>
                 )}
               </div>
 
               <div className='flex items-center gap-2'>
-                {result.metadata?.isBookmarked && <Star className='w-4 h-4 text-yellow-500' />}
+                {result.metadata?.isBookmarked && (
+                  <Star className='w-4 h-4 text-yellow-500' />
+                )}
                 <span className='text-xs text-text-secondary'>
                   {formatDate(result.lastModified)}
                 </span>
@@ -290,11 +326,13 @@ const SearchResultItem: React.FC<{
             </div>
 
             {showPreview && result.snippet && (
-              <p className={`text-sm text-text-secondary mb-3 ${showFullContent ? '' : 'line-clamp-2'}`}>
+              <p
+                className={`text-sm text-text-secondary mb-3 ${showFullContent ? '' : 'line-clamp-2'}`}
+              >
                 {result.snippet}
                 {result.snippet.length > 150 && (
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       setShowFullContent(!showFullContent);
                     }}
@@ -317,7 +355,7 @@ const SearchResultItem: React.FC<{
 
                 {result.metadata?.tags && result.metadata.tags.length > 0 && (
                   <div className='flex items-center gap-1'>
-                    {result.metadata.tags.slice(0, 3).map((tag) => (
+                    {result.metadata.tags.slice(0, 3).map(tag => (
                       <Badge key={tag} variant='outline' className='text-xs'>
                         #{tag}
                       </Badge>
@@ -331,23 +369,32 @@ const SearchResultItem: React.FC<{
                 )}
               </div>
 
-              <Button variant='ghost' size='sm' className='opacity-0 group-hover:opacity-100 transition-opacity'>
+              <Button
+                variant='ghost'
+                size='sm'
+                className='opacity-0 group-hover:opacity-100 transition-opacity'
+              >
                 <ChevronRight className='w-4 h-4' />
               </Button>
             </div>
 
             {result.highlights && result.highlights.length > 0 && (
               <div className='mt-3 pt-3 border-t border-border-primary'>
-                <div className='text-xs text-text-secondary mb-2'>Highlighted matches:</div>
+                <div className='text-xs text-text-secondary mb-2'>
+                  Highlighted matches:
+                </div>
                 <div className='space-y-1'>
                   {result.highlights.slice(0, 3).map((highlight, index) => (
-                    <div key={index} className='text-xs text-text-primary bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded'>
+                    <div
+                      key={index}
+                      className='text-xs text-text-primary bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded'
+                    >
                       <span dangerouslySetInnerHTML={{ __html: highlight }} />
                     </div>
                   ))}
                   {result.highlights.length > 3 && (
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         setShowFullContent(!showFullContent);
                       }}
@@ -380,7 +427,9 @@ const SearchSuggestions: React.FC<{
   const groupedSuggestions = useMemo(() => {
     const recent = suggestions.filter(s => s.type === 'recent').slice(0, 3);
     const popular = suggestions.filter(s => s.type === 'popular').slice(0, 3);
-    const suggested = suggestions.filter(s => s.type === 'suggested').slice(0, 3);
+    const suggested = suggestions
+      .filter(s => s.type === 'suggested')
+      .slice(0, 3);
 
     return { recent, popular, suggested };
   }, [suggestions]);
@@ -391,7 +440,9 @@ const SearchSuggestions: React.FC<{
         {groupedSuggestions.recent.length > 0 && (
           <div>
             <div className='flex items-center justify-between mb-2'>
-              <h4 className='text-sm font-medium text-text-primary'>Recent Searches</h4>
+              <h4 className='text-sm font-medium text-text-primary'>
+                Recent Searches
+              </h4>
               <Button
                 variant='ghost'
                 size='sm'
@@ -402,7 +453,7 @@ const SearchSuggestions: React.FC<{
               </Button>
             </div>
             <div className='space-y-1'>
-              {groupedSuggestions.recent.map((suggestion) => (
+              {groupedSuggestions.recent.map(suggestion => (
                 <button
                   key={suggestion.id}
                   onClick={() => onSuggestionSelect(suggestion)}
@@ -425,9 +476,11 @@ const SearchSuggestions: React.FC<{
 
         {groupedSuggestions.popular.length > 0 && (
           <div>
-            <h4 className='text-sm font-medium text-text-primary mb-2'>Popular Searches</h4>
+            <h4 className='text-sm font-medium text-text-primary mb-2'>
+              Popular Searches
+            </h4>
             <div className='space-y-1'>
-              {groupedSuggestions.popular.map((suggestion) => (
+              {groupedSuggestions.popular.map(suggestion => (
                 <button
                   key={suggestion.id}
                   onClick={() => onSuggestionSelect(suggestion)}
@@ -450,9 +503,11 @@ const SearchSuggestions: React.FC<{
 
         {groupedSuggestions.suggested.length > 0 && (
           <div>
-            <h4 className='text-sm font-medium text-text-primary mb-2'>Suggested</h4>
+            <h4 className='text-sm font-medium text-text-primary mb-2'>
+              Suggested
+            </h4>
             <div className='space-y-1'>
-              {groupedSuggestions.suggested.map((suggestion) => (
+              {groupedSuggestions.suggested.map(suggestion => (
                 <button
                   key={suggestion.id}
                   onClick={() => onSuggestionSelect(suggestion)}
@@ -480,52 +535,66 @@ const AdvancedFilters: React.FC<{
   onFiltersChange: (filters: ExtendedSearchFilters) => void;
   onClearFilters: () => void;
 }> = ({ filters, onFiltersChange, onClearFilters }) => {
-  const updateFilter = useCallback(<K extends keyof ExtendedSearchFilters>(
-    key: K,
-    value: ExtendedSearchFilters[K]
-  ) => {
-    onFiltersChange({ ...filters, [key]: value });
-  }, [filters, onFiltersChange]);
+  const updateFilter = useCallback(
+    <K extends keyof ExtendedSearchFilters>(
+      key: K,
+      value: ExtendedSearchFilters[K]
+    ) => {
+      onFiltersChange({ ...filters, [key]: value });
+    },
+    [filters, onFiltersChange]
+  );
 
-  const setDateRangePreset = useCallback((preset: ExtendedSearchFilters['dateRangePreset']) => {
-    let dateFrom: string | undefined;
-    let dateTo: string | undefined;
+  const setDateRangePreset = useCallback(
+    (preset: ExtendedSearchFilters['dateRangePreset']) => {
+      let dateFrom: string | undefined;
+      let dateTo: string | undefined;
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    switch (preset) {
-      case 'today':
-        dateFrom = today.toISOString();
-        dateTo = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString();
-        break;
-      case 'week':
-        dateFrom = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        dateTo = now.toISOString();
-        break;
-      case 'month':
-        dateFrom = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        dateTo = now.toISOString();
-        break;
-      case 'quarter':
-        dateFrom = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-        dateTo = now.toISOString();
-        break;
-      case 'all':
-      case 'custom':
-      default:
-        dateFrom = undefined;
-        dateTo = undefined;
-        break;
-    }
+      switch (preset) {
+        case 'today':
+          dateFrom = today.toISOString();
+          dateTo = new Date(
+            today.getTime() + 24 * 60 * 60 * 1000
+          ).toISOString();
+          break;
+        case 'week':
+          dateFrom = new Date(
+            today.getTime() - 7 * 24 * 60 * 60 * 1000
+          ).toISOString();
+          dateTo = now.toISOString();
+          break;
+        case 'month':
+          dateFrom = new Date(
+            today.getTime() - 30 * 24 * 60 * 60 * 1000
+          ).toISOString();
+          dateTo = now.toISOString();
+          break;
+        case 'quarter':
+          dateFrom = new Date(
+            today.getTime() - 90 * 24 * 60 * 60 * 1000
+          ).toISOString();
+          dateTo = now.toISOString();
+          break;
+        case 'all':
+        case 'custom':
+        default:
+          dateFrom = undefined;
+          dateTo = undefined;
+          break;
+      }
 
-    onFiltersChange({
-      ...filters,
-      dateRangePreset: preset,
-      dateFrom,
-      dateTo,
-    });
-  }, [filters, onFiltersChange]);
+      onFiltersChange({
+        ...filters,
+        dateRangePreset: preset,
+        dateFrom,
+        dateTo,
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
   return (
     <Card className='bg-background-accent border-border-primary'>
@@ -545,14 +614,24 @@ const AdvancedFilters: React.FC<{
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
           {/* Content Types */}
           <div>
-            <label className='block text-sm font-medium text-text-primary mb-2'>Content Types</label>
+            <label className='block text-sm font-medium text-text-primary mb-2'>
+              Content Types
+            </label>
             <div className='space-y-2'>
-              {(['module', 'lesson', 'note', 'transcription', 'recording'] as ContentType[]).map((type) => (
+              {(
+                [
+                  'module',
+                  'lesson',
+                  'note',
+                  'transcription',
+                  'recording',
+                ] as ContentType[]
+              ).map(type => (
                 <label key={type} className='flex items-center gap-2 text-sm'>
                   <input
                     type='checkbox'
                     checked={filters.contentTypes?.includes(type) || false}
-                    onChange={(e) => {
+                    onChange={e => {
                       const currentTypes = filters.contentTypes || [];
                       const newTypes = e.target.checked
                         ? [...currentTypes, type]
@@ -569,11 +648,17 @@ const AdvancedFilters: React.FC<{
 
           {/* Date Range */}
           <div>
-            <label className='block text-sm font-medium text-text-primary mb-2'>Date Range</label>
+            <label className='block text-sm font-medium text-text-primary mb-2'>
+              Date Range
+            </label>
             <div className='space-y-2'>
               <select
                 value={filters.dateRangePreset}
-                onChange={(e) => setDateRangePreset(e.target.value as ExtendedSearchFilters['dateRangePreset'])}
+                onChange={e =>
+                  setDateRangePreset(
+                    e.target.value as ExtendedSearchFilters['dateRangePreset']
+                  )
+                }
                 className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
               >
                 <option value='all'>All Time</option>
@@ -589,14 +674,28 @@ const AdvancedFilters: React.FC<{
                   <input
                     type='date'
                     value={filters.dateFrom?.split('T')[0] || ''}
-                    onChange={(e) => updateFilter('dateFrom', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+                    onChange={e =>
+                      updateFilter(
+                        'dateFrom',
+                        e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : undefined
+                      )
+                    }
                     className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary'
                     placeholder='From'
                   />
                   <input
                     type='date'
                     value={filters.dateTo?.split('T')[0] || ''}
-                    onChange={(e) => updateFilter('dateTo', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+                    onChange={e =>
+                      updateFilter(
+                        'dateTo',
+                        e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : undefined
+                      )
+                    }
                     className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary'
                     placeholder='To'
                   />
@@ -607,11 +706,18 @@ const AdvancedFilters: React.FC<{
 
           {/* Progress & Status */}
           <div>
-            <label className='block text-sm font-medium text-text-primary mb-2'>Progress & Status</label>
+            <label className='block text-sm font-medium text-text-primary mb-2'>
+              Progress & Status
+            </label>
             <div className='space-y-2'>
               <select
                 value={filters.progressStatus || ''}
-                onChange={(e) => updateFilter('progressStatus', e.target.value as ProgressStatus || undefined)}
+                onChange={e =>
+                  updateFilter(
+                    'progressStatus',
+                    (e.target.value as ProgressStatus) || undefined
+                  )
+                }
                 className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
               >
                 <option value=''>Any Progress</option>
@@ -622,7 +728,12 @@ const AdvancedFilters: React.FC<{
 
               <select
                 value={filters.difficultyLevel || ''}
-                onChange={(e) => updateFilter('difficultyLevel', e.target.value as DifficultyLevel || undefined)}
+                onChange={e =>
+                  updateFilter(
+                    'difficultyLevel',
+                    (e.target.value as DifficultyLevel) || undefined
+                  )
+                }
                 className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
               >
                 <option value=''>Any Difficulty</option>
@@ -635,13 +746,15 @@ const AdvancedFilters: React.FC<{
 
           {/* Quick Filters */}
           <div>
-            <label className='block text-sm font-medium text-text-primary mb-2'>Quick Filters</label>
+            <label className='block text-sm font-medium text-text-primary mb-2'>
+              Quick Filters
+            </label>
             <div className='space-y-2'>
               <label className='flex items-center gap-2 text-sm'>
                 <input
                   type='checkbox'
                   checked={filters.isBookmarked || false}
-                  onChange={(e) => updateFilter('isBookmarked', e.target.checked)}
+                  onChange={e => updateFilter('isBookmarked', e.target.checked)}
                   className='rounded border-border-primary'
                 />
                 Bookmarked Only
@@ -651,7 +764,9 @@ const AdvancedFilters: React.FC<{
                 <input
                   type='checkbox'
                   checked={filters.hasActionItems || false}
-                  onChange={(e) => updateFilter('hasActionItems', e.target.checked)}
+                  onChange={e =>
+                    updateFilter('hasActionItems', e.target.checked)
+                  }
                   className='rounded border-border-primary'
                 />
                 Has Action Items
@@ -661,7 +776,15 @@ const AdvancedFilters: React.FC<{
                 type='text'
                 placeholder='Tags (comma-sep)'
                 value={filters.tags?.join(', ') || ''}
-                onChange={(e) => updateFilter('tags', e.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}
+                onChange={e =>
+                  updateFilter(
+                    'tags',
+                    e.target.value
+                      .split(',')
+                      .map(tag => tag.trim())
+                      .filter(Boolean)
+                  )
+                }
                 className='w-full px-3 py-1 text-sm bg-background-secondary border border-border-primary rounded text-text-primary'
               />
             </div>
@@ -734,149 +857,179 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   /**
    * Perform search with current query and filters
    */
-  const performSearch = useCallback(async (
-    query: string = searchQuery,
-    currentFilters: ExtendedSearchFilters = filters,
-    page: number = 1
-  ) => {
-    if (!query.trim() && !Object.keys(currentFilters).some(key => {
-      const value = currentFilters[key as keyof ExtendedSearchFilters];
-      return value && value !== 'all' && value !== 'none' &&
-             (Array.isArray(value) ? value.length > 0 : true);
-    })) {
-      setSearchResults([]);
-      setTotalResults(0);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const startTime = Date.now();
-
-      // Build search request
-      const searchRequest: SearchRequest = {
-        query: query.trim(),
-        filters: {
-          contentTypes: currentFilters.contentTypes,
-          moduleId: currentFilters.moduleId,
-          lessonId: currentFilters.lessonId,
-          dateFrom: currentFilters.dateFrom,
-          dateTo: currentFilters.dateTo,
-          tags: currentFilters.tags,
-          difficultyLevel: currentFilters.difficultyLevel,
-          progressStatus: currentFilters.progressStatus,
-          isBookmarked: currentFilters.isBookmarked,
-        },
-        sortBy: currentFilters.sortBy || 'relevance',
-        sortOrder: currentFilters.sortOrder || 'desc',
-        page,
-        limit: pageSize,
-        includeHighlights: true,
-        includeSnippets: true,
-      };
-
-      const response = await fetch('/api/workbook/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(searchRequest),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Search failed');
+  const performSearch = useCallback(
+    async (
+      query: string = searchQuery,
+      currentFilters: ExtendedSearchFilters = filters,
+      page: number = 1
+    ) => {
+      if (
+        !query.trim() &&
+        !Object.keys(currentFilters).some(key => {
+          const value = currentFilters[key as keyof ExtendedSearchFilters];
+          return (
+            value &&
+            value !== 'all' &&
+            value !== 'none' &&
+            (Array.isArray(value) ? value.length > 0 : true)
+          );
+        })
+      ) {
+        setSearchResults([]);
+        setTotalResults(0);
+        return;
       }
 
-      const data: SearchResponse = await response.json();
+      try {
+        setLoading(true);
+        setError(null);
+        const startTime = Date.now();
 
-      if (data.success && data.data) {
-        const searchTime = Date.now() - startTime;
+        // Build search request
+        const searchRequest: SearchRequest = {
+          query: query.trim(),
+          filters: {
+            contentTypes: currentFilters.contentTypes,
+            moduleId: currentFilters.moduleId,
+            lessonId: currentFilters.lessonId,
+            dateFrom: currentFilters.dateFrom,
+            dateTo: currentFilters.dateTo,
+            tags: currentFilters.tags,
+            difficultyLevel: currentFilters.difficultyLevel,
+            progressStatus: currentFilters.progressStatus,
+            isBookmarked: currentFilters.isBookmarked,
+          },
+          sortBy: currentFilters.sortBy || 'relevance',
+          sortOrder: currentFilters.sortOrder || 'desc',
+          page,
+          limit: pageSize,
+          includeHighlights: true,
+          includeSnippets: true,
+        };
 
-        setSearchResults(data.data.results);
-        setTotalResults(data.data.total);
-        setCurrentPage(page);
+        const response = await fetch('/api/workbook/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(searchRequest),
+        });
 
-        // Update analytics
-        if (enableAnalytics) {
-          const newAnalytics: SearchAnalytics = {
-            totalResults: data.data.total,
-            resultsByType: data.data.aggregations?.contentTypes || analytics.resultsByType,
-            searchTime,
-            suggestedFilters: data.data.suggestedFilters || [],
-            relatedTopics: data.data.relatedQueries || [],
-            popularQueries: analytics.popularQueries,
-          };
-
-          setAnalytics(newAnalytics);
-          onAnalyticsChange?.(newAnalytics);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Search failed');
         }
 
-        // Add to search history
-        if (query.trim()) {
-          const suggestion: SearchSuggestion = {
-            id: `search_${Date.now()}`,
-            query: query.trim(),
-            type: 'recent',
-            lastUsed: new Date().toISOString(),
-          };
+        const data: SearchResponse = await response.json();
 
-          setSuggestions(prev => [
-            suggestion,
-            ...prev.filter(s => s.query !== query.trim()).slice(0, 9)
-          ]);
+        if (data.success && data.data) {
+          const searchTime = Date.now() - startTime;
+
+          setSearchResults(data.data.results);
+          setTotalResults(data.data.total);
+          setCurrentPage(page);
+
+          // Update analytics
+          if (enableAnalytics) {
+            const newAnalytics: SearchAnalytics = {
+              totalResults: data.data.total,
+              resultsByType:
+                data.data.aggregations?.contentTypes || analytics.resultsByType,
+              searchTime,
+              suggestedFilters: data.data.suggestedFilters || [],
+              relatedTopics: data.data.relatedQueries || [],
+              popularQueries: analytics.popularQueries,
+            };
+
+            setAnalytics(newAnalytics);
+            onAnalyticsChange?.(newAnalytics);
+          }
+
+          // Add to search history
+          if (query.trim()) {
+            const suggestion: SearchSuggestion = {
+              id: `search_${Date.now()}`,
+              query: query.trim(),
+              type: 'recent',
+              lastUsed: new Date().toISOString(),
+            };
+
+            setSuggestions(prev => [
+              suggestion,
+              ...prev.filter(s => s.query !== query.trim()).slice(0, 9),
+            ]);
+          }
+        } else {
+          throw new Error(data.error || 'Invalid search response');
         }
-      } else {
-        throw new Error(data.error || 'Invalid search response');
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Search failed';
+        setError(errorMessage);
+        onError?.(errorMessage, 'search');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Search failed';
-      setError(errorMessage);
-      onError?.(errorMessage, 'search');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, filters, pageSize, enableAnalytics, analytics.resultsByType, analytics.popularQueries, onAnalyticsChange, onError]);
+    },
+    [
+      searchQuery,
+      filters,
+      pageSize,
+      enableAnalytics,
+      analytics.resultsByType,
+      analytics.popularQueries,
+      onAnalyticsChange,
+      onError,
+    ]
+  );
 
   /**
    * Debounced search
    */
-  const debouncedSearch = useCallback((query: string) => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+  const debouncedSearch = useCallback(
+    (query: string) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
 
-    searchTimeoutRef.current = setTimeout(() => {
-      performSearch(query);
-    }, 300);
-  }, [performSearch]);
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(query);
+      }, 300);
+    },
+    [performSearch]
+  );
 
   /**
    * Handle search input change
    */
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      setCurrentPage(1);
 
-    if (value.trim()) {
-      debouncedSearch(value);
-      setShowSuggestionsPanel(false);
-    } else {
-      setSearchResults([]);
-      setTotalResults(0);
-    }
-  }, [debouncedSearch]);
+      if (value.trim()) {
+        debouncedSearch(value);
+        setShowSuggestionsPanel(false);
+      } else {
+        setSearchResults([]);
+        setTotalResults(0);
+      }
+    },
+    [debouncedSearch]
+  );
 
   /**
    * Handle filter changes
    */
-  const handleFiltersChange = useCallback((newFilters: ExtendedSearchFilters) => {
-    setFilters(newFilters);
-    setCurrentPage(1);
-    performSearch(searchQuery, newFilters, 1);
-  }, [searchQuery, performSearch]);
+  const handleFiltersChange = useCallback(
+    (newFilters: ExtendedSearchFilters) => {
+      setFilters(newFilters);
+      setCurrentPage(1);
+      performSearch(searchQuery, newFilters, 1);
+    },
+    [searchQuery, performSearch]
+  );
 
   /**
    * Clear all filters
@@ -895,16 +1048,26 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
     setFilters(clearedFilters);
     setCurrentPage(1);
     performSearch(searchQuery, clearedFilters, 1);
-  }, [filters.showFilters, filters.viewMode, moduleId, lessonId, searchQuery, performSearch]);
+  }, [
+    filters.showFilters,
+    filters.viewMode,
+    moduleId,
+    lessonId,
+    searchQuery,
+    performSearch,
+  ]);
 
   /**
    * Handle suggestion selection
    */
-  const handleSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
-    setSearchQuery(suggestion.query);
-    setShowSuggestionsPanel(false);
-    performSearch(suggestion.query);
-  }, [performSearch]);
+  const handleSuggestionSelect = useCallback(
+    (suggestion: SearchSuggestion) => {
+      setSearchQuery(suggestion.query);
+      setShowSuggestionsPanel(false);
+      performSearch(suggestion.query);
+    },
+    [performSearch]
+  );
 
   /**
    * Clear search history
@@ -972,8 +1135,18 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   useEffect(() => {
     // Load popular queries and suggestions
     const popularQueries: SearchSuggestion[] = [
-      { id: 'p1', query: 'business foundations', type: 'popular', frequency: 45 },
-      { id: 'p2', query: 'marketing strategies', type: 'popular', frequency: 38 },
+      {
+        id: 'p1',
+        query: 'business foundations',
+        type: 'popular',
+        frequency: 45,
+      },
+      {
+        id: 'p2',
+        query: 'marketing strategies',
+        type: 'popular',
+        frequency: 38,
+      },
       { id: 'p3', query: 'six figure barber', type: 'popular', frequency: 32 },
     ];
 
@@ -1001,9 +1174,15 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                   type='text'
                   placeholder='Search across all content - modules, lessons, notes, recordings...'
                   value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onFocus={() => setShowSuggestionsPanel(showSuggestions && suggestions.length > 0)}
-                  onBlur={() => setTimeout(() => setShowSuggestionsPanel(false), 150)}
+                  onChange={e => handleSearchChange(e.target.value)}
+                  onFocus={() =>
+                    setShowSuggestionsPanel(
+                      showSuggestions && suggestions.length > 0
+                    )
+                  }
+                  onBlur={() =>
+                    setTimeout(() => setShowSuggestionsPanel(false), 150)
+                  }
                   className='w-full pl-12 pr-12 py-4 text-lg bg-background-accent border border-border-primary rounded-xl text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-tomb45-green focus:border-transparent transition-all'
                 />
                 {loading && (
@@ -1035,18 +1214,35 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               <div className='flex items-center gap-4'>
                 {/* Content Type Tabs */}
                 <div className='flex items-center bg-background-accent rounded-lg p-1'>
-                  {(['all', 'modules', 'lessons', 'notes', 'transcriptions', 'recordings'] as const).map((tab) => (
+                  {(
+                    [
+                      'all',
+                      'modules',
+                      'lessons',
+                      'notes',
+                      'transcriptions',
+                      'recordings',
+                    ] as const
+                  ).map(tab => (
                     <Button
                       key={tab}
-                      variant={filters.activeTab === tab ? 'secondary' : 'ghost'}
+                      variant={
+                        filters.activeTab === tab ? 'secondary' : 'ghost'
+                      }
                       size='sm'
                       onClick={() => {
-                        const contentTypes = tab === 'all' ? undefined :
-                          tab === 'modules' ? ['module'] :
-                          tab === 'lessons' ? ['lesson'] :
-                          tab === 'notes' ? ['note'] :
-                          tab === 'transcriptions' ? ['transcription'] :
-                          ['recording'];
+                        const contentTypes =
+                          tab === 'all'
+                            ? undefined
+                            : tab === 'modules'
+                              ? ['module']
+                              : tab === 'lessons'
+                                ? ['lesson']
+                                : tab === 'notes'
+                                  ? ['note']
+                                  : tab === 'transcriptions'
+                                    ? ['transcription']
+                                    : ['recording'];
 
                         handleFiltersChange({
                           ...filters,
@@ -1064,7 +1260,12 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                 {/* Filter Toggle */}
                 <Button
                   variant={filters.showFilters ? 'secondary' : 'outline'}
-                  onClick={() => setFilters(prev => ({ ...prev, showFilters: !prev.showFilters }))}
+                  onClick={() =>
+                    setFilters(prev => ({
+                      ...prev,
+                      showFilters: !prev.showFilters,
+                    }))
+                  }
                 >
                   <Filter className='w-4 h-4 mr-2' />
                   Filters
@@ -1080,17 +1281,25 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                 {/* View Mode Toggle */}
                 <div className='flex items-center bg-background-accent rounded-lg p-1'>
                   <Button
-                    variant={filters.viewMode === 'list' ? 'secondary' : 'ghost'}
+                    variant={
+                      filters.viewMode === 'list' ? 'secondary' : 'ghost'
+                    }
                     size='sm'
-                    onClick={() => setFilters(prev => ({ ...prev, viewMode: 'list' }))}
+                    onClick={() =>
+                      setFilters(prev => ({ ...prev, viewMode: 'list' }))
+                    }
                     className='w-8 h-8 p-0'
                   >
                     <List className='w-4 h-4' />
                   </Button>
                   <Button
-                    variant={filters.viewMode === 'grid' ? 'secondary' : 'ghost'}
+                    variant={
+                      filters.viewMode === 'grid' ? 'secondary' : 'ghost'
+                    }
                     size='sm'
-                    onClick={() => setFilters(prev => ({ ...prev, viewMode: 'grid' }))}
+                    onClick={() =>
+                      setFilters(prev => ({ ...prev, viewMode: 'grid' }))
+                    }
                     className='w-8 h-8 p-0'
                   >
                     <Grid className='w-4 h-4' />
@@ -1100,8 +1309,11 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                 {/* Sort Options */}
                 <select
                   value={`${filters.sortBy || 'relevance'}_${filters.sortOrder || 'desc'}`}
-                  onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('_') as [SearchSortOptions, 'asc' | 'desc'];
+                  onChange={e => {
+                    const [sortBy, sortOrder] = e.target.value.split('_') as [
+                      SearchSortOptions,
+                      'asc' | 'desc',
+                    ];
                     handleFiltersChange({
                       ...filters,
                       sortBy,
@@ -1138,21 +1350,36 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-6'>
                 <div className='text-sm text-text-secondary'>
-                  <span className='font-medium text-text-primary'>{totalResults.toLocaleString()}</span> results
+                  <span className='font-medium text-text-primary'>
+                    {totalResults.toLocaleString()}
+                  </span>{' '}
+                  results
                   {analytics.searchTime > 0 && (
                     <span className='ml-2'>in {analytics.searchTime}ms</span>
                   )}
                 </div>
 
-                {Object.values(analytics.resultsByType).some(count => count > 0) && (
+                {Object.values(analytics.resultsByType).some(
+                  count => count > 0
+                ) && (
                   <div className='flex items-center gap-3 text-sm'>
-                    {(Object.entries(analytics.resultsByType) as [ContentType, number][]).map(([type, count]) => (
-                      count > 0 && (
-                        <Badge key={type} variant='outline' className='text-xs'>
-                          {count} {type}s
-                        </Badge>
-                      )
-                    ))}
+                    {(
+                      Object.entries(analytics.resultsByType) as [
+                        ContentType,
+                        number,
+                      ][]
+                    ).map(
+                      ([type, count]) =>
+                        count > 0 && (
+                          <Badge
+                            key={type}
+                            variant='outline'
+                            className='text-xs'
+                          >
+                            {count} {type}s
+                          </Badge>
+                        )
+                    )}
                   </div>
                 )}
               </div>
@@ -1206,16 +1433,18 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                 </h3>
               )}
 
-              <div className={
-                filters.viewMode === 'grid'
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                  : 'space-y-3'
-              }>
-                {results.map((result) => (
+              <div
+                className={
+                  filters.viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                    : 'space-y-3'
+                }
+              >
+                {results.map(result => (
                   <SearchResultItem
                     key={result.id}
                     result={result}
-                    onSelect={(result) => onResultSelect?.(result)}
+                    onSelect={result => onResultSelect?.(result)}
                     viewMode={filters.viewMode}
                     showPreview={true}
                   />
@@ -1266,9 +1495,12 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
         <Card className='bg-background-secondary border-border-primary'>
           <CardContent className='p-8 text-center'>
             <Search className='w-16 h-16 mx-auto mb-4 text-text-secondary opacity-50' />
-            <h3 className='text-xl font-semibold text-text-primary mb-2'>No results found</h3>
+            <h3 className='text-xl font-semibold text-text-primary mb-2'>
+              No results found
+            </h3>
             <p className='text-text-secondary mb-6'>
-              Try adjusting your search query or filters to find what you're looking for.
+              Try adjusting your search query or filters to find what you're
+              looking for.
             </p>
             <div className='flex justify-center gap-3'>
               <Button onClick={clearAllFilters} variant='outline'>
@@ -1293,42 +1525,60 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               Comprehensive Workshop Search
             </h3>
             <p className='text-text-secondary mb-6 max-w-2xl mx-auto'>
-              Search across all your workshop content including modules, lessons, notes, recordings, and transcriptions.
-              Use advanced filters to find exactly what you need.
+              Search across all your workshop content including modules,
+              lessons, notes, recordings, and transcriptions. Use advanced
+              filters to find exactly what you need.
             </p>
 
             <div className='grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto'>
               <div className='text-center p-4'>
                 <BookOpen className='w-8 h-8 mx-auto mb-2 text-blue-500' />
-                <h4 className='font-medium text-text-primary mb-1'>Workshop Content</h4>
-                <p className='text-sm text-text-secondary'>Search modules and lessons</p>
+                <h4 className='font-medium text-text-primary mb-1'>
+                  Workshop Content
+                </h4>
+                <p className='text-sm text-text-secondary'>
+                  Search modules and lessons
+                </p>
               </div>
               <div className='text-center p-4'>
                 <FileText className='w-8 h-8 mx-auto mb-2 text-purple-500' />
-                <h4 className='font-medium text-text-primary mb-1'>Personal Notes</h4>
-                <p className='text-sm text-text-secondary'>Find your notes and action items</p>
+                <h4 className='font-medium text-text-primary mb-1'>
+                  Personal Notes
+                </h4>
+                <p className='text-sm text-text-secondary'>
+                  Find your notes and action items
+                </p>
               </div>
               <div className='text-center p-4'>
                 <Mic className='w-8 h-8 mx-auto mb-2 text-orange-500' />
-                <h4 className='font-medium text-text-primary mb-1'>Audio Content</h4>
-                <p className='text-sm text-text-secondary'>Search recordings and transcriptions</p>
+                <h4 className='font-medium text-text-primary mb-1'>
+                  Audio Content
+                </h4>
+                <p className='text-sm text-text-secondary'>
+                  Search recordings and transcriptions
+                </p>
               </div>
             </div>
 
             {suggestions.filter(s => s.type === 'popular').length > 0 && (
               <div className='mt-6'>
-                <p className='text-sm text-text-secondary mb-3'>Popular searches:</p>
+                <p className='text-sm text-text-secondary mb-3'>
+                  Popular searches:
+                </p>
                 <div className='flex justify-center gap-2 flex-wrap'>
-                  {suggestions.filter(s => s.type === 'popular').slice(0, 3).map((suggestion) => (
-                    <Button
-                      key={suggestion.id}
-                      variant='outline'
-                      size='sm'
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                    >
-                      {suggestion.query}
-                    </Button>
-                  ))}
+                  {suggestions
+                    .filter(s => s.type === 'popular')
+                    .slice(0, 3)
+                    .map(suggestion => (
+                      <Button
+                        key={suggestion.id}
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handleSuggestionSelect(suggestion)}
+                      >
+                        {suggestion.query}
+                      </Button>
+                    ))}
                 </div>
               </div>
             )}
@@ -1349,4 +1599,9 @@ export type {
   SearchSuggestion,
   SearchAnalytics,
 };
-export { SearchInterface, SearchResultItem, SearchSuggestions, AdvancedFilters };
+export {
+  SearchInterface,
+  SearchResultItem,
+  SearchSuggestions,
+  AdvancedFilters,
+};

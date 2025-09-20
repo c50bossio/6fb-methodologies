@@ -178,16 +178,18 @@ async function getCompletionHistory(
     [userId, limit, offset]
   );
 
-  const validatedCompletions: CompletionHistoryItem[] = completions.map((completion: any) => {
-    return CompletionHistoryItemSchema.parse({
-      moduleId: completion.module_id,
-      moduleName: completion.module_name,
-      completedAt: completion.completed_at,
-      timeSpentMinutes: completion.time_spent_minutes || 0,
-      completionScore: completion.completion_score,
-      certificateUrl: completion.certificate_url,
-    });
-  });
+  const validatedCompletions: CompletionHistoryItem[] = completions.map(
+    (completion: any) => {
+      return CompletionHistoryItemSchema.parse({
+        moduleId: completion.module_id,
+        moduleName: completion.module_name,
+        completedAt: completion.completed_at,
+        timeSpentMinutes: completion.time_spent_minutes || 0,
+        completionScore: completion.completion_score,
+        certificateUrl: completion.certificate_url,
+      });
+    }
+  );
 
   return {
     completions: validatedCompletions,
@@ -319,7 +321,8 @@ async function checkModuleCompletionEligibility(
 
   const totalLessons = parseInt(lessonCompletion?.total_lessons || '0');
   const completedLessons = parseInt(lessonCompletion?.completed_lessons || '0');
-  const lessonCompletionRate = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 100;
+  const lessonCompletionRate =
+    totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 100;
 
   if (lessonCompletionRate < 100) {
     return {
@@ -393,7 +396,7 @@ async function createModuleCompletion(
   const completionId = uuidv4();
 
   // Calculate completion score based on various factors
-  let completionScore = 100; // Base score
+  const completionScore = 100; // Base score
 
   // Adjust score based on time efficiency (optional)
   // This could be enhanced with more sophisticated scoring logic
@@ -513,7 +516,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -561,10 +564,17 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '20'),
+      100
+    );
 
     // Get completion history
-    const historyResult = await getCompletionHistory(workbookUser.id, page, limit);
+    const historyResult = await getCompletionHistory(
+      workbookUser.id,
+      page,
+      limit
+    );
 
     // Build pagination metadata
     const pagination = {
@@ -592,7 +602,6 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Completion history GET error:', error);
 
@@ -647,7 +656,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -670,7 +679,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Rate limit exceeded. Module completion requests are limited to prevent abuse.',
+          error:
+            'Rate limit exceeded. Module completion requests are limited to prevent abuse.',
           timestamp: Date.now(),
         },
         { status: 429 }
@@ -725,7 +735,8 @@ export async function POST(request: NextRequest) {
     );
 
     if (!eligibilityCheck.isEligible) {
-      const statusCode = eligibilityCheck.code === 'MODULE_NOT_FOUND' ? 404 : 403;
+      const statusCode =
+        eligibilityCheck.code === 'MODULE_NOT_FOUND' ? 404 : 403;
       return NextResponse.json(
         {
           success: false,
@@ -738,7 +749,8 @@ export async function POST(request: NextRequest) {
     }
 
     const module = eligibilityCheck.module!;
-    const userName = `${workbookUser.firstName} ${workbookUser.lastName}`.trim();
+    const userName =
+      `${workbookUser.firstName} ${workbookUser.lastName}`.trim();
 
     // Create completion record using transaction
     const completion = await db.transaction(async () => {
@@ -769,10 +781,12 @@ export async function POST(request: NextRequest) {
           title: module.title,
           difficultyLevel: module.difficulty_level,
         },
-        certificate: completion.certificateUrl ? {
-          url: completion.certificateUrl,
-          issuedAt: completion.completedAt,
-        } : null,
+        certificate: completion.certificateUrl
+          ? {
+              url: completion.certificateUrl,
+              issuedAt: completion.completedAt,
+            }
+          : null,
       },
       message: `Module "${module.title}" completed successfully${completion.certificateUrl ? ' with certificate' : ''}`,
       timestamp: Date.now(),
@@ -785,7 +799,6 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Module completion POST error:', error);
 

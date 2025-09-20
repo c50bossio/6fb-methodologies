@@ -17,6 +17,10 @@ import {
 } from '@/lib/inventory';
 import { recordMemberDiscountUsage } from '@/lib/member-discount-tracking';
 import { storeWorkbookUser } from '@/lib/workbook-auth';
+import {
+  customerService,
+  type CustomerRegistrationData,
+} from '@/lib/services/CustomerService';
 import Stripe from 'stripe';
 
 // Webhook event processor
@@ -773,24 +777,105 @@ class StripeWebhookProcessor {
   }
 
   private async updateCustomerDatabase(session: Stripe.Checkout.Session) {
-    // Update customer database or CRM
-    const customerData = {
-      email: session.customer_details?.email,
-      name: session.metadata?.customerName,
-      businessName: session.metadata?.businessName,
-      businessType: session.metadata?.businessType,
-      yearsExperience: session.metadata?.yearsExperience,
-      phone: session.metadata?.phone,
-      ticketType: session.metadata?.ticketType,
-      isSixFBMember: session.metadata?.isSixFBMember === 'true',
-      totalPaid: session.amount_total,
-      currency: session.currency,
-      sessionId: session.id,
-      lastUpdated: new Date().toISOString(),
-    };
+    try {
+      // Extract customer information from session
+      const customerEmail = session.customer_details?.email;
+      if (!customerEmail) {
+        console.warn('Cannot save customer: no email provided');
+        return;
+      }
 
-    console.log('Would update customer database:', customerData);
-    // await customerService.upsert(customerData)
+      // Parse name into first/last name
+      const fullName =
+        session.metadata?.customerName || session.customer_details?.name || '';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || 'Workshop';
+      const lastName = nameParts.slice(1).join(' ') || 'Attendee';
+
+      // Prepare customer registration data
+      const customerData: CustomerRegistrationData = {
+        // Customer info
+        firstName,
+        lastName,
+        email: customerEmail,
+        phone: session.metadata?.phone || session.customer_details?.phone || '',
+        city: session.metadata?.city || '',
+        state: session.metadata?.state || '',
+        zipCode: session.metadata?.zipCode || '',
+
+        // Registration details
+        cityId: session.metadata?.cityId || 'unknown',
+        ticketType:
+          (session.metadata?.ticketType?.toLowerCase() as 'ga' | 'vip') || 'ga',
+        quantity: parseInt(session.metadata?.quantity || '1'),
+        totalAmount: session.amount_total || 0,
+        discountType: this.parseDiscountType(session.metadata?.discountReason),
+        discountAmount: parseInt(session.metadata?.discountAmount || '0'),
+
+        // Stripe data
+        stripeCustomerId: session.customer as string,
+        stripeSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent as string,
+
+        // Verification status
+        isSixFBMember: session.metadata?.isSixFBMember === 'true',
+        isVerifiedMember: session.metadata?.isVerifiedMember === 'true',
+        membershipType: session.metadata?.membershipType,
+        skoolUserId: session.metadata?.skoolUserId,
+      };
+
+      // Save to database
+      const result = await customerService.upsert(customerData);
+
+      console.log('✅ Customer data saved to database:', {
+        customerId: result.customer.id,
+        email: result.customer.email,
+        paymentId: result.payment?.id,
+        ticketCount: result.tickets.length,
+        sessionId: session.id,
+      });
+
+      return {
+        success: true,
+        customer: result.customer,
+        payment: result.payment,
+        tickets: result.tickets,
+      };
+    } catch (error) {
+      console.error('❌ Failed to save customer to database:', error);
+
+      // Log the error but don't fail the webhook
+      console.log('database_save_error', {
+        sessionId: session.id,
+        customerEmail: session.customer_details?.email,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Parse discount type from discount reason string
+   */
+  private parseDiscountType(
+    discountReason?: string
+  ): 'member' | 'bulk' | 'both' | undefined {
+    if (!discountReason) return undefined;
+
+    const reason = discountReason.toLowerCase();
+    const hasMember = reason.includes('member');
+    const hasBulk = reason.includes('bulk') || reason.includes('quantity');
+
+    if (hasMember && hasBulk) return 'both';
+    if (hasMember) return 'member';
+    if (hasBulk) return 'bulk';
+
+    return undefined;
   }
 
   private async updateMembershipStatus(paymentIntent: Stripe.PaymentIntent) {

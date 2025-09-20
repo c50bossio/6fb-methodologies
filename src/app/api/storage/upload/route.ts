@@ -66,9 +66,19 @@ const VALIDATION_RULES = {
   ],
   maxFileNameLength: 255,
   allowedFileExtensions: [
-    'mp3', 'wav', 'm4a', 'webm', 'ogg', 'flac',
-    'jpg', 'jpeg', 'png', 'gif', 'webp',
-    'pdf', 'txt'
+    'mp3',
+    'wav',
+    'm4a',
+    'webm',
+    'ogg',
+    'flac',
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+    'pdf',
+    'txt',
   ],
 };
 
@@ -76,7 +86,9 @@ const VALIDATION_RULES = {
  * POST /api/storage/upload
  * Upload a file to S3 with validation and processing
  */
-export async function POST(request: NextRequest): Promise<NextResponse<UploadResponse>> {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<UploadResponse>> {
   const startTime = Date.now();
   let userId: string | null = null;
   let clientIp: string | null = null;
@@ -84,9 +96,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
   try {
     // Get client IP for audit logging
     const headersList = headers();
-    clientIp = headersList.get('x-forwarded-for') ||
-               headersList.get('x-real-ip') ||
-               'unknown';
+    clientIp =
+      headersList.get('x-forwarded-for') ||
+      headersList.get('x-real-ip') ||
+      'unknown';
 
     // Authentication check
     const authResult = await verifyToken(request);
@@ -124,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         {
           success: false,
           error: validationResult.error,
-          details: validationResult.details
+          details: validationResult.details,
         },
         { status: 400 }
       );
@@ -133,9 +146,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
     // Parse additional parameters
     const uploadOptions = {
       userId,
-      moduleId: formData.get('moduleId') as string || undefined,
-      lessonId: formData.get('lessonId') as string || undefined,
-      sessionId: formData.get('sessionId') as string || undefined,
+      moduleId: (formData.get('moduleId') as string) || undefined,
+      lessonId: (formData.get('lessonId') as string) || undefined,
+      sessionId: (formData.get('sessionId') as string) || undefined,
       tags: parseJsonField(formData.get('tags') as string) || [],
       metadata: parseJsonField(formData.get('metadata') as string) || {},
       generateThumbnail: formData.get('generateThumbnail') === 'true',
@@ -151,8 +164,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       file.name,
       uploadOptions,
       // Progress callback (for server-side logging)
-      (progress) => {
-        console.log(`Upload progress for ${file.name}: ${progress.percentage}% (${progress.stage})`);
+      progress => {
+        console.log(
+          `Upload progress for ${file.name}: ${progress.percentage}% (${progress.stage})`
+        );
       }
     );
 
@@ -168,7 +183,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         {
           success: false,
           error: uploadResult.error || 'Upload failed',
-          details: 'File upload to storage failed'
+          details: 'File upload to storage failed',
         },
         { status: 500 }
       );
@@ -214,7 +229,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
           },
         },
       });
-
     } catch (dbError) {
       console.error('Database save failed:', dbError);
 
@@ -222,7 +236,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       try {
         await storageService.deleteFile(fileMetadata.key);
       } catch (cleanupError) {
-        console.error('Failed to cleanup uploaded file after db error:', cleanupError);
+        console.error(
+          'Failed to cleanup uploaded file after db error:',
+          cleanupError
+        );
       }
 
       await logFileAccess('upload', fileMetadata.key, userId, {
@@ -237,12 +254,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         {
           success: false,
           error: 'Failed to save file metadata',
-          details: 'File uploaded but database save failed'
+          details: 'File uploaded but database save failed',
         },
         { status: 500 }
       );
     }
-
   } catch (error) {
     console.error('Upload endpoint error:', error);
 
@@ -260,9 +276,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       {
         success: false,
         error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ?
-          (error instanceof Error ? error.message : 'Unknown error') :
-          'An unexpected error occurred'
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : 'Unknown error'
+            : 'An unexpected error occurred',
       },
       { status: 500 }
     );
@@ -306,7 +325,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Generate signed upload URL
     const storageService = getStorageService();
     const fileKey = `users/${authResult.userId}/uploads/${Date.now()}_${fileName}`;
-    const signedUrl = await storageService.getSignedUploadUrl(fileKey, mimeType, 3600);
+    const signedUrl = await storageService.getSignedUploadUrl(
+      fileKey,
+      mimeType,
+      3600
+    );
 
     return NextResponse.json({
       success: true,
@@ -318,7 +341,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         allowedTypes: VALIDATION_RULES.allowedMimeTypes,
       },
     });
-
   } catch (error) {
     console.error('Get upload URL error:', error);
     return NextResponse.json(
@@ -331,7 +353,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 /**
  * File validation function
  */
-function validateFile(file: File): { isValid: boolean; error?: string; details?: string } {
+function validateFile(file: File): {
+  isValid: boolean;
+  error?: string;
+  details?: string;
+} {
   // Check file size
   if (file.size > VALIDATION_RULES.maxFileSize) {
     return {
@@ -361,7 +387,10 @@ function validateFile(file: File): { isValid: boolean; error?: string; details?:
 
   // Check file extension
   const extension = file.name.split('.').pop()?.toLowerCase();
-  if (!extension || !VALIDATION_RULES.allowedFileExtensions.includes(extension)) {
+  if (
+    !extension ||
+    !VALIDATION_RULES.allowedFileExtensions.includes(extension)
+  ) {
     return {
       isValid: false,
       error: 'File extension not allowed',
@@ -370,7 +399,11 @@ function validateFile(file: File): { isValid: boolean; error?: string; details?:
   }
 
   // Check for malicious file names
-  if (file.name.includes('..') || file.name.includes('/') || file.name.includes('\\')) {
+  if (
+    file.name.includes('..') ||
+    file.name.includes('/') ||
+    file.name.includes('\\')
+  ) {
     return {
       isValid: false,
       error: 'Invalid file name',

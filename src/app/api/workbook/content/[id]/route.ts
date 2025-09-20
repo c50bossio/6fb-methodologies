@@ -348,7 +348,7 @@ export async function GET(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -418,11 +418,9 @@ export async function GET(
     const contentItem = contentResult.item!;
 
     // Record access for analytics (async, don't wait)
-    recordContentAccess(
-      workbookUser.id,
-      contentId,
-      contentItem.type
-    ).catch(console.warn);
+    recordContentAccess(workbookUser.id, contentId, contentItem.type).catch(
+      console.warn
+    );
 
     // Build successful response
     const response = {
@@ -439,7 +437,6 @@ export async function GET(
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Content item GET error:', error);
 
@@ -513,7 +510,7 @@ export async function PUT(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -547,12 +544,12 @@ export async function PUT(
       {
         success: false,
         error: 'Content update endpoint not yet implemented',
-        message: 'This feature is planned for future release. Content can be updated through specific module and lesson endpoints.',
+        message:
+          'This feature is planned for future release. Content can be updated through specific module and lesson endpoints.',
         timestamp: Date.now(),
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Content PUT error:', error);
     return NextResponse.json(
@@ -599,7 +596,7 @@ export async function DELETE(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -633,12 +630,12 @@ export async function DELETE(
       {
         success: false,
         error: 'Content deletion endpoint not yet implemented',
-        message: 'This feature is planned for future release. Content can be deleted through specific module and lesson endpoints.',
+        message:
+          'This feature is planned for future release. Content can be deleted through specific module and lesson endpoints.',
         timestamp: Date.now(),
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Content DELETE error:', error);
     return NextResponse.json(

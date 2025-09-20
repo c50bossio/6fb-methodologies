@@ -79,7 +79,7 @@ export class StorageDatabaseService {
             peaks: metadata.peaks,
             thumbnailUrl: metadata.thumbnailUrl,
             tags: metadata.tags,
-            ...metadata.metadata
+            ...metadata.metadata,
           })}::jsonb, ${false}
         )
         RETURNING id
@@ -154,7 +154,12 @@ export class StorageDatabaseService {
    */
   async updateAudioRecording(
     id: string,
-    updates: Partial<Pick<AudioRecordingRecord, 'metadata' | 'is_processed' | 'transcription_id'>>
+    updates: Partial<
+      Pick<
+        AudioRecordingRecord,
+        'metadata' | 'is_processed' | 'transcription_id'
+      >
+    >
   ): Promise<boolean> {
     try {
       const updateFields: string[] = [];
@@ -295,7 +300,9 @@ export class StorageDatabaseService {
   /**
    * Log storage action for audit trail
    */
-  async logStorageAction(action: Omit<StorageAuditRecord, 'id' | 'created_at'>): Promise<void> {
+  async logStorageAction(
+    action: Omit<StorageAuditRecord, 'id' | 'created_at'>
+  ): Promise<void> {
     try {
       await sql`
         INSERT INTO storage_audit_log (
@@ -343,7 +350,18 @@ export class StorageDatabaseService {
    */
   async updateCleanupJob(
     jobId: string,
-    updates: Partial<Pick<CleanupJobRecord, 'status' | 'files_processed' | 'files_deleted' | 'bytes_saved' | 'error_message' | 'started_at' | 'completed_at'>>
+    updates: Partial<
+      Pick<
+        CleanupJobRecord,
+        | 'status'
+        | 'files_processed'
+        | 'files_deleted'
+        | 'bytes_saved'
+        | 'error_message'
+        | 'started_at'
+        | 'completed_at'
+      >
+    >
   ): Promise<boolean> {
     try {
       const updateFields: string[] = [];
@@ -570,12 +588,16 @@ export class StorageDatabaseService {
 }
 
 // Utility functions for common database operations
-export async function saveFileToDatabase(metadata: AudioFileMetadata): Promise<string> {
+export async function saveFileToDatabase(
+  metadata: AudioFileMetadata
+): Promise<string> {
   const dbService = new StorageDatabaseService();
   return dbService.saveAudioRecording(metadata);
 }
 
-export async function getFileFromDatabase(id: string): Promise<AudioRecordingRecord | null> {
+export async function getFileFromDatabase(
+  id: string
+): Promise<AudioRecordingRecord | null> {
   const dbService = new StorageDatabaseService();
   return dbService.getAudioRecording(id);
 }
@@ -589,7 +611,10 @@ export async function getUserFiles(
   return dbService.getUserAudioRecordings(userId, limit, offset);
 }
 
-export async function deleteFileFromDatabase(id: string, userId: string): Promise<boolean> {
+export async function deleteFileFromDatabase(
+  id: string,
+  userId: string
+): Promise<boolean> {
   const dbService = new StorageDatabaseService();
   return dbService.deleteAudioRecording(id, userId);
 }
@@ -635,8 +660,4 @@ export function getDatabaseService(): StorageDatabaseService {
 }
 
 // StorageDatabaseService is already exported above in the class declaration
-export type {
-  AudioRecordingRecord,
-  StorageAuditRecord,
-  CleanupJobRecord,
-};
+export type { AudioRecordingRecord, StorageAuditRecord, CleanupJobRecord };

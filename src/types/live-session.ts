@@ -26,7 +26,8 @@ export const SessionStatus = {
   CANCELLED: 'cancelled',
 } as const;
 
-export type SessionStatusType = typeof SessionStatus[keyof typeof SessionStatus];
+export type SessionStatusType =
+  (typeof SessionStatus)[keyof typeof SessionStatus];
 
 export const SessionType = {
   WORKSHOP: 'workshop',
@@ -39,7 +40,7 @@ export const SessionType = {
   TRAINING: 'training',
 } as const;
 
-export type SessionTypeType = typeof SessionType[keyof typeof SessionType];
+export type SessionTypeType = (typeof SessionType)[keyof typeof SessionType];
 
 export const ParticipantRole = {
   HOST: 'host',
@@ -50,7 +51,8 @@ export const ParticipantRole = {
   OBSERVER: 'observer',
 } as const;
 
-export type ParticipantRoleType = typeof ParticipantRole[keyof typeof ParticipantRole];
+export type ParticipantRoleType =
+  (typeof ParticipantRole)[keyof typeof ParticipantRole];
 
 export const ParticipantStatus = {
   INVITED: 'invited',
@@ -60,7 +62,8 @@ export const ParticipantStatus = {
   BANNED: 'banned',
 } as const;
 
-export type ParticipantStatusType = typeof ParticipantStatus[keyof typeof ParticipantStatus];
+export type ParticipantStatusType =
+  (typeof ParticipantStatus)[keyof typeof ParticipantStatus];
 
 export const ConnectionStatus = {
   CONNECTING: 'connecting',
@@ -70,7 +73,8 @@ export const ConnectionStatus = {
   FAILED: 'failed',
 } as const;
 
-export type ConnectionStatusType = typeof ConnectionStatus[keyof typeof ConnectionStatus];
+export type ConnectionStatusType =
+  (typeof ConnectionStatus)[keyof typeof ConnectionStatus];
 
 export const MediaType = {
   AUDIO: 'audio',
@@ -79,7 +83,7 @@ export const MediaType = {
   AUDIO_VIDEO: 'audio_video',
 } as const;
 
-export type MediaTypeType = typeof MediaType[keyof typeof MediaType];
+export type MediaTypeType = (typeof MediaType)[keyof typeof MediaType];
 
 // =============================================================================
 // WebSocket and Real-time Communication
@@ -506,7 +510,16 @@ export interface SessionReaction {
   participantId: UUID;
 
   // Reaction details
-  type: 'like' | 'love' | 'laugh' | 'wow' | 'sad' | 'angry' | 'applause' | 'thumbs_up' | 'thumbs_down';
+  type:
+    | 'like'
+    | 'love'
+    | 'laugh'
+    | 'wow'
+    | 'sad'
+    | 'angry'
+    | 'applause'
+    | 'thumbs_up'
+    | 'thumbs_down';
   targetType: 'session' | 'message' | 'poll' | 'question' | 'participant';
   targetId?: UUID;
 
@@ -818,11 +831,46 @@ export interface LiveSession {
 // Base schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const SessionStatusSchema = z.enum(['scheduled', 'waiting', 'live', 'paused', 'ended', 'cancelled']);
-export const SessionTypeSchema = z.enum(['workshop', 'lecture', 'discussion', 'q_and_a', 'office_hours', 'collaboration', 'presentation', 'training']);
-export const ParticipantRoleSchema = z.enum(['host', 'co_host', 'presenter', 'moderator', 'participant', 'observer']);
-export const ParticipantStatusSchema = z.enum(['invited', 'joined', 'left', 'kicked', 'banned']);
-export const ConnectionStatusSchema = z.enum(['connecting', 'connected', 'reconnecting', 'disconnected', 'failed']);
+export const SessionStatusSchema = z.enum([
+  'scheduled',
+  'waiting',
+  'live',
+  'paused',
+  'ended',
+  'cancelled',
+]);
+export const SessionTypeSchema = z.enum([
+  'workshop',
+  'lecture',
+  'discussion',
+  'q_and_a',
+  'office_hours',
+  'collaboration',
+  'presentation',
+  'training',
+]);
+export const ParticipantRoleSchema = z.enum([
+  'host',
+  'co_host',
+  'presenter',
+  'moderator',
+  'participant',
+  'observer',
+]);
+export const ParticipantStatusSchema = z.enum([
+  'invited',
+  'joined',
+  'left',
+  'kicked',
+  'banned',
+]);
+export const ConnectionStatusSchema = z.enum([
+  'connecting',
+  'connected',
+  'reconnecting',
+  'disconnected',
+  'failed',
+]);
 
 // WebSocket schemas
 export const WebSocketConnectionSchema = z.object({
@@ -850,16 +898,20 @@ export const WebSocketConnectionSchema = z.object({
   }),
   networkInfo: z.object({
     ipAddress: z.string(),
-    location: z.object({
-      country: z.string().optional(),
-      region: z.string().optional(),
-      city: z.string().optional(),
-    }).optional(),
+    location: z
+      .object({
+        country: z.string().optional(),
+        region: z.string().optional(),
+        city: z.string().optional(),
+      })
+      .optional(),
     latency: z.number().min(0).optional(),
-    bandwidth: z.object({
-      upload: z.number().min(0),
-      download: z.number().min(0),
-    }).optional(),
+    bandwidth: z
+      .object({
+        upload: z.number().min(0),
+        download: z.number().min(0),
+      })
+      .optional(),
   }),
   quality: z.object({
     audioQuality: z.enum(['excellent', 'good', 'fair', 'poor']),
@@ -906,11 +958,13 @@ export const SessionParticipantSchema = z.object({
   }),
   connectionId: z.string().optional(),
   connectionStatus: ConnectionStatusSchema,
-  deviceInfo: z.object({
-    type: z.enum(['desktop', 'mobile', 'tablet']),
-    os: z.string(),
-    browser: z.string(),
-  }).optional(),
+  deviceInfo: z
+    .object({
+      type: z.enum(['desktop', 'mobile', 'tablet']),
+      os: z.string(),
+      browser: z.string(),
+    })
+    .optional(),
   engagement: z.object({
     joinedAt: TimestampSchema.optional(),
     leftAt: TimestampSchema.optional(),
@@ -935,13 +989,23 @@ export const SessionPollSchema = z.object({
   createdBy: UUIDSchema,
   question: z.string().min(1).max(500),
   description: z.string().max(1000).optional(),
-  type: z.enum(['multiple_choice', 'single_choice', 'text', 'rating', 'yes_no']),
-  options: z.array(z.object({
-    id: z.string(),
-    text: z.string(),
-    color: z.string().optional(),
-    image: z.string().url().optional(),
-  })).optional(),
+  type: z.enum([
+    'multiple_choice',
+    'single_choice',
+    'text',
+    'rating',
+    'yes_no',
+  ]),
+  options: z
+    .array(
+      z.object({
+        id: z.string(),
+        text: z.string(),
+        color: z.string().optional(),
+        image: z.string().url().optional(),
+      })
+    )
+    .optional(),
   settings: z.object({
     allowMultipleAnswers: z.boolean(),
     allowTextResponse: z.boolean(),
@@ -954,20 +1018,26 @@ export const SessionPollSchema = z.object({
   startedAt: TimestampSchema.optional(),
   closedAt: TimestampSchema.optional(),
   timeRemaining: z.number().min(0).optional(),
-  responses: z.array(z.object({
-    participantId: UUIDSchema,
-    selectedOptions: z.array(z.string()).optional(),
-    textResponse: z.string().optional(),
-    submittedAt: TimestampSchema,
-  })),
+  responses: z.array(
+    z.object({
+      participantId: UUIDSchema,
+      selectedOptions: z.array(z.string()).optional(),
+      textResponse: z.string().optional(),
+      submittedAt: TimestampSchema,
+    })
+  ),
   analytics: z.object({
     totalVotes: z.number().min(0),
     participationRate: z.number().min(0).max(100),
-    optionResults: z.array(z.object({
-      optionId: z.string(),
-      votes: z.number().min(0),
-      percentage: z.number().min(0).max(100),
-    })).optional(),
+    optionResults: z
+      .array(
+        z.object({
+          optionId: z.string(),
+          votes: z.number().min(0),
+          percentage: z.number().min(0).max(100),
+        })
+      )
+      .optional(),
     textResponses: z.array(z.string()).optional(),
     averageRating: z.number().min(0).max(10).optional(),
   }),
@@ -987,22 +1057,30 @@ export const QAQuestionSchema = z.object({
   priority: z.enum(['low', 'normal', 'high']),
   upvotes: z.number().min(0),
   downvotes: z.number().min(0),
-  answer: z.object({
-    content: z.string(),
-    answeredBy: UUIDSchema,
-    answeredAt: TimestampSchema,
-    format: z.enum(['text', 'markdown', 'audio', 'video']),
-    attachments: z.array(z.object({
-      type: z.enum(['image', 'file', 'link']),
-      url: z.string().url(),
-      filename: z.string().optional(),
-    })).optional(),
-  }).optional(),
-  votes: z.array(z.object({
-    participantId: UUIDSchema,
-    type: z.enum(['up', 'down']),
-    votedAt: TimestampSchema,
-  })),
+  answer: z
+    .object({
+      content: z.string(),
+      answeredBy: UUIDSchema,
+      answeredAt: TimestampSchema,
+      format: z.enum(['text', 'markdown', 'audio', 'video']),
+      attachments: z
+        .array(
+          z.object({
+            type: z.enum(['image', 'file', 'link']),
+            url: z.string().url(),
+            filename: z.string().optional(),
+          })
+        )
+        .optional(),
+    })
+    .optional(),
+  votes: z.array(
+    z.object({
+      participantId: UUIDSchema,
+      type: z.enum(['up', 'down']),
+      votedAt: TimestampSchema,
+    })
+  ),
   askedAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -1049,14 +1127,16 @@ export const SessionRecordingSchema = z.object({
   title: z.string().max(200).optional(),
   description: z.string().max(1000).optional(),
   status: z.enum(['recording', 'processing', 'ready', 'failed']),
-  files: z.array(z.object({
-    type: z.enum(['video', 'audio', 'screen', 'chat', 'whiteboard']),
-    url: z.string().url(),
-    format: z.string(),
-    fileSize: z.number().min(0),
-    duration: z.number().min(0).optional(),
-    quality: z.enum(['low', 'medium', 'high']),
-  })),
+  files: z.array(
+    z.object({
+      type: z.enum(['video', 'audio', 'screen', 'chat', 'whiteboard']),
+      url: z.string().url(),
+      format: z.string(),
+      fileSize: z.number().min(0),
+      duration: z.number().min(0).optional(),
+      quality: z.enum(['low', 'medium', 'high']),
+    })
+  ),
   settings: z.object({
     recordAudio: z.boolean(),
     recordVideo: z.boolean(),
@@ -1135,25 +1215,29 @@ export const LiveSessionSchema = z.object({
   polls: z.array(SessionPollSchema),
   questions: z.array(QAQuestionSchema),
   breakoutRooms: z.array(BreakoutRoomSchema),
-  messages: z.array(z.object({
-    id: UUIDSchema,
-    senderId: UUIDSchema,
-    content: z.string(),
-    type: z.enum(['text', 'file', 'system']),
-    timestamp: TimestampSchema,
-    isPrivate: z.boolean(),
-    recipientId: UUIDSchema.optional(),
-    isDeleted: z.boolean(),
-  })),
+  messages: z.array(
+    z.object({
+      id: UUIDSchema,
+      senderId: UUIDSchema,
+      content: z.string(),
+      type: z.enum(['text', 'file', 'system']),
+      timestamp: TimestampSchema,
+      isPrivate: z.boolean(),
+      recipientId: UUIDSchema.optional(),
+      isDeleted: z.boolean(),
+    })
+  ),
   recordings: z.array(SessionRecordingSchema),
   isRecording: z.boolean(),
   recordingStartedAt: TimestampSchema.optional(),
   webRTCConfig: z.object({
-    iceServers: z.array(z.object({
-      urls: z.array(z.string().url()),
-      username: z.string().optional(),
-      credential: z.string().optional(),
-    })),
+    iceServers: z.array(
+      z.object({
+        urls: z.array(z.string().url()),
+        username: z.string().optional(),
+        credential: z.string().optional(),
+      })
+    ),
     mediaConstraints: z.object({
       audio: z.union([z.boolean(), z.record(z.any())]),
       video: z.union([z.boolean(), z.record(z.any())]),
@@ -1166,34 +1250,38 @@ export const LiveSessionSchema = z.object({
   }),
   state: z.object({
     currentSlide: z.number().min(0).optional(),
-    sharedScreen: z.object({
-      participantId: UUIDSchema,
-      type: z.enum(['screen', 'window', 'tab']),
-      startedAt: TimestampSchema,
-    }).optional(),
+    sharedScreen: z
+      .object({
+        participantId: UUIDSchema,
+        type: z.enum(['screen', 'window', 'tab']),
+        startedAt: TimestampSchema,
+      })
+      .optional(),
     activePoll: UUIDSchema.optional(),
     waitingRoomCount: z.number().min(0),
     lockedUntil: TimestampSchema.optional(),
   }),
-  invitations: z.array(z.object({
-    id: UUIDSchema,
-    sessionId: UUIDSchema,
-    inviterId: UUIDSchema,
-    email: z.string().email().optional(),
-    userId: UUIDSchema.optional(),
-    role: ParticipantRoleSchema,
-    customMessage: z.string().optional(),
-    status: z.enum(['pending', 'accepted', 'declined', 'expired']),
-    expiresAt: TimestampSchema.optional(),
-    respondedAt: TimestampSchema.optional(),
-    joinedAt: TimestampSchema.optional(),
-    invitationToken: z.string(),
-    invitationUrl: z.string().url(),
-    requiresRegistration: z.boolean(),
-    sentAt: TimestampSchema,
-    createdAt: TimestampSchema,
-    updatedAt: TimestampSchema,
-  })),
+  invitations: z.array(
+    z.object({
+      id: UUIDSchema,
+      sessionId: UUIDSchema,
+      inviterId: UUIDSchema,
+      email: z.string().email().optional(),
+      userId: UUIDSchema.optional(),
+      role: ParticipantRoleSchema,
+      customMessage: z.string().optional(),
+      status: z.enum(['pending', 'accepted', 'declined', 'expired']),
+      expiresAt: TimestampSchema.optional(),
+      respondedAt: TimestampSchema.optional(),
+      joinedAt: TimestampSchema.optional(),
+      invitationToken: z.string(),
+      invitationUrl: z.string().url(),
+      requiresRegistration: z.boolean(),
+      sentAt: TimestampSchema,
+      createdAt: TimestampSchema,
+      updatedAt: TimestampSchema,
+    })
+  ),
   joinUrl: z.string().url(),
   embedCode: z.string().optional(),
   isPublic: z.boolean(),
@@ -1224,7 +1312,8 @@ export const CreateLiveSessionInputSchema = LiveSessionSchema.omit({
   joinUrl: true,
 });
 
-export const UpdateLiveSessionInputSchema = CreateLiveSessionInputSchema.partial();
+export const UpdateLiveSessionInputSchema =
+  CreateLiveSessionInputSchema.partial();
 
 export const CreatePollInputSchema = SessionPollSchema.omit({
   id: true,
@@ -1256,7 +1345,10 @@ export const CreateQAQuestionInputSchema = QAQuestionSchema.omit({
 /**
  * Generate join URL for session
  */
-export function generateJoinUrl(sessionId: UUID, baseUrl: string = 'https://app.example.com'): string {
+export function generateJoinUrl(
+  sessionId: UUID,
+  baseUrl: string = 'https://app.example.com'
+): string {
   return `${baseUrl}/sessions/${sessionId}/join`;
 }
 
@@ -1272,7 +1364,12 @@ export function generateEmbedCode(
     controls?: boolean;
   } = {}
 ): string {
-  const { width = 800, height = 600, autoplay = false, controls = true } = options;
+  const {
+    width = 800,
+    height = 600,
+    autoplay = false,
+    controls = true,
+  } = options;
   const joinUrl = generateJoinUrl(sessionId);
 
   return `<iframe
@@ -1299,7 +1396,10 @@ export function canUserJoinSession(
   }
 
   // Check if session is locked
-  if (session.state.lockedUntil && new Date(session.state.lockedUntil) > new Date()) {
+  if (
+    session.state.lockedUntil &&
+    new Date(session.state.lockedUntil) > new Date()
+  ) {
     return { canJoin: false, reason: 'Session is locked' };
   }
 
@@ -1309,10 +1409,17 @@ export function canUserJoinSession(
   }
 
   // Check if user is invited or session allows guests
-  const isInvited = session.invitations.some(inv => inv.userId === userId && inv.status === 'accepted');
+  const isInvited = session.invitations.some(
+    inv => inv.userId === userId && inv.status === 'accepted'
+  );
   const isParticipant = session.participants.some(p => p.userId === userId);
 
-  if (!isInvited && !isParticipant && !session.settings.allowGuests && !session.isPublic) {
+  if (
+    !isInvited &&
+    !isParticipant &&
+    !session.settings.allowGuests &&
+    !session.isPublic
+  ) {
     return { canJoin: false, reason: 'Not invited to this session' };
   }
 
@@ -1322,7 +1429,9 @@ export function canUserJoinSession(
 /**
  * Calculate session engagement score
  */
-export function calculateEngagementScore(participant: SessionParticipant): number {
+export function calculateEngagementScore(
+  participant: SessionParticipant
+): number {
   const weights = {
     messages: 0.3,
     reactions: 0.2,
@@ -1332,11 +1441,26 @@ export function calculateEngagementScore(participant: SessionParticipant): numbe
   };
 
   // Normalize values (assuming reasonable maximums)
-  const normalizedMessages = Math.min(participant.engagement.messagesCount / 50, 1);
-  const normalizedReactions = Math.min(participant.engagement.reactionsCount / 20, 1);
-  const normalizedPolls = Math.min(participant.engagement.pollsParticipated / 10, 1);
-  const normalizedHandRaises = Math.min(participant.engagement.handRaisedCount / 5, 1);
-  const normalizedSpeaking = Math.min(participant.engagement.speakingTime / 30, 1); // 30 minutes max
+  const normalizedMessages = Math.min(
+    participant.engagement.messagesCount / 50,
+    1
+  );
+  const normalizedReactions = Math.min(
+    participant.engagement.reactionsCount / 20,
+    1
+  );
+  const normalizedPolls = Math.min(
+    participant.engagement.pollsParticipated / 10,
+    1
+  );
+  const normalizedHandRaises = Math.min(
+    participant.engagement.handRaisedCount / 5,
+    1
+  );
+  const normalizedSpeaking = Math.min(
+    participant.engagement.speakingTime / 30,
+    1
+  ); // 30 minutes max
 
   const score =
     normalizedMessages * weights.messages +
@@ -1351,7 +1475,9 @@ export function calculateEngagementScore(participant: SessionParticipant): numbe
 /**
  * Get participant permissions based on role
  */
-export function getPermissionsForRole(role: ParticipantRoleType): SessionParticipant['permissions'] {
+export function getPermissionsForRole(
+  role: ParticipantRoleType
+): SessionParticipant['permissions'] {
   const basePermissions: SessionParticipant['permissions'] = {
     canSpeak: false,
     canVideo: false,
@@ -1367,10 +1493,13 @@ export function getPermissionsForRole(role: ParticipantRoleType): SessionPartici
 
   switch (role) {
     case ParticipantRole.HOST:
-      return Object.keys(basePermissions).reduce((permissions, key) => {
-        permissions[key as keyof SessionParticipant['permissions']] = true;
-        return permissions;
-      }, {} as SessionParticipant['permissions']);
+      return Object.keys(basePermissions).reduce(
+        (permissions, key) => {
+          permissions[key as keyof SessionParticipant['permissions']] = true;
+          return permissions;
+        },
+        {} as SessionParticipant['permissions']
+      );
 
     case ParticipantRole.CO_HOST:
       return {
@@ -1425,7 +1554,9 @@ export function getPermissionsForRole(role: ParticipantRoleType): SessionPartici
 /**
  * Create WebRTC configuration
  */
-export function createWebRTCConfig(customSettings?: Partial<LiveSession['webRTCConfig']>): LiveSession['webRTCConfig'] {
+export function createWebRTCConfig(
+  customSettings?: Partial<LiveSession['webRTCConfig']>
+): LiveSession['webRTCConfig'] {
   const defaultConfig: LiveSession['webRTCConfig'] = {
     iceServers: [
       { urls: ['stun:stun.l.google.com:19302'] },
@@ -1478,7 +1609,8 @@ export function validateSessionTiming(
     errors.push('Session must be at least 5 minutes long');
   }
 
-  if (duration > 480) { // 8 hours
+  if (duration > 480) {
+    // 8 hours
     errors.push('Session cannot be longer than 8 hours');
   }
 
@@ -1489,16 +1621,27 @@ export function validateSessionTiming(
  * Generate session analytics summary
  */
 export function generateSessionSummary(session: LiveSession): string {
-  const duration = session.actualEnd && session.actualStart
-    ? Math.round((new Date(session.actualEnd).getTime() - new Date(session.actualStart).getTime()) / (1000 * 60))
-    : 0;
+  const duration =
+    session.actualEnd && session.actualStart
+      ? Math.round(
+          (new Date(session.actualEnd).getTime() -
+            new Date(session.actualStart).getTime()) /
+            (1000 * 60)
+        )
+      : 0;
 
   const totalMessages = session.messages.length;
   const totalPolls = session.polls.length;
   const totalQuestions = session.questions.length;
-  const averageEngagement = session.participants.length > 0
-    ? Math.round(session.participants.reduce((sum, p) => sum + calculateEngagementScore(p), 0) / session.participants.length)
-    : 0;
+  const averageEngagement =
+    session.participants.length > 0
+      ? Math.round(
+          session.participants.reduce(
+            (sum, p) => sum + calculateEngagementScore(p),
+            0
+          ) / session.participants.length
+        )
+      : 0;
 
   return `
 Session "${session.title}" Summary:
@@ -1517,40 +1660,52 @@ Session "${session.title}" Summary:
 // =============================================================================
 
 export function isLiveSession(obj: any): obj is LiveSession {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.title === 'string' &&
-         typeof obj.type === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.title === 'string' &&
+    typeof obj.type === 'string'
+  );
 }
 
 export function isSessionParticipant(obj: any): obj is SessionParticipant {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.sessionId === 'string' &&
-         typeof obj.userId === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.sessionId === 'string' &&
+    typeof obj.userId === 'string'
+  );
 }
 
 export function isSessionPoll(obj: any): obj is SessionPoll {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.sessionId === 'string' &&
-         typeof obj.question === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.sessionId === 'string' &&
+    typeof obj.question === 'string'
+  );
 }
 
 export function isWebSocketMessage(obj: any): obj is WebSocketMessage {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.type === 'string' &&
-         typeof obj.sessionId === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.type === 'string' &&
+    typeof obj.sessionId === 'string'
+  );
 }
 
 // =============================================================================
 // Input/Output Types for API
 // =============================================================================
 
-export type CreateLiveSessionInput = z.infer<typeof CreateLiveSessionInputSchema>;
-export type UpdateLiveSessionInput = z.infer<typeof UpdateLiveSessionInputSchema>;
+export type CreateLiveSessionInput = z.infer<
+  typeof CreateLiveSessionInputSchema
+>;
+export type UpdateLiveSessionInput = z.infer<
+  typeof UpdateLiveSessionInputSchema
+>;
 export type CreatePollInput = z.infer<typeof CreatePollInputSchema>;
 export type CreateQAQuestionInput = z.infer<typeof CreateQAQuestionInputSchema>;
 

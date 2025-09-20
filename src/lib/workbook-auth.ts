@@ -53,12 +53,18 @@ export function verifyToken(token: string): WorkbookSession | null {
   return null;
 }
 
-export function validateSession(session: WorkbookSession | null): { isValid: boolean; error?: string } {
+export function validateSession(session: WorkbookSession | null): {
+  isValid: boolean;
+  error?: string;
+} {
   console.warn('workbook-auth temporarily disabled');
   return { isValid: false, error: 'workbook-auth temporarily disabled' };
 }
 
-export function hasPermission(session: WorkbookSession | null, permission: string): boolean {
+export function hasPermission(
+  session: WorkbookSession | null,
+  permission: string
+): boolean {
   console.warn('workbook-auth temporarily disabled');
   return false;
 }
@@ -68,9 +74,11 @@ export function recordSecurityEvent(event: any): void {
 }
 
 export function getClientIP(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for') ||
-         request.headers.get('x-real-ip') ||
-         'unknown';
+  return (
+    request.headers.get('x-forwarded-for') ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
 }
 
 // Add other placeholder exports as needed

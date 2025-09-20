@@ -321,7 +321,11 @@ async function getAccessibleContent(
   const offset = (page - 1) * limit;
 
   // Build query
-  const { query: baseQuery, params } = buildContentQuery(filters, userTier, isAdmin);
+  const { query: baseQuery, params } = buildContentQuery(
+    filters,
+    userTier,
+    isAdmin
+  );
 
   // Get total count
   const countQuery = `
@@ -388,7 +392,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -479,7 +483,8 @@ export async function GET(request: NextRequest) {
 
     // Validate response schema
     try {
-      const validatedResponse = PaginatedResponseSchema(ContentItemSchema).parse(response);
+      const validatedResponse =
+        PaginatedResponseSchema(ContentItemSchema).parse(response);
 
       // Add performance metrics in development
       if (process.env.NODE_ENV === 'development') {
@@ -492,7 +497,6 @@ export async function GET(request: NextRequest) {
       console.error('Content response validation error:', error);
       throw new Error('Failed to validate response format');
     }
-
   } catch (error) {
     console.error('Content GET error:', error);
 
@@ -547,7 +551,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -589,12 +593,12 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Content creation endpoint not yet implemented',
-        message: 'This feature is planned for future release. Content can be created through module and lesson management interfaces.',
+        message:
+          'This feature is planned for future release. Content can be created through module and lesson management interfaces.',
         timestamp: Date.now(),
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Content POST error:', error);
 

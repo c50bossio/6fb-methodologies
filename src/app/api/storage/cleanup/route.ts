@@ -56,7 +56,9 @@ interface CleanupJobStatus {
  * POST /api/storage/cleanup
  * Start a new cleanup operation
  */
-export async function POST(request: NextRequest): Promise<NextResponse<CleanupResponse>> {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<CleanupResponse>> {
   try {
     // Authentication check
     const authResult = await verifyToken(request);
@@ -80,7 +82,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<CleanupRe
     const cleanupRequest: CleanupRequest = await request.json();
 
     // Validate request
-    if (!['orphaned_files', 'old_files', 'large_files', 'manual'].includes(cleanupRequest.type)) {
+    if (
+      !['orphaned_files', 'old_files', 'large_files', 'manual'].includes(
+        cleanupRequest.type
+      )
+    ) {
       return NextResponse.json(
         { success: false, error: 'Invalid cleanup type' },
         { status: 400 }
@@ -89,19 +95,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<CleanupRe
 
     // Create cleanup job in database
     const dbService = getDatabaseService();
-    const jobId = await dbService.createCleanupJob(cleanupRequest.type, cleanupRequest.parameters);
+    const jobId = await dbService.createCleanupJob(
+      cleanupRequest.type,
+      cleanupRequest.parameters
+    );
 
     // Start the cleanup operation asynchronously
-    performCleanup(jobId, cleanupRequest, authResult.userId)
-      .catch(error => {
-        console.error('Cleanup operation failed:', error);
-        // Update job status to failed
-        dbService.updateCleanupJob(jobId, {
-          status: 'failed',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          completedAt: new Date(),
-        });
+    performCleanup(jobId, cleanupRequest, authResult.userId).catch(error => {
+      console.error('Cleanup operation failed:', error);
+      // Update job status to failed
+      dbService.updateCleanupJob(jobId, {
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        completedAt: new Date(),
       });
+    });
 
     return NextResponse.json({
       success: true,
@@ -112,7 +120,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<CleanupRe
         dryRun: cleanupRequest.parameters.dryRun || false,
       },
     });
-
   } catch (error) {
     console.error('Cleanup endpoint error:', error);
     return NextResponse.json(
@@ -153,10 +160,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       `;
 
       if (result.rows.length === 0) {
-        return NextResponse.json(
-          { error: 'Job not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       }
 
       const job = mapCleanupJobRow(result.rows[0]);
@@ -176,10 +180,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           createdAt: job.createdAt,
         },
       });
-
     } else {
       // Get job history
-      let query = `
+      const query = `
         SELECT * FROM storage_cleanup_jobs
         ${status ? `WHERE status = $1` : ''}
         ORDER BY created_at DESC
@@ -214,7 +217,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         },
       });
     }
-
   } catch (error) {
     console.error('Get cleanup status error:', error);
     return NextResponse.json(
@@ -243,10 +245,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     const jobId = searchParams.get('jobId');
 
     if (!jobId) {
-      return NextResponse.json(
-        { error: 'Job ID required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Job ID required' }, { status: 400 });
     }
 
     // Update job status to cancelled
@@ -274,7 +273,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       success: true,
       data: { jobId, status: 'cancelled' },
     });
-
   } catch (error) {
     console.error('Cancel cleanup error:', error);
     return NextResponse.json(
@@ -309,12 +307,13 @@ async function performCleanup(
 
     switch (request.type) {
       case 'orphaned_files':
-        ({ filesProcessed, filesDeleted, bytesSaved } = await cleanupOrphanedFiles(
-          storageService,
-          dbService,
-          request.parameters,
-          errors
-        ));
+        ({ filesProcessed, filesDeleted, bytesSaved } =
+          await cleanupOrphanedFiles(
+            storageService,
+            dbService,
+            request.parameters,
+            errors
+          ));
         break;
 
       case 'old_files':
@@ -367,7 +366,6 @@ async function performCleanup(
       dryRun: request.parameters.dryRun || false,
       errors: errors.length,
     });
-
   } catch (error) {
     console.error('Cleanup operation error:', error);
     await dbService.updateCleanupJob(jobId, {
@@ -387,7 +385,11 @@ async function cleanupOrphanedFiles(
   dbService: any,
   parameters: any,
   errors: string[]
-): Promise<{ filesProcessed: number; filesDeleted: number; bytesSaved: number }> {
+): Promise<{
+  filesProcessed: number;
+  filesDeleted: number;
+  bytesSaved: number;
+}> {
   // This is a placeholder implementation
   // In production, you would:
   // 1. List all files in S3
@@ -405,7 +407,11 @@ async function cleanupOldFiles(
   dbService: any,
   parameters: any,
   errors: string[]
-): Promise<{ filesProcessed: number; filesDeleted: number; bytesSaved: number }> {
+): Promise<{
+  filesProcessed: number;
+  filesDeleted: number;
+  bytesSaved: number;
+}> {
   const olderThanDays = parameters.olderThanDays || 90;
   const dryRun = parameters.dryRun || false;
   const batchSize = parameters.batchSize || 100;
@@ -444,7 +450,6 @@ async function cleanupOldFiles(
         errors.push(`Failed to delete file ${file.file_name}: ${error}`);
       }
     }
-
   } catch (error) {
     errors.push(`Failed to get stale files: ${error}`);
   }
@@ -460,7 +465,11 @@ async function cleanupLargeFiles(
   dbService: any,
   parameters: any,
   errors: string[]
-): Promise<{ filesProcessed: number; filesDeleted: number; bytesSaved: number }> {
+): Promise<{
+  filesProcessed: number;
+  filesDeleted: number;
+  bytesSaved: number;
+}> {
   // This would implement logic to identify and clean up very large files
   // that might be taking up excessive storage space
 
@@ -475,7 +484,11 @@ async function manualCleanup(
   dbService: any,
   parameters: any,
   errors: string[]
-): Promise<{ filesProcessed: number; filesDeleted: number; bytesSaved: number }> {
+): Promise<{
+  filesProcessed: number;
+  filesDeleted: number;
+  bytesSaved: number;
+}> {
   const fileIds = parameters.fileIds || [];
   const dryRun = parameters.dryRun || false;
 
@@ -505,7 +518,6 @@ async function manualCleanup(
         filesDeleted++;
         bytesSaved += file.file_size_bytes;
       }
-
     } catch (error) {
       errors.push(`Failed to delete file ${fileId}: ${error}`);
     }

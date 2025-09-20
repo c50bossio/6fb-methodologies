@@ -155,13 +155,22 @@ export interface WorkbookState {
   loadLessons: (moduleId: string) => Promise<void>;
   setCurrentModule: (moduleId: string | null) => void;
   setCurrentLesson: (lessonId: string | null) => void;
-  updateLessonProgress: (lessonId: string, progress: Partial<UserProgress>) => Promise<void>;
+  updateLessonProgress: (
+    lessonId: string,
+    progress: Partial<UserProgress>
+  ) => Promise<void>;
   markLessonComplete: (lessonId: string) => Promise<void>;
-  addBookmark: (lessonId: string, timestamp: number, note: string) => Promise<void>;
+  addBookmark: (
+    lessonId: string,
+    timestamp: number,
+    note: string
+  ) => Promise<void>;
 
   // Actions - Notes
   loadNotes: () => Promise<void>;
-  createNote: (note: Omit<WorkbookNote, 'id' | 'createdAt' | 'updatedAt' | 'version'>) => Promise<string>;
+  createNote: (
+    note: Omit<WorkbookNote, 'id' | 'createdAt' | 'updatedAt' | 'version'>
+  ) => Promise<string>;
   updateNote: (noteId: string, updates: Partial<WorkbookNote>) => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
   searchNotes: (query: string) => WorkbookNote[];
@@ -169,16 +178,26 @@ export interface WorkbookState {
   setActiveNote: (noteId: string | null) => void;
 
   // Actions - Audio and Transcriptions
-  uploadAudio: (file: File, metadata: { moduleId?: string; lessonId?: string; title: string }) => Promise<string>;
+  uploadAudio: (
+    file: File,
+    metadata: { moduleId?: string; lessonId?: string; title: string }
+  ) => Promise<string>;
   transcribeAudio: (recordingId: string) => Promise<string>;
   loadTranscriptions: () => Promise<void>;
   searchTranscriptions: (query: string) => TranscriptionRecord[];
 
   // Actions - Progress
   loadProgress: () => Promise<void>;
-  updateProgress: (moduleId: string, progress: Partial<UserProgress>) => Promise<void>;
+  updateProgress: (
+    moduleId: string,
+    progress: Partial<UserProgress>
+  ) => Promise<void>;
   getModuleProgress: (moduleId: string) => UserProgress | null;
-  getOverallProgress: () => { completedModules: number; totalModules: number; percentComplete: number };
+  getOverallProgress: () => {
+    completedModules: number;
+    totalModules: number;
+    percentComplete: number;
+  };
 
   // Actions - UI
   setSidebarOpen: (open: boolean) => void;
@@ -225,7 +244,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
         // Actions - Modules and Lessons
         loadModules: async () => {
-          set((state) => {
+          set(state => {
             state.loadingStates.modules = true;
             delete state.errors.modules;
           });
@@ -233,7 +252,7 @@ export const useWorkbookStore = create<WorkbookState>()(
           try {
             const response = await fetch('/api/workbook/modules', {
               headers: {
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
             });
 
@@ -243,30 +262,36 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const modules = await response.json();
 
-            set((state) => {
+            set(state => {
               state.modules = modules;
               state.loadingStates.modules = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.loadingStates.modules = false;
-              state.errors.modules = error instanceof Error ? error.message : 'Failed to load modules';
+              state.errors.modules =
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to load modules';
             });
           }
         },
 
-        loadLessons: async (moduleId) => {
-          set((state) => {
+        loadLessons: async moduleId => {
+          set(state => {
             state.loadingStates[`lessons-${moduleId}`] = true;
             delete state.errors[`lessons-${moduleId}`];
           });
 
           try {
-            const response = await fetch(`/api/workbook/modules/${moduleId}/lessons`, {
-              headers: {
-                'Authorization': `Bearer ${get().token}`,
-              },
-            });
+            const response = await fetch(
+              `/api/workbook/modules/${moduleId}/lessons`,
+              {
+                headers: {
+                  Authorization: `Bearer ${get().token}`,
+                },
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to load lessons');
@@ -274,20 +299,23 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const lessons = await response.json();
 
-            set((state) => {
+            set(state => {
               state.lessons[moduleId] = lessons;
               state.loadingStates[`lessons-${moduleId}`] = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.loadingStates[`lessons-${moduleId}`] = false;
-              state.errors[`lessons-${moduleId}`] = error instanceof Error ? error.message : 'Failed to load lessons';
+              state.errors[`lessons-${moduleId}`] =
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to load lessons';
             });
           }
         },
 
-        setCurrentModule: (moduleId) => {
-          set((state) => {
+        setCurrentModule: moduleId => {
+          set(state => {
             state.currentModuleId = moduleId;
             state.currentLessonId = null;
           });
@@ -297,8 +325,8 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        setCurrentLesson: (lessonId) => {
-          set((state) => {
+        setCurrentLesson: lessonId => {
+          set(state => {
             state.currentLessonId = lessonId;
           });
         },
@@ -309,7 +337,7 @@ export const useWorkbookStore = create<WorkbookState>()(
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
               body: JSON.stringify(progress),
             });
@@ -320,7 +348,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const updatedProgress = await response.json();
 
-            set((state) => {
+            set(state => {
               state.progress[lessonId] = updatedProgress;
             });
           } catch (error) {
@@ -328,7 +356,7 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        markLessonComplete: async (lessonId) => {
+        markLessonComplete: async lessonId => {
           await get().updateLessonProgress(lessonId, {
             status: 'completed',
             progressPercent: 100,
@@ -338,14 +366,17 @@ export const useWorkbookStore = create<WorkbookState>()(
 
         addBookmark: async (lessonId, timestamp, note) => {
           try {
-            const response = await fetch(`/api/workbook/lessons/${lessonId}/bookmarks`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
-              },
-              body: JSON.stringify({ timestamp, note }),
-            });
+            const response = await fetch(
+              `/api/workbook/lessons/${lessonId}/bookmarks`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${get().token}`,
+                },
+                body: JSON.stringify({ timestamp, note }),
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to add bookmark');
@@ -353,7 +384,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const bookmark = await response.json();
 
-            set((state) => {
+            set(state => {
               Object.values(state.lessons).forEach(moduleLinks => {
                 const lesson = moduleLinks.find(l => l.id === lessonId);
                 if (lesson) {
@@ -368,7 +399,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
         // Actions - Notes
         loadNotes: async () => {
-          set((state) => {
+          set(state => {
             state.loadingStates.notes = true;
             delete state.errors.notes;
           });
@@ -376,7 +407,7 @@ export const useWorkbookStore = create<WorkbookState>()(
           try {
             const response = await fetch('/api/workbook/notes', {
               headers: {
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
             });
 
@@ -386,25 +417,26 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const notes = await response.json();
 
-            set((state) => {
+            set(state => {
               state.notes = notes;
               state.loadingStates.notes = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.loadingStates.notes = false;
-              state.errors.notes = error instanceof Error ? error.message : 'Failed to load notes';
+              state.errors.notes =
+                error instanceof Error ? error.message : 'Failed to load notes';
             });
           }
         },
 
-        createNote: async (noteData) => {
+        createNote: async noteData => {
           try {
             const response = await fetch('/api/workbook/notes', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
               body: JSON.stringify(noteData),
             });
@@ -415,7 +447,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const newNote = await response.json();
 
-            set((state) => {
+            set(state => {
               state.notes.push(newNote);
             });
 
@@ -432,7 +464,7 @@ export const useWorkbookStore = create<WorkbookState>()(
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
               body: JSON.stringify(updates),
             });
@@ -443,7 +475,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const updatedNote = await response.json();
 
-            set((state) => {
+            set(state => {
               const index = state.notes.findIndex(n => n.id === noteId);
               if (index !== -1) {
                 state.notes[index] = updatedNote;
@@ -455,12 +487,12 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        deleteNote: async (noteId) => {
+        deleteNote: async noteId => {
           try {
             const response = await fetch(`/api/workbook/notes/${noteId}`, {
               method: 'DELETE',
               headers: {
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
             });
 
@@ -468,7 +500,7 @@ export const useWorkbookStore = create<WorkbookState>()(
               throw new Error('Failed to delete note');
             }
 
-            set((state) => {
+            set(state => {
               state.notes = state.notes.filter(n => n.id !== noteId);
               if (state.activeNoteId === noteId) {
                 state.activeNoteId = null;
@@ -480,37 +512,43 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        searchNotes: (query) => {
+        searchNotes: query => {
           const { notes } = get();
           if (!query.trim()) return notes;
 
           const searchTerm = query.toLowerCase();
-          return notes.filter(note =>
-            note.title.toLowerCase().includes(searchTerm) ||
-            note.content.toLowerCase().includes(searchTerm) ||
-            note.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+          return notes.filter(
+            note =>
+              note.title.toLowerCase().includes(searchTerm) ||
+              note.content.toLowerCase().includes(searchTerm) ||
+              note.tags.some(tag => tag.toLowerCase().includes(searchTerm))
           );
         },
 
         shareNote: async (noteId, userIds) => {
           try {
-            const response = await fetch(`/api/workbook/notes/${noteId}/share`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
-              },
-              body: JSON.stringify({ userIds }),
-            });
+            const response = await fetch(
+              `/api/workbook/notes/${noteId}/share`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${get().token}`,
+                },
+                body: JSON.stringify({ userIds }),
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to share note');
             }
 
-            set((state) => {
+            set(state => {
               const note = state.notes.find(n => n.id === noteId);
               if (note) {
-                note.sharedWith = [...new Set([...note.sharedWith, ...userIds])];
+                note.sharedWith = [
+                  ...new Set([...note.sharedWith, ...userIds]),
+                ];
               }
             });
           } catch (error) {
@@ -519,8 +557,8 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        setActiveNote: (noteId) => {
-          set((state) => {
+        setActiveNote: noteId => {
+          set(state => {
             state.activeNoteId = noteId;
           });
         },
@@ -529,7 +567,7 @@ export const useWorkbookStore = create<WorkbookState>()(
         uploadAudio: async (file, metadata) => {
           const recordingId = `temp-${Date.now()}`;
 
-          set((state) => {
+          set(state => {
             state.recordings.push({
               id: recordingId,
               ...metadata,
@@ -552,7 +590,7 @@ export const useWorkbookStore = create<WorkbookState>()(
             const response = await fetch('/api/workbook/audio', {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
               body: formData,
             });
@@ -563,8 +601,10 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const uploadedRecording = await response.json();
 
-            set((state) => {
-              const index = state.recordings.findIndex(r => r.id === recordingId);
+            set(state => {
+              const index = state.recordings.findIndex(
+                r => r.id === recordingId
+              );
               if (index !== -1) {
                 state.recordings[index] = uploadedRecording;
               }
@@ -572,8 +612,10 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             return uploadedRecording.id;
           } catch (error) {
-            set((state) => {
-              const index = state.recordings.findIndex(r => r.id === recordingId);
+            set(state => {
+              const index = state.recordings.findIndex(
+                r => r.id === recordingId
+              );
               if (index !== -1) {
                 state.recordings[index].status = 'failed';
               }
@@ -582,13 +624,13 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        transcribeAudio: async (recordingId) => {
+        transcribeAudio: async recordingId => {
           try {
             const response = await fetch('/api/workbook/audio/transcribe', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
               body: JSON.stringify({ recordingId }),
             });
@@ -599,9 +641,11 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const transcription = await response.json();
 
-            set((state) => {
+            set(state => {
               state.transcriptions.push(transcription);
-              const recording = state.recordings.find(r => r.id === recordingId);
+              const recording = state.recordings.find(
+                r => r.id === recordingId
+              );
               if (recording) {
                 recording.transcriptionId = transcription.id;
               }
@@ -615,7 +659,7 @@ export const useWorkbookStore = create<WorkbookState>()(
         },
 
         loadTranscriptions: async () => {
-          set((state) => {
+          set(state => {
             state.loadingStates.transcriptions = true;
             delete state.errors.transcriptions;
           });
@@ -623,7 +667,7 @@ export const useWorkbookStore = create<WorkbookState>()(
           try {
             const response = await fetch('/api/workbook/transcriptions', {
               headers: {
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
             });
 
@@ -633,34 +677,38 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const transcriptions = await response.json();
 
-            set((state) => {
+            set(state => {
               state.transcriptions = transcriptions;
               state.loadingStates.transcriptions = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.loadingStates.transcriptions = false;
-              state.errors.transcriptions = error instanceof Error ? error.message : 'Failed to load transcriptions';
+              state.errors.transcriptions =
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to load transcriptions';
             });
           }
         },
 
-        searchTranscriptions: (query) => {
+        searchTranscriptions: query => {
           const { transcriptions } = get();
           if (!query.trim()) return transcriptions;
 
           const searchTerm = query.toLowerCase();
-          return transcriptions.filter(transcription =>
-            transcription.content.toLowerCase().includes(searchTerm) ||
-            transcription.segments.some(segment =>
-              segment.text.toLowerCase().includes(searchTerm)
-            )
+          return transcriptions.filter(
+            transcription =>
+              transcription.content.toLowerCase().includes(searchTerm) ||
+              transcription.segments.some(segment =>
+                segment.text.toLowerCase().includes(searchTerm)
+              )
           );
         },
 
         // Actions - Progress
         loadProgress: async () => {
-          set((state) => {
+          set(state => {
             state.loadingStates.progress = true;
             delete state.errors.progress;
           });
@@ -668,7 +716,7 @@ export const useWorkbookStore = create<WorkbookState>()(
           try {
             const response = await fetch('/api/workbook/progress', {
               headers: {
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
             });
 
@@ -678,17 +726,23 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const progressData = await response.json();
 
-            set((state) => {
-              state.progress = progressData.reduce((acc: Record<string, UserProgress>, item: UserProgress) => {
-                acc[item.moduleId] = item;
-                return acc;
-              }, {});
+            set(state => {
+              state.progress = progressData.reduce(
+                (acc: Record<string, UserProgress>, item: UserProgress) => {
+                  acc[item.moduleId] = item;
+                  return acc;
+                },
+                {}
+              );
               state.loadingStates.progress = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.loadingStates.progress = false;
-              state.errors.progress = error instanceof Error ? error.message : 'Failed to load progress';
+              state.errors.progress =
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to load progress';
             });
           }
         },
@@ -699,7 +753,7 @@ export const useWorkbookStore = create<WorkbookState>()(
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${get().token}`,
+                Authorization: `Bearer ${get().token}`,
               },
               body: JSON.stringify(progressUpdate),
             });
@@ -710,7 +764,7 @@ export const useWorkbookStore = create<WorkbookState>()(
 
             const updatedProgress = await response.json();
 
-            set((state) => {
+            set(state => {
               state.progress[moduleId] = updatedProgress;
             });
           } catch (error) {
@@ -718,53 +772,58 @@ export const useWorkbookStore = create<WorkbookState>()(
           }
         },
 
-        getModuleProgress: (moduleId) => {
+        getModuleProgress: moduleId => {
           return get().progress[moduleId] || null;
         },
 
         getOverallProgress: () => {
           const { modules, progress } = get();
-          const completedModules = Object.values(progress).filter(p => p.status === 'completed').length;
+          const completedModules = Object.values(progress).filter(
+            p => p.status === 'completed'
+          ).length;
           const totalModules = modules.length;
-          const percentComplete = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+          const percentComplete =
+            totalModules > 0
+              ? Math.round((completedModules / totalModules) * 100)
+              : 0;
 
           return { completedModules, totalModules, percentComplete };
         },
 
         // Actions - UI
-        setSidebarOpen: (open) => {
-          set((state) => {
+        setSidebarOpen: open => {
+          set(state => {
             state.sidebarOpen = open;
           });
         },
 
-        setViewMode: (mode) => {
-          set((state) => {
+        setViewMode: mode => {
+          set(state => {
             state.viewMode = mode;
           });
         },
 
-        setSearchQuery: (query) => {
-          set((state) => {
+        setSearchQuery: query => {
+          set(state => {
             state.searchQuery = query;
           });
         },
 
-        setSelectedTags: (tags) => {
-          set((state) => {
+        setSelectedTags: tags => {
+          set(state => {
             state.selectedTags = tags;
           });
         },
 
         setSorting: (sortBy, sortOrder) => {
-          set((state) => {
+          set(state => {
             state.sortBy = sortBy;
             state.sortOrder = sortOrder;
           });
         },
 
         setLoading: (key, loading) => {
-          set((state) => {
+          set(state => {
             if (loading) {
               state.loadingStates[key] = true;
             } else {
@@ -774,7 +833,7 @@ export const useWorkbookStore = create<WorkbookState>()(
         },
 
         setError: (key, error) => {
-          set((state) => {
+          set(state => {
             if (error) {
               state.errors[key] = error;
             } else {
@@ -784,24 +843,28 @@ export const useWorkbookStore = create<WorkbookState>()(
         },
 
         clearErrors: () => {
-          set((state) => {
+          set(state => {
             state.errors = {};
           });
         },
 
         // Utilities
         getFilteredModules: () => {
-          const { modules, searchQuery, selectedTags, sortBy, sortOrder } = get();
+          const { modules, searchQuery, selectedTags, sortBy, sortOrder } =
+            get();
 
           let filtered = modules;
 
           // Filter by search query
           if (searchQuery.trim()) {
             const searchTerm = searchQuery.toLowerCase();
-            filtered = filtered.filter(module =>
-              module.title.toLowerCase().includes(searchTerm) ||
-              module.description.toLowerCase().includes(searchTerm) ||
-              module.metadata.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            filtered = filtered.filter(
+              module =>
+                module.title.toLowerCase().includes(searchTerm) ||
+                module.description.toLowerCase().includes(searchTerm) ||
+                module.metadata.tags.some(tag =>
+                  tag.toLowerCase().includes(searchTerm)
+                )
             );
           }
 
@@ -908,13 +971,16 @@ export const useWorkbookStore = create<WorkbookState>()(
           return [...new Set([...moduleTags, ...noteTags])].sort();
         },
 
-        exportData: async (format) => {
+        exportData: async format => {
           try {
-            const response = await fetch(`/api/workbook/export?format=${format}`, {
-              headers: {
-                'Authorization': `Bearer ${get().token}`,
-              },
-            });
+            const response = await fetch(
+              `/api/workbook/export?format=${format}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${get().token}`,
+                },
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to export data');

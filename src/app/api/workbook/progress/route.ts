@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
       progressRecords.push(...newProgressRecords);
     }
 
-    let responseData: any = {
+    const responseData: any = {
       success: true,
       progress: progressRecords,
     };

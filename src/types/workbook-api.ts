@@ -352,7 +352,8 @@ export interface CompletionHistoryQueryParams {
 }
 
 // GET /api/workbook/completion response
-export type CompletionHistoryResponse = PaginatedApiResponse<CompletionHistoryItem>;
+export type CompletionHistoryResponse =
+  PaginatedApiResponse<CompletionHistoryItem>;
 
 // POST /api/workbook/completion request
 export type CompleteModuleRequestBody = CompleteModuleRequest & {
@@ -374,13 +375,15 @@ export type ModuleCompletionResponse = ApiResponse<{
 }>;
 
 // GET /api/workbook/completion/[moduleId] response
-export type ModuleCompletionStatusResponse = ApiResponse<ModuleCompletionStatus>;
+export type ModuleCompletionStatusResponse =
+  ApiResponse<ModuleCompletionStatus>;
 
 // POST /api/workbook/completion/[moduleId] request
 export type CompleteSpecificModuleRequestBody = CompleteModuleRequest;
 
 // POST /api/workbook/completion/[moduleId] response
-export type CompleteSpecificModuleResponse = ApiResponse<ModuleCompletionResult>;
+export type CompleteSpecificModuleResponse =
+  ApiResponse<ModuleCompletionResult>;
 
 // ==============================================================
 // T030: CONTENT MANAGEMENT API TYPES
@@ -617,26 +620,64 @@ export interface ClientRequestOptions {
  */
 export interface WorkbookApiClient {
   // Modules
-  getModules(params?: ModulesQueryParams, options?: ClientRequestOptions): Promise<ModulesListResponse>;
-  getModule(id: string, options?: ClientRequestOptions): Promise<ModuleDetailsResponse>;
+  getModules(
+    params?: ModulesQueryParams,
+    options?: ClientRequestOptions
+  ): Promise<ModulesListResponse>;
+  getModule(
+    id: string,
+    options?: ClientRequestOptions
+  ): Promise<ModuleDetailsResponse>;
 
   // Lessons
-  getLessons(params?: LessonsQueryParams, options?: ClientRequestOptions): Promise<LessonsListResponse>;
-  getLesson(id: string, options?: ClientRequestOptions): Promise<LessonDetailsResponse>;
-  completeLesson(id: string, data: CompleteLessonRequestBody, options?: ClientRequestOptions): Promise<CompleteLessonResponse>;
+  getLessons(
+    params?: LessonsQueryParams,
+    options?: ClientRequestOptions
+  ): Promise<LessonsListResponse>;
+  getLesson(
+    id: string,
+    options?: ClientRequestOptions
+  ): Promise<LessonDetailsResponse>;
+  completeLesson(
+    id: string,
+    data: CompleteLessonRequestBody,
+    options?: ClientRequestOptions
+  ): Promise<CompleteLessonResponse>;
 
   // Progress
-  getProgress(params?: ProgressQueryParams, options?: ClientRequestOptions): Promise<ProgressDataResponse>;
-  updateProgress(data: UpdateProgressRequestBody, options?: ClientRequestOptions): Promise<UpdateProgressResponse>;
+  getProgress(
+    params?: ProgressQueryParams,
+    options?: ClientRequestOptions
+  ): Promise<ProgressDataResponse>;
+  updateProgress(
+    data: UpdateProgressRequestBody,
+    options?: ClientRequestOptions
+  ): Promise<UpdateProgressResponse>;
 
   // Completion
-  getCompletionHistory(params?: CompletionHistoryQueryParams, options?: ClientRequestOptions): Promise<CompletionHistoryResponse>;
-  getModuleCompletionStatus(moduleId: string, options?: ClientRequestOptions): Promise<ModuleCompletionStatusResponse>;
-  completeModule(moduleId: string, data: CompleteSpecificModuleRequestBody, options?: ClientRequestOptions): Promise<CompleteSpecificModuleResponse>;
+  getCompletionHistory(
+    params?: CompletionHistoryQueryParams,
+    options?: ClientRequestOptions
+  ): Promise<CompletionHistoryResponse>;
+  getModuleCompletionStatus(
+    moduleId: string,
+    options?: ClientRequestOptions
+  ): Promise<ModuleCompletionStatusResponse>;
+  completeModule(
+    moduleId: string,
+    data: CompleteSpecificModuleRequestBody,
+    options?: ClientRequestOptions
+  ): Promise<CompleteSpecificModuleResponse>;
 
   // Content
-  getContent(params?: ContentQueryParameters, options?: ClientRequestOptions): Promise<ContentListApiResponse>;
-  getContentItem(id: string, options?: ClientRequestOptions): Promise<ContentItemResponse>;
+  getContent(
+    params?: ContentQueryParameters,
+    options?: ClientRequestOptions
+  ): Promise<ContentListApiResponse>;
+  getContentItem(
+    id: string,
+    options?: ClientRequestOptions
+  ): Promise<ContentItemResponse>;
 }
 
 // ==============================================================
@@ -706,7 +747,9 @@ export type WorkbookEvent =
 /**
  * Event handler type
  */
-export type EventHandler<T extends WorkbookEvent = WorkbookEvent> = (event: T) => void;
+export type EventHandler<T extends WorkbookEvent = WorkbookEvent> = (
+  event: T
+) => void;
 
 /**
  * Event subscription interface

@@ -84,8 +84,12 @@ export class AudioProcessingService {
 
   constructor() {
     // Initialize audio context in browser environment
-    if (typeof window !== 'undefined' && (window.AudioContext || (window as any).webkitAudioContext)) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (
+      typeof window !== 'undefined' &&
+      (window.AudioContext || (window as any).webkitAudioContext)
+    ) {
+      this.audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
     }
   }
 
@@ -126,7 +130,10 @@ export class AudioProcessingService {
 
           // Generate peaks for visualization
           if (options.generatePeaks) {
-            result.peaks = await this.generateAudioPeaks(audioBuffer, options.peakCount || 100);
+            result.peaks = await this.generateAudioPeaks(
+              audioBuffer,
+              options.peakCount || 100
+            );
           }
 
           // Generate thumbnail (preview of first few seconds)
@@ -139,9 +146,11 @@ export class AudioProcessingService {
 
           // Audio compression (if requested and supported)
           if (options.compress) {
-            result.compressedAudio = await this.compressAudio(audioBuffer, options);
+            result.compressedAudio = await this.compressAudio(
+              audioBuffer,
+              options
+            );
           }
-
         } catch (audioError) {
           console.warn('Web Audio API processing failed:', audioError);
           warnings.push('Advanced audio processing unavailable');
@@ -156,10 +165,11 @@ export class AudioProcessingService {
 
       result.processingTime = Date.now() - startTime;
       return result;
-
     } catch (error) {
       console.error('Audio processing failed:', error);
-      errors.push(error instanceof Error ? error.message : 'Unknown processing error');
+      errors.push(
+        error instanceof Error ? error.message : 'Unknown processing error'
+      );
 
       return {
         metadata: {
@@ -175,7 +185,6 @@ export class AudioProcessingService {
         warnings,
         errors,
       };
-
     } finally {
       this.isProcessing = false;
     }
@@ -209,7 +218,9 @@ export class AudioProcessingService {
   /**
    * Decode audio buffer using Web Audio API
    */
-  private async decodeAudioBuffer(audioBuffer: ArrayBuffer): Promise<AudioBuffer> {
+  private async decodeAudioBuffer(
+    audioBuffer: ArrayBuffer
+  ): Promise<AudioBuffer> {
     if (!this.audioContext) {
       throw new Error('AudioContext not available');
     }
@@ -381,7 +392,10 @@ export class AudioProcessingService {
 
     // Generate basic peaks
     if (options.generatePeaks) {
-      result.peaks = await this.generateBasicPeaks(audioBuffer, options.peakCount || 100);
+      result.peaks = await this.generateBasicPeaks(
+        audioBuffer,
+        options.peakCount || 100
+      );
     }
   }
 
@@ -395,12 +409,17 @@ export class AudioProcessingService {
     // This is a simplified implementation
     // In production, you would need proper audio format parsing
     const waveformPoints = 1000;
-    const peaks = new Array(waveformPoints).fill(0).map(() => Math.random() * 0.8);
+    const peaks = new Array(waveformPoints)
+      .fill(0)
+      .map(() => Math.random() * 0.8);
 
     return {
       peaks,
       length: waveformPoints,
-      duration: this.estimateDuration(audioBuffer.byteLength, this.estimateBitRate(audioBuffer.byteLength, mimeType)),
+      duration: this.estimateDuration(
+        audioBuffer.byteLength,
+        this.estimateBitRate(audioBuffer.byteLength, mimeType)
+      ),
       sampleRate: 44100,
       channels: 2,
     };
@@ -461,8 +480,11 @@ export class AudioProcessingService {
     let offset = 44;
     for (let i = 0; i < length; i++) {
       for (let channel = 0; channel < channels; channel++) {
-        const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[i]));
-        view.setInt16(offset, sample * 0x7FFF, true);
+        const sample = Math.max(
+          -1,
+          Math.min(1, audioBuffer.getChannelData(channel)[i])
+        );
+        view.setInt16(offset, sample * 0x7fff, true);
         offset += 2;
       }
     }
@@ -550,7 +572,10 @@ export class AudioProcessingService {
   /**
    * Get processing status
    */
-  getProcessingStatus(): { isProcessing: boolean; audioContextAvailable: boolean } {
+  getProcessingStatus(): {
+    isProcessing: boolean;
+    audioContextAvailable: boolean;
+  } {
     return {
       isProcessing: this.isProcessing,
       audioContextAvailable: !!this.audioContext,

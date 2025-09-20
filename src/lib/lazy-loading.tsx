@@ -41,46 +41,47 @@ export function lazyLoad<T extends ComponentType<any>>(
       }, timeout);
     });
 
-    return Promise.race([importPromise, timeoutPromise])
-      .catch((error) => {
-        console.error('Failed to load component:', error);
+    return Promise.race([importPromise, timeoutPromise]).catch(error => {
+      console.error('Failed to load component:', error);
 
-        // Return error component if available
-        if (ErrorComponent) {
-          return {
-            default: (props: any) => ErrorComponent({
+      // Return error component if available
+      if (ErrorComponent) {
+        return {
+          default: (props: any) =>
+            ErrorComponent({
               error,
               retry: () => window.location.reload(),
-              ...props
-            })
-          };
-        }
-
-        // Fallback error component
-        return {
-          default: () => {
-            return (
-              <div className="flex items-center justify-center p-8 text-center">
-                <div className="max-w-md">
-                  <div className="text-red-500 mb-2">⚠️</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Failed to load component
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {error.message || 'An error occurred while loading this component.'}
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Retry
-                  </button>
-                </div>
-              </div>
-            );
-          }
+              ...props,
+            }),
         };
-      });
+      }
+
+      // Fallback error component
+      return {
+        default: () => {
+          return (
+            <div className='flex items-center justify-center p-8 text-center'>
+              <div className='max-w-md'>
+                <div className='text-red-500 mb-2'>⚠️</div>
+                <h3 className='text-lg font-semibold text-gray-900 mb-2'>
+                  Failed to load component
+                </h3>
+                <p className='text-gray-600 mb-4'>
+                  {error.message ||
+                    'An error occurred while loading this component.'}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          );
+        },
+      };
+    });
   });
 }
 
@@ -113,8 +114,8 @@ export const LazyWorkbookLogin = lazyLoad(
   () => import('@/components/WorkbookLogin'),
   {
     loading: () => (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className='flex items-center justify-center p-8'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500'></div>
       </div>
     ),
     ssr: false,
@@ -125,10 +126,10 @@ export const LazyLiveSessionRoom = lazyLoad(
   () => import('@/components/workbook/LiveSessionRoom'),
   {
     loading: () => (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white">Loading live session...</p>
+      <div className='flex items-center justify-center min-h-screen bg-gray-900'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4'></div>
+          <p className='text-white'>Loading live session...</p>
         </div>
       </div>
     ),
@@ -141,8 +142,8 @@ export const LazyVoiceRecorder = lazyLoad(
   () => import('@/components/workbook/VoiceRecorder'),
   {
     loading: () => (
-      <div className="h-24 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
-        <span className="text-gray-500">Loading recorder...</span>
+      <div className='h-24 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center'>
+        <span className='text-gray-500'>Loading recorder...</span>
       </div>
     ),
     ssr: false,
@@ -153,8 +154,8 @@ export const LazyAudioFileUploader = lazyLoad(
   () => import('@/components/workbook/AudioFileUploader'),
   {
     loading: () => (
-      <div className="h-32 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
-        <span className="text-gray-500">Loading uploader...</span>
+      <div className='h-32 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center'>
+        <span className='text-gray-500'>Loading uploader...</span>
       </div>
     ),
     ssr: false,
@@ -165,8 +166,8 @@ export const LazyPerformanceMonitor = lazyLoad(
   () => import('@/components/monitoring/PerformanceMonitor'),
   {
     loading: () => (
-      <div className="h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
-        <span className="text-gray-500">Loading performance monitor...</span>
+      <div className='h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center'>
+        <span className='text-gray-500'>Loading performance monitor...</span>
       </div>
     ),
     ssr: false,
@@ -178,14 +179,17 @@ export const LazyAnalyticsDashboard = lazyLoad(
   () => import('@/components/analytics/AnalyticsDashboard'),
   {
     loading: () => (
-      <div className="space-y-4">
-        <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className='space-y-4'>
+        <div className='h-8 bg-gray-200 rounded animate-pulse'></div>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded animate-pulse"></div>
+            <div
+              key={i}
+              className='h-24 bg-gray-200 rounded animate-pulse'
+            ></div>
           ))}
         </div>
-        <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+        <div className='h-64 bg-gray-200 rounded animate-pulse'></div>
       </div>
     ),
     ssr: false,
@@ -215,16 +219,24 @@ export const LazyPages = {
  */
 export const LazyFeatures = {
   // Payment features
-  PaymentMethodSelector: lazyLoad(() => import('@/components/payment/PaymentMethodSelector')),
-  PaymentRecovery: lazyLoad(() => import('@/components/payment/PaymentRecovery')),
+  PaymentMethodSelector: lazyLoad(
+    () => import('@/components/payment/PaymentMethodSelector')
+  ),
+  PaymentRecovery: lazyLoad(
+    () => import('@/components/payment/PaymentRecovery')
+  ),
 
   // Advanced UI components
   ExitIntentModal: lazyLoad(() => import('@/components/ui/ExitIntentModal')),
   ConversionTimer: lazyLoad(() => import('@/components/ui/ConversionTimer')),
 
   // Analytics
-  AnalyticsProvider: lazyLoad(() => import('@/components/analytics/AnalyticsProvider')),
-  AnalyticsRegistrationForm: lazyLoad(() => import('@/components/forms/AnalyticsRegistrationForm')),
+  AnalyticsProvider: lazyLoad(
+    () => import('@/components/analytics/AnalyticsProvider')
+  ),
+  AnalyticsRegistrationForm: lazyLoad(
+    () => import('@/components/forms/AnalyticsRegistrationForm')
+  ),
 } as const;
 
 // =============================================================================
@@ -329,8 +341,8 @@ export class ComponentPreloader {
     }
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             this.preload(key);
             observer.unobserve(element);
@@ -383,7 +395,8 @@ export function useLazyLoad<T>(
   const elementRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!enabled || !elementRef.current || typeof window === 'undefined') return;
+    if (!enabled || !elementRef.current || typeof window === 'undefined')
+      return;
 
     const element = elementRef.current;
 
@@ -398,8 +411,8 @@ export function useLazyLoad<T>(
     }
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting && !data && !loading) {
             setLoading(true);
             loader()

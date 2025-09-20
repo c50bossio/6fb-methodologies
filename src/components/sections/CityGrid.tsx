@@ -152,8 +152,8 @@ export function CityGrid({ className }: CityGridProps) {
             </h4>
             <p className='text-sm text-text-secondary'>
               We've planned warmer cities during winter months (Dallas, Atlanta,
-              Las Vegas) and cooler cities during summer (San Francisco, Chicago, NYC)
-              for your comfort and convenience.
+              Las Vegas) and cooler cities during summer (San Francisco,
+              Chicago, NYC) for your comfort and convenience.
             </p>
           </div>
 

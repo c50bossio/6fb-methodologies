@@ -27,16 +27,16 @@ export const AudioFormat = {
   WEBM: 'webm',
 } as const;
 
-export type AudioFormatType = typeof AudioFormat[keyof typeof AudioFormat];
+export type AudioFormatType = (typeof AudioFormat)[keyof typeof AudioFormat];
 
 export const AudioQuality = {
-  LOW: 'low',        // 64kbps
-  MEDIUM: 'medium',  // 128kbps
-  HIGH: 'high',      // 256kbps
+  LOW: 'low', // 64kbps
+  MEDIUM: 'medium', // 128kbps
+  HIGH: 'high', // 256kbps
   LOSSLESS: 'lossless', // FLAC/uncompressed
 } as const;
 
-export type AudioQualityType = typeof AudioQuality[keyof typeof AudioQuality];
+export type AudioQualityType = (typeof AudioQuality)[keyof typeof AudioQuality];
 
 export const RecordingStatus = {
   RECORDING: 'recording',
@@ -48,7 +48,8 @@ export const RecordingStatus = {
   DELETED: 'deleted',
 } as const;
 
-export type RecordingStatusType = typeof RecordingStatus[keyof typeof RecordingStatus];
+export type RecordingStatusType =
+  (typeof RecordingStatus)[keyof typeof RecordingStatus];
 
 export const RecordingSource = {
   BROWSER_MIC: 'browser_mic',
@@ -59,7 +60,8 @@ export const RecordingSource = {
   SCREEN_RECORDING: 'screen_recording',
 } as const;
 
-export type RecordingSourceType = typeof RecordingSource[keyof typeof RecordingSource];
+export type RecordingSourceType =
+  (typeof RecordingSource)[keyof typeof RecordingSource];
 
 export const StorageProvider = {
   AWS_S3: 'aws_s3',
@@ -69,7 +71,8 @@ export const StorageProvider = {
   LOCAL: 'local',
 } as const;
 
-export type StorageProviderType = typeof StorageProvider[keyof typeof StorageProvider];
+export type StorageProviderType =
+  (typeof StorageProvider)[keyof typeof StorageProvider];
 
 // =============================================================================
 // Audio File Metadata
@@ -163,7 +166,14 @@ export interface S3Configuration {
 
   // Access control
   acl: 'private' | 'public-read' | 'public-read-write' | 'authenticated-read';
-  storageClass: 'STANDARD' | 'REDUCED_REDUNDANCY' | 'STANDARD_IA' | 'ONEZONE_IA' | 'INTELLIGENT_TIERING' | 'GLACIER' | 'DEEP_ARCHIVE';
+  storageClass:
+    | 'STANDARD'
+    | 'REDUCED_REDUNDANCY'
+    | 'STANDARD_IA'
+    | 'ONEZONE_IA'
+    | 'INTELLIGENT_TIERING'
+    | 'GLACIER'
+    | 'DEEP_ARCHIVE';
 
   // Lifecycle management
   lifecycleRules?: Array<{
@@ -493,11 +503,40 @@ export interface AudioStream {
 // Base schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const AudioFormatSchema = z.enum(['mp3', 'wav', 'm4a', 'ogg', 'flac', 'aac', 'webm']);
+export const AudioFormatSchema = z.enum([
+  'mp3',
+  'wav',
+  'm4a',
+  'ogg',
+  'flac',
+  'aac',
+  'webm',
+]);
 export const AudioQualitySchema = z.enum(['low', 'medium', 'high', 'lossless']);
-export const RecordingStatusSchema = z.enum(['recording', 'processing', 'ready', 'transcribing', 'completed', 'failed', 'deleted']);
-export const RecordingSourceSchema = z.enum(['browser_mic', 'mobile_app', 'upload', 'live_session', 'phone_call', 'screen_recording']);
-export const StorageProviderSchema = z.enum(['aws_s3', 'cloudflare_r2', 'google_cloud', 'azure_blob', 'local']);
+export const RecordingStatusSchema = z.enum([
+  'recording',
+  'processing',
+  'ready',
+  'transcribing',
+  'completed',
+  'failed',
+  'deleted',
+]);
+export const RecordingSourceSchema = z.enum([
+  'browser_mic',
+  'mobile_app',
+  'upload',
+  'live_session',
+  'phone_call',
+  'screen_recording',
+]);
+export const StorageProviderSchema = z.enum([
+  'aws_s3',
+  'cloudflare_r2',
+  'google_cloud',
+  'azure_blob',
+  'local',
+]);
 
 // Audio metadata schema
 export const AudioMetadataSchema = z.object({
@@ -513,13 +552,15 @@ export const AudioMetadataSchema = z.object({
   quality: AudioQualitySchema,
   recordedAt: TimestampSchema,
   timezone: z.string().optional(),
-  location: z.object({
-    latitude: z.number().optional(),
-    longitude: z.number().optional(),
-    accuracy: z.number().optional(),
-    city: z.string().optional(),
-    country: z.string().optional(),
-  }).optional(),
+  location: z
+    .object({
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+      accuracy: z.number().optional(),
+      city: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional(),
   device: z.object({
     type: z.enum(['desktop', 'mobile', 'tablet', 'server']),
     os: z.string().optional(),
@@ -530,26 +571,30 @@ export const AudioMetadataSchema = z.object({
   processedAt: TimestampSchema.optional(),
   processingDuration: z.number().min(0).optional(),
   compressionRatio: z.number().min(0).optional(),
-  analysis: z.object({
-    volume: z.object({
-      average: z.number(),
-      peak: z.number(),
-      rms: z.number(),
-    }),
-    frequency: z.object({
-      fundamental: z.number().optional(),
-      harmonics: z.array(z.number()).optional(),
-    }),
-    silenceDetection: z.object({
-      silentSegments: z.array(z.object({
-        start: z.number().min(0),
-        end: z.number().min(0),
-      })),
-      speechPercentage: z.number().min(0).max(100),
-    }),
-    noiseLevel: z.number().optional(),
-    qualityScore: z.number().min(0).max(100).optional(),
-  }).optional(),
+  analysis: z
+    .object({
+      volume: z.object({
+        average: z.number(),
+        peak: z.number(),
+        rms: z.number(),
+      }),
+      frequency: z.object({
+        fundamental: z.number().optional(),
+        harmonics: z.array(z.number()).optional(),
+      }),
+      silenceDetection: z.object({
+        silentSegments: z.array(
+          z.object({
+            start: z.number().min(0),
+            end: z.number().min(0),
+          })
+        ),
+        speechPercentage: z.number().min(0).max(100),
+      }),
+      noiseLevel: z.number().optional(),
+      qualityScore: z.number().min(0).max(100).optional(),
+    })
+    .optional(),
 });
 
 // S3 storage schema
@@ -588,7 +633,13 @@ export const UploadSessionSchema = z.object({
   progressPercentage: z.number().min(0).max(100),
   uploadSpeed: z.number().min(0).optional(),
   estimatedTimeRemaining: z.number().min(0).optional(),
-  status: z.enum(['pending', 'in_progress', 'completed', 'failed', 'cancelled']),
+  status: z.enum([
+    'pending',
+    'in_progress',
+    'completed',
+    'failed',
+    'cancelled',
+  ]),
   error: z.string().optional(),
   retryCount: z.number().min(0),
   maxRetries: z.number().min(0),
@@ -622,7 +673,9 @@ export const AudioRecordingSchema = z.object({
   }),
   transcriptionId: UUIDSchema.optional(),
   hasTranscription: z.boolean(),
-  transcriptionStatus: z.enum(['pending', 'processing', 'completed', 'failed']).optional(),
+  transcriptionStatus: z
+    .enum(['pending', 'processing', 'completed', 'failed'])
+    .optional(),
   transcriptionLanguage: z.string().optional(),
   transcriptionConfidence: z.number().min(0).max(100).optional(),
   isPublic: z.boolean(),
@@ -630,11 +683,15 @@ export const AudioRecordingSchema = z.object({
   shareExpiry: TimestampSchema.optional(),
   downloadCount: z.number().min(0),
   playCount: z.number().min(0),
-  collaborators: z.array(z.object({
-    userId: UUIDSchema,
-    permission: z.enum(['view', 'edit', 'admin']),
-    addedAt: TimestampSchema,
-  })).optional(),
+  collaborators: z
+    .array(
+      z.object({
+        userId: UUIDSchema,
+        permission: z.enum(['view', 'edit', 'admin']),
+        addedAt: TimestampSchema,
+      })
+    )
+    .optional(),
   version: z.number().min(1),
   parentRecordingId: UUIDSchema.optional(),
   qualityScore: z.number().min(0).max(100).optional(),
@@ -676,32 +733,44 @@ export const AudioProcessingJobSchema = z.object({
   progress: z.number().min(0).max(100),
   currentStep: z.string().optional(),
   totalSteps: z.number().min(0).optional(),
-  result: z.object({
-    outputFiles: z.array(z.object({
-      type: z.string(),
-      url: z.string().url(),
-      size: z.number().min(0),
-      format: z.string(),
-    })).optional(),
-    analysis: z.record(z.any()).optional(),
-    transcription: z.object({
-      id: UUIDSchema,
-      text: z.string(),
-      confidence: z.number().min(0).max(100),
-      language: z.string(),
-    }).optional(),
-    quality: z.object({
-      score: z.number().min(0).max(100),
-      issues: z.array(z.string()),
-      recommendations: z.array(z.string()),
-    }).optional(),
-  }).optional(),
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-    details: z.record(z.any()).optional(),
-    retryable: z.boolean(),
-  }).optional(),
+  result: z
+    .object({
+      outputFiles: z
+        .array(
+          z.object({
+            type: z.string(),
+            url: z.string().url(),
+            size: z.number().min(0),
+            format: z.string(),
+          })
+        )
+        .optional(),
+      analysis: z.record(z.any()).optional(),
+      transcription: z
+        .object({
+          id: UUIDSchema,
+          text: z.string(),
+          confidence: z.number().min(0).max(100),
+          language: z.string(),
+        })
+        .optional(),
+      quality: z
+        .object({
+          score: z.number().min(0).max(100),
+          issues: z.array(z.string()),
+          recommendations: z.array(z.string()),
+        })
+        .optional(),
+    })
+    .optional(),
+  error: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+      details: z.record(z.any()).optional(),
+      retryable: z.boolean(),
+    })
+    .optional(),
   queuedAt: TimestampSchema,
   startedAt: TimestampSchema.optional(),
   completedAt: TimestampSchema.optional(),
@@ -721,7 +790,8 @@ export const CreateAudioRecordingInputSchema = AudioRecordingSchema.omit({
   version: true,
 });
 
-export const UpdateAudioRecordingInputSchema = CreateAudioRecordingInputSchema.partial();
+export const UpdateAudioRecordingInputSchema =
+  CreateAudioRecordingInputSchema.partial();
 
 export const CreateUploadSessionInputSchema = UploadSessionSchema.omit({
   id: true,
@@ -854,7 +924,9 @@ export function isValidAudioFormat(mimeType: string): boolean {
 /**
  * Get audio format from MIME type
  */
-export function getAudioFormatFromMimeType(mimeType: string): AudioFormatType | null {
+export function getAudioFormatFromMimeType(
+  mimeType: string
+): AudioFormatType | null {
   const mimeToFormat: Record<string, AudioFormatType> = {
     'audio/mpeg': AudioFormat.MP3,
     'audio/mp3': AudioFormat.MP3,
@@ -891,7 +963,8 @@ export function calculateStorageCost(
   };
 
   const fileSizeGB = fileSizeBytes / (1024 * 1024 * 1024);
-  const monthlyCost = costPerGBPerMonth[storageClass] || costPerGBPerMonth.STANDARD;
+  const monthlyCost =
+    costPerGBPerMonth[storageClass] || costPerGBPerMonth.STANDARD;
 
   return fileSizeGB * monthlyCost;
 }
@@ -899,7 +972,11 @@ export function calculateStorageCost(
 /**
  * Validate audio recording data
  */
-export function validateAudioRecording(data: unknown): { valid: boolean; errors?: string[]; data?: AudioRecording } {
+export function validateAudioRecording(data: unknown): {
+  valid: boolean;
+  errors?: string[];
+  data?: AudioRecording;
+} {
   try {
     const validData = AudioRecordingSchema.parse(data);
     return { valid: true, data: validData };
@@ -907,7 +984,9 @@ export function validateAudioRecording(data: unknown): { valid: boolean; errors?
     if (error instanceof z.ZodError) {
       return {
         valid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.errors.map(
+          err => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return { valid: false, errors: ['Invalid data format'] };
@@ -930,7 +1009,9 @@ export function canUserAccessRecording(
 
   // Check collaborator permissions
   if (recording.collaborators) {
-    const collaboration = recording.collaborators.find(c => c.userId === userId);
+    const collaboration = recording.collaborators.find(
+      c => c.userId === userId
+    );
     if (collaboration) return true;
   }
 
@@ -951,7 +1032,8 @@ export function calculateAudioQualityScore(metadata: AudioMetadata): number {
   score = score - 30 + bitrateScore;
 
   // Sample rate score (0-20 points)
-  const sampleRateScore = metadata.sampleRate >= 44100 ? 20 : (metadata.sampleRate / 44100) * 20;
+  const sampleRateScore =
+    metadata.sampleRate >= 44100 ? 20 : (metadata.sampleRate / 44100) * 20;
   score = score - 20 + sampleRateScore;
 
   // Duration penalty for very short recordings
@@ -980,34 +1062,46 @@ export function calculateAudioQualityScore(metadata: AudioMetadata): number {
 // =============================================================================
 
 export function isAudioRecording(obj: any): obj is AudioRecording {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.userId === 'string' &&
-         typeof obj.status === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.userId === 'string' &&
+    typeof obj.status === 'string'
+  );
 }
 
 export function isUploadSession(obj: any): obj is UploadSession {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.recordingId === 'string' &&
-         typeof obj.filename === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.recordingId === 'string' &&
+    typeof obj.filename === 'string'
+  );
 }
 
 export function isAudioProcessingJob(obj: any): obj is AudioProcessingJob {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.recordingId === 'string' &&
-         typeof obj.jobType === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.recordingId === 'string' &&
+    typeof obj.jobType === 'string'
+  );
 }
 
 // =============================================================================
 // Input/Output Types for API
 // =============================================================================
 
-export type CreateAudioRecordingInput = z.infer<typeof CreateAudioRecordingInputSchema>;
-export type UpdateAudioRecordingInput = z.infer<typeof UpdateAudioRecordingInputSchema>;
-export type CreateUploadSessionInput = z.infer<typeof CreateUploadSessionInputSchema>;
+export type CreateAudioRecordingInput = z.infer<
+  typeof CreateAudioRecordingInputSchema
+>;
+export type UpdateAudioRecordingInput = z.infer<
+  typeof UpdateAudioRecordingInputSchema
+>;
+export type CreateUploadSessionInput = z.infer<
+  typeof CreateUploadSessionInputSchema
+>;
 
 // Export all validation schemas for use in API routes
 export const ValidationSchemas = {

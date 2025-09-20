@@ -22,7 +22,7 @@ function verifyWebhookSignature(
 }
 
 // In production, this would be stored in a database
-let memberDatabase = new Map<
+const memberDatabase = new Map<
   string,
   {
     name: string;

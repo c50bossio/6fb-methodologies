@@ -51,13 +51,25 @@ async function authenticateRequest(request: NextRequest) {
   return { session: session! };
 }
 
-function broadcastToSession(sessionId: string, event: string, data: any, excludeUserId?: string) {
+function broadcastToSession(
+  sessionId: string,
+  event: string,
+  data: any,
+  excludeUserId?: string
+) {
   // Real-time broadcasting logic would go here
-  console.log(`Broadcasting to session ${sessionId}:`, { event, data, excludeUserId });
+  console.log(`Broadcasting to session ${sessionId}:`, {
+    event,
+    data,
+    excludeUserId,
+  });
 }
 
 // POST /api/workbook/sessions/live/[sessionId]/join - Join live session
-export async function POST(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
   try {
     const auth = await authenticateRequest(request);
     if ('error' in auth) {
@@ -121,12 +133,17 @@ export async function POST(request: NextRequest, { params }: { params: { session
     }
 
     // Check if session has started (if scheduled)
-    if (session.status === 'scheduled' && new Date() < new Date(session.scheduled_start)) {
-      const minutesUntilStart = Math.ceil((new Date(session.scheduled_start).getTime() - Date.now()) / (1000 * 60));
+    if (
+      session.status === 'scheduled' &&
+      new Date() < new Date(session.scheduled_start)
+    ) {
+      const minutesUntilStart = Math.ceil(
+        (new Date(session.scheduled_start).getTime() - Date.now()) / (1000 * 60)
+      );
       return NextResponse.json(
         {
           error: `Session has not started yet. It begins in ${minutesUntilStart} minutes.`,
-          scheduled_start: session.scheduled_start
+          scheduled_start: session.scheduled_start,
         },
         { status: 400, headers: WORKBOOK_SECURITY_HEADERS }
       );
@@ -150,7 +167,7 @@ export async function POST(request: NextRequest, { params }: { params: { session
       return NextResponse.json(
         {
           error: 'You are already in this session',
-          participant: existingParticipant
+          participant: existingParticipant,
         },
         { status: 409, headers: WORKBOOK_SECURITY_HEADERS }
       );
@@ -160,7 +177,13 @@ export async function POST(request: NextRequest, { params }: { params: { session
     const isInstructor = session.instructor_id === auth.session.userId;
     const role = isInstructor ? 'instructor' : 'participant';
     const permissions = isInstructor
-      ? ['can_speak', 'can_moderate', 'can_record', 'can_share_screen', 'can_mute_others']
+      ? [
+          'can_speak',
+          'can_moderate',
+          'can_record',
+          'can_share_screen',
+          'can_mute_others',
+        ]
       : ['can_speak'];
 
     // Add user permissions based on subscription level
@@ -233,14 +256,19 @@ export async function POST(request: NextRequest, { params }: { params: { session
     );
 
     // Broadcast user joined event
-    broadcastToSession(sessionId, 'participant_joined', {
-      userId: auth.session.userId,
-      name: displayName || auth.session.name,
-      role,
-      permissions,
-      joinedAt: now,
-      metadata: participant.metadata,
-    }, auth.session.userId);
+    broadcastToSession(
+      sessionId,
+      'participant_joined',
+      {
+        userId: auth.session.userId,
+        name: displayName || auth.session.name,
+        role,
+        permissions,
+        joinedAt: now,
+        metadata: participant.metadata,
+      },
+      auth.session.userId
+    );
 
     return NextResponse.json(
       {
@@ -260,7 +288,13 @@ export async function POST(request: NextRequest, { params }: { params: { session
           // In production, include WebSocket/Socket.io connection details
           connection_info: {
             polling_interval: 2000, // For polling-based updates
-            event_types: ['participant_joined', 'participant_left', 'message', 'screen_share', 'recording_started'],
+            event_types: [
+              'participant_joined',
+              'participant_left',
+              'message',
+              'screen_share',
+              'recording_started',
+            ],
           },
         },
         message: 'Successfully joined live session',
@@ -285,7 +319,10 @@ export async function POST(request: NextRequest, { params }: { params: { session
 }
 
 // DELETE /api/workbook/sessions/live/[sessionId]/join - Leave live session
-export async function DELETE(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
   try {
     const auth = await authenticateRequest(request);
     if ('error' in auth) {
@@ -319,7 +356,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
     );
 
     // Calculate participation score based on time spent
-    const timeSpentMinutes = (now.getTime() - new Date(participant.joined_at).getTime()) / (1000 * 60);
+    const timeSpentMinutes =
+      (now.getTime() - new Date(participant.joined_at).getTime()) / (1000 * 60);
     const participationScore = Math.min(Math.round(timeSpentMinutes * 2), 100); // 2 points per minute, max 100
 
     await db.query(
@@ -347,12 +385,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
       });
     } else {
       // Regular participant leaving
-      broadcastToSession(sessionId, 'participant_left', {
-        userId: auth.session.userId,
-        leftAt: now,
-        participationScore,
-        timeSpentMinutes: Math.round(timeSpentMinutes),
-      }, auth.session.userId);
+      broadcastToSession(
+        sessionId,
+        'participant_left',
+        {
+          userId: auth.session.userId,
+          leftAt: now,
+          participationScore,
+          timeSpentMinutes: Math.round(timeSpentMinutes),
+        },
+        auth.session.userId
+      );
     }
 
     return NextResponse.json(
@@ -380,7 +423,10 @@ export async function OPTIONS(request: NextRequest) {
     status: 200,
     headers: {
       ...WORKBOOK_SECURITY_HEADERS,
-      'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://6fbmethodologies.com',
+      'Access-Control-Allow-Origin':
+        process.env.NODE_ENV === 'development'
+          ? '*'
+          : 'https://6fbmethodologies.com',
       'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',

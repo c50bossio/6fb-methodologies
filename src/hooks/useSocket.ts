@@ -61,9 +61,10 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
       return null;
     }
 
-    const serverUrl = process.env.NODE_ENV === 'production'
-      ? 'https://6fbmethodologies.com'
-      : 'http://localhost:3000';
+    const serverUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://6fbmethodologies.com'
+        : 'http://localhost:3000';
 
     const socketUrl = `${serverUrl}${mergedConfig.namespace}`;
 
@@ -86,7 +87,11 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
       return;
     }
 
-    setConnectionState(prev => ({ ...prev, isConnecting: true, error: undefined }));
+    setConnectionState(prev => ({
+      ...prev,
+      isConnecting: true,
+      error: undefined,
+    }));
 
     if (!socketRef.current) {
       socketRef.current = createSocket();
@@ -100,7 +105,11 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
   const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
-      setConnectionState(prev => ({ ...prev, isConnected: false, isConnecting: false }));
+      setConnectionState(prev => ({
+        ...prev,
+        isConnected: false,
+        isConnecting: false,
+      }));
     }
   }, []);
 
@@ -134,13 +143,19 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
     }
   }, []);
 
-  const joinRoom = useCallback((roomId: string) => {
-    emit('join-room', { roomId });
-  }, [emit]);
+  const joinRoom = useCallback(
+    (roomId: string) => {
+      emit('join-room', { roomId });
+    },
+    [emit]
+  );
 
-  const leaveRoom = useCallback((roomId: string) => {
-    emit('leave-room', { roomId });
-  }, [emit]);
+  const leaveRoom = useCallback(
+    (roomId: string) => {
+      emit('leave-room', { roomId });
+    },
+    [emit]
+  );
 
   // Setup socket event listeners
   useEffect(() => {
@@ -166,7 +181,7 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
       const heartbeatStart = Date.now();
       socket.emit('heartbeat', { timestamp: new Date().toISOString() });
 
-      socket.once('heartbeat-ack', (data) => {
+      socket.once('heartbeat-ack', data => {
         const latency = Date.now() - heartbeatStart;
         setConnectionState(prev => ({ ...prev, latency }));
       });
@@ -178,7 +193,8 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
         ...prev,
         isConnected: false,
         isConnecting: false,
-        error: reason === 'io server disconnect' ? 'Server disconnected' : undefined,
+        error:
+          reason === 'io server disconnect' ? 'Server disconnected' : undefined,
       }));
     };
 
@@ -194,7 +210,10 @@ export function useSocket(config: SocketConfig = {}): UseSocketReturn {
 
     const handleReconnect = (attemptNumber: number) => {
       console.log(`Socket reconnected after ${attemptNumber} attempts`);
-      setConnectionState(prev => ({ ...prev, reconnectAttempts: attemptNumber }));
+      setConnectionState(prev => ({
+        ...prev,
+        reconnectAttempts: attemptNumber,
+      }));
     };
 
     const handleReconnectAttempt = (attemptNumber: number) => {
@@ -304,12 +323,15 @@ export function useLiveSessionSocket(sessionId?: string) {
   const [sessionMessages, setSessionMessages] = useState<any[]>([]);
   const [currentPoll, setCurrentPoll] = useState<any>(null);
 
-  const joinSession = useCallback((id: string) => {
-    if (baseSocket.socket) {
-      baseSocket.socket.io.opts.query = { sessionId: id };
-      baseSocket.connect();
-    }
-  }, [baseSocket]);
+  const joinSession = useCallback(
+    (id: string) => {
+      if (baseSocket.socket) {
+        baseSocket.socket.io.opts.query = { sessionId: id };
+        baseSocket.connect();
+      }
+    },
+    [baseSocket]
+  );
 
   const leaveSession = useCallback(() => {
     baseSocket.disconnect();
@@ -327,7 +349,9 @@ export function useLiveSessionSocket(sessionId?: string) {
     };
 
     const handleParticipantLeft = (data: any) => {
-      setSessionParticipants(prev => prev.filter(p => p.userId !== data.participantId));
+      setSessionParticipants(prev =>
+        prev.filter(p => p.userId !== data.participantId)
+      );
     };
 
     const handleChatMessage = (data: any) => {
@@ -370,9 +394,12 @@ export function useWorkbookCollaborationSocket() {
   const [collaborators, setCollaborators] = useState<any[]>([]);
   const [noteChanges, setNoteChanges] = useState<any[]>([]);
 
-  const joinNote = useCallback((noteId: string) => {
-    baseSocket.emit('note:join', { noteId });
-  }, [baseSocket]);
+  const joinNote = useCallback(
+    (noteId: string) => {
+      baseSocket.emit('note:join', { noteId });
+    },
+    [baseSocket]
+  );
 
   const leaveNote = useCallback(() => {
     baseSocket.emit('note:leave');
@@ -380,13 +407,19 @@ export function useWorkbookCollaborationSocket() {
     setNoteChanges([]);
   }, [baseSocket]);
 
-  const sendNoteChange = useCallback((changes: any) => {
-    baseSocket.emit('note:content-change', { changes });
-  }, [baseSocket]);
+  const sendNoteChange = useCallback(
+    (changes: any) => {
+      baseSocket.emit('note:content-change', { changes });
+    },
+    [baseSocket]
+  );
 
-  const sendCursorPosition = useCallback((position: any, selection: any) => {
-    baseSocket.emit('note:cursor-position', { position, selection });
-  }, [baseSocket]);
+  const sendCursorPosition = useCallback(
+    (position: any, selection: any) => {
+      baseSocket.emit('note:cursor-position', { position, selection });
+    },
+    [baseSocket]
+  );
 
   // Collaboration-specific event handlers
   useEffect(() => {

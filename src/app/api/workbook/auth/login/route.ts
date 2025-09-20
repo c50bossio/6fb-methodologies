@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'ip_locked_out', action: 'login_attempt' }
+        details: { reason: 'ip_locked_out', action: 'login_attempt' },
       });
 
       return createErrorResponse(
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'rate_limited', action: 'login_attempt' }
+        details: { reason: 'rate_limited', action: 'login_attempt' },
       });
       return rateLimitResult;
     }
@@ -90,7 +90,10 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'suspicious_request_detected', action: 'login_attempt' }
+        details: {
+          reason: 'suspicious_request_detected',
+          action: 'login_attempt',
+        },
       });
 
       return createErrorResponse(
@@ -118,7 +121,9 @@ export async function POST(request: NextRequest) {
     try {
       validatedData = validateLoginRequest(requestBody);
     } catch (error) {
-      console.warn(`❌ Request validation failed from IP: ${clientIP}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `❌ Request validation failed from IP: ${clientIP}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       recordSecurityEvent({
         type: 'auth_failure',
         ip: clientIP,
@@ -127,8 +132,8 @@ export async function POST(request: NextRequest) {
         details: {
           reason: 'validation_failed',
           error: error instanceof Error ? error.message : 'Unknown error',
-          action: 'login_attempt'
-        }
+          action: 'login_attempt',
+        },
       });
 
       return createErrorResponse(
@@ -140,7 +145,9 @@ export async function POST(request: NextRequest) {
 
     const { email, password, customerId } = validatedData;
 
-    console.log(`🔐 Workbook authentication attempt for: ${email} from IP: ${clientIP}`);
+    console.log(
+      `🔐 Workbook authentication attempt for: ${email} from IP: ${clientIP}`
+    );
 
     // Record authentication attempt
     recordSecurityEvent({
@@ -149,7 +156,7 @@ export async function POST(request: NextRequest) {
       ip: clientIP,
       userAgent,
       timestamp: Date.now(),
-      details: { action: 'login_attempt', hasCustomerId: !!customerId }
+      details: { action: 'login_attempt', hasCustomerId: !!customerId },
     });
 
     // Authenticate user with enhanced security context
@@ -177,15 +184,16 @@ export async function POST(request: NextRequest) {
         details: {
           reason: authResult.error || 'authentication_failed',
           message: authResult.message,
-          action: 'login_failed'
-        }
+          action: 'login_failed',
+        },
       });
 
       // Enhanced error handling with security context
       const statusCode = authResult.error === 'suspicious_activity' ? 403 : 401;
-      const errorMessage = authResult.error === 'suspicious_activity'
-        ? 'Request blocked due to suspicious activity'
-        : 'Authentication failed';
+      const errorMessage =
+        authResult.error === 'suspicious_activity'
+          ? 'Request blocked due to suspicious activity'
+          : 'Authentication failed';
 
       return createErrorResponse(
         errorMessage,
@@ -200,7 +208,9 @@ export async function POST(request: NextRequest) {
 
     // Validate the auth result session data
     if (!authResult.session) {
-      console.error(`❌ Authentication succeeded but no session data for: ${email}`);
+      console.error(
+        `❌ Authentication succeeded but no session data for: ${email}`
+      );
       return createErrorResponse(
         'Authentication service error',
         'Session creation failed',
@@ -211,7 +221,9 @@ export async function POST(request: NextRequest) {
     // Prepare response data with validation
     const responseData: LoginResponse = {
       success: true,
-      message: authResult.message || `Authenticated as ${authResult.session.role} user`,
+      message:
+        authResult.message ||
+        `Authenticated as ${authResult.session.role} user`,
       user: {
         userId: authResult.session.userId,
         email: authResult.session.email,
@@ -291,8 +303,8 @@ export async function POST(request: NextRequest) {
       details: {
         reason: 'login_service_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        action: 'login_exception'
-      }
+        action: 'login_exception',
+      },
     });
 
     return createErrorResponse(

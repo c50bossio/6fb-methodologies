@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Save,
   Plus,
@@ -213,7 +219,11 @@ const FormattingToolbar: React.FC<{
         <Button
           variant={formatting.listType === 'bullet' ? 'secondary' : 'ghost'}
           size='sm'
-          onClick={() => onFormatChange({ listType: formatting.listType === 'bullet' ? 'none' : 'bullet' })}
+          onClick={() =>
+            onFormatChange({
+              listType: formatting.listType === 'bullet' ? 'none' : 'bullet',
+            })
+          }
           disabled={disabled}
           className='w-8 h-8 p-0'
         >
@@ -222,7 +232,12 @@ const FormattingToolbar: React.FC<{
         <Button
           variant={formatting.listType === 'numbered' ? 'secondary' : 'ghost'}
           size='sm'
-          onClick={() => onFormatChange({ listType: formatting.listType === 'numbered' ? 'none' : 'numbered' })}
+          onClick={() =>
+            onFormatChange({
+              listType:
+                formatting.listType === 'numbered' ? 'none' : 'numbered',
+            })
+          }
           disabled={disabled}
           className='w-8 h-8 p-0'
         >
@@ -265,7 +280,11 @@ const FormattingToolbar: React.FC<{
       <div className='flex items-center gap-1'>
         <select
           value={formatting.fontSize}
-          onChange={(e) => onFormatChange({ fontSize: e.target.value as FormattingOptions['fontSize'] })}
+          onChange={e =>
+            onFormatChange({
+              fontSize: e.target.value as FormattingOptions['fontSize'],
+            })
+          }
           disabled={disabled}
           className='px-2 py-1 text-xs bg-background-secondary border border-border-primary rounded focus:outline-none focus:ring-1 focus:ring-tomb45-green'
         >
@@ -305,18 +324,24 @@ const ActionItemsManager: React.FC<{
     setNewItemText('');
   }, [newItemText, actionItems, onActionItemsChange]);
 
-  const updateActionItem = useCallback((id: string, updates: Partial<ActionItem>) => {
-    const updatedItems = actionItems.map(item =>
-      item.id === id
-        ? { ...item, ...updates, updatedAt: new Date().toISOString() }
-        : item
-    );
-    onActionItemsChange(updatedItems);
-  }, [actionItems, onActionItemsChange]);
+  const updateActionItem = useCallback(
+    (id: string, updates: Partial<ActionItem>) => {
+      const updatedItems = actionItems.map(item =>
+        item.id === id
+          ? { ...item, ...updates, updatedAt: new Date().toISOString() }
+          : item
+      );
+      onActionItemsChange(updatedItems);
+    },
+    [actionItems, onActionItemsChange]
+  );
 
-  const removeActionItem = useCallback((id: string) => {
-    onActionItemsChange(actionItems.filter(item => item.id !== id));
-  }, [actionItems, onActionItemsChange]);
+  const removeActionItem = useCallback(
+    (id: string) => {
+      onActionItemsChange(actionItems.filter(item => item.id !== id));
+    },
+    [actionItems, onActionItemsChange]
+  );
 
   return (
     <div className='space-y-3'>
@@ -332,8 +357,8 @@ const ActionItemsManager: React.FC<{
         <input
           type='text'
           value={newItemText}
-          onChange={(e) => setNewItemText(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && addActionItem()}
+          onChange={e => setNewItemText(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && addActionItem()}
           placeholder='Add action item...'
           disabled={disabled}
           className='flex-1 px-3 py-2 text-sm bg-background-secondary border border-border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-tomb45-green'
@@ -349,7 +374,7 @@ const ActionItemsManager: React.FC<{
 
       {/* Action items list */}
       <div className='space-y-2 max-h-48 overflow-y-auto'>
-        {actionItems.map((item) => (
+        {actionItems.map(item => (
           <div
             key={item.id}
             className='flex items-start gap-3 p-3 bg-background-accent rounded-lg border border-border-primary'
@@ -357,7 +382,9 @@ const ActionItemsManager: React.FC<{
             <Button
               variant='ghost'
               size='sm'
-              onClick={() => updateActionItem(item.id, { completed: !item.completed })}
+              onClick={() =>
+                updateActionItem(item.id, { completed: !item.completed })
+              }
               disabled={disabled}
               className='w-6 h-6 p-0 mt-0.5'
             >
@@ -369,7 +396,9 @@ const ActionItemsManager: React.FC<{
             </Button>
 
             <div className='flex-1 min-w-0'>
-              <p className={`text-sm ${item.completed ? 'line-through text-text-secondary' : 'text-text-primary'}`}>
+              <p
+                className={`text-sm ${item.completed ? 'line-through text-text-secondary' : 'text-text-primary'}`}
+              >
                 {item.content}
               </p>
               <div className='flex items-center gap-2 mt-1'>
@@ -418,7 +447,15 @@ const NotesList: React.FC<{
   searchFilters: SearchFilters;
   onFiltersChange: (filters: SearchFilters) => void;
   loading?: boolean;
-}> = ({ notes, selectedNoteId, onNoteSelect, onNoteDelete, searchFilters, onFiltersChange, loading = false }) => {
+}> = ({
+  notes,
+  selectedNoteId,
+  onNoteSelect,
+  onNoteDelete,
+  searchFilters,
+  onFiltersChange,
+  loading = false,
+}) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const filteredNotes = useMemo(() => {
@@ -446,14 +483,19 @@ const NotesList: React.FC<{
       }
 
       // Action items filter
-      if (searchFilters.hasActionItems && (!note.actionItems || note.actionItems.length === 0)) {
+      if (
+        searchFilters.hasActionItems &&
+        (!note.actionItems || note.actionItems.length === 0)
+      ) {
         return false;
       }
 
       // Tags filter
       if (searchFilters.tags.length > 0) {
         const noteTags = note.tags || [];
-        const hasAllTags = searchFilters.tags.every(tag => noteTags.includes(tag));
+        const hasAllTags = searchFilters.tags.every(tag =>
+          noteTags.includes(tag)
+        );
         if (!hasAllTags) return false;
       }
 
@@ -482,7 +524,9 @@ const NotesList: React.FC<{
               type='text'
               placeholder='Search notes...'
               value={searchFilters.query}
-              onChange={(e) => onFiltersChange({ ...searchFilters, query: e.target.value })}
+              onChange={e =>
+                onFiltersChange({ ...searchFilters, query: e.target.value })
+              }
               className='w-full pl-10 pr-4 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
             />
           </div>
@@ -501,13 +545,17 @@ const NotesList: React.FC<{
             <CardContent className='p-4 space-y-4'>
               <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                 <div>
-                  <label className='block text-sm font-medium text-text-primary mb-1'>Category</label>
+                  <label className='block text-sm font-medium text-text-primary mb-1'>
+                    Category
+                  </label>
                   <select
                     value={searchFilters.category || ''}
-                    onChange={(e) => onFiltersChange({
-                      ...searchFilters,
-                      category: e.target.value as NoteCategory || undefined
-                    })}
+                    onChange={e =>
+                      onFiltersChange({
+                        ...searchFilters,
+                        category: (e.target.value as NoteCategory) || undefined,
+                      })
+                    }
                     className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
                   >
                     <option value=''>All Categories</option>
@@ -522,13 +570,17 @@ const NotesList: React.FC<{
                 </div>
 
                 <div>
-                  <label className='block text-sm font-medium text-text-primary mb-1'>Priority</label>
+                  <label className='block text-sm font-medium text-text-primary mb-1'>
+                    Priority
+                  </label>
                   <select
                     value={searchFilters.priority || ''}
-                    onChange={(e) => onFiltersChange({
-                      ...searchFilters,
-                      priority: e.target.value as NotePriority || undefined
-                    })}
+                    onChange={e =>
+                      onFiltersChange({
+                        ...searchFilters,
+                        priority: (e.target.value as NotePriority) || undefined,
+                      })
+                    }
                     className='w-full px-3 py-2 bg-background-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
                   >
                     <option value=''>All Priorities</option>
@@ -540,13 +592,20 @@ const NotesList: React.FC<{
                 </div>
 
                 <div className='space-y-2'>
-                  <label className='block text-sm font-medium text-text-primary'>Quick Filters</label>
+                  <label className='block text-sm font-medium text-text-primary'>
+                    Quick Filters
+                  </label>
                   <div className='flex flex-wrap gap-2'>
                     <label className='flex items-center gap-2 text-sm'>
                       <input
                         type='checkbox'
                         checked={searchFilters.isBookmarked}
-                        onChange={(e) => onFiltersChange({ ...searchFilters, isBookmarked: e.target.checked })}
+                        onChange={e =>
+                          onFiltersChange({
+                            ...searchFilters,
+                            isBookmarked: e.target.checked,
+                          })
+                        }
                         className='rounded border-border-primary'
                       />
                       Bookmarked
@@ -555,7 +614,12 @@ const NotesList: React.FC<{
                       <input
                         type='checkbox'
                         checked={searchFilters.hasActionItems}
-                        onChange={(e) => onFiltersChange({ ...searchFilters, hasActionItems: e.target.checked })}
+                        onChange={e =>
+                          onFiltersChange({
+                            ...searchFilters,
+                            hasActionItems: e.target.checked,
+                          })
+                        }
                         className='rounded border-border-primary'
                       />
                       Has Action Items
@@ -584,7 +648,7 @@ const NotesList: React.FC<{
 
       {/* Notes List */}
       <div className='space-y-2 max-h-96 overflow-y-auto'>
-        {filteredNotes.map((note) => (
+        {filteredNotes.map(note => (
           <Card
             key={note.id}
             className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
@@ -596,19 +660,29 @@ const NotesList: React.FC<{
           >
             <CardContent className='p-4'>
               <div className='flex items-start justify-between mb-2'>
-                <h4 className={`font-medium truncate ${
-                  selectedNoteId === note.id ? 'text-tomb45-green' : 'text-text-primary'
-                }`}>
+                <h4
+                  className={`font-medium truncate ${
+                    selectedNoteId === note.id
+                      ? 'text-tomb45-green'
+                      : 'text-text-primary'
+                  }`}
+                >
                   {note.title || 'Untitled Note'}
                 </h4>
                 <div className='flex items-center gap-1 ml-2'>
-                  {note.isBookmarked && <Star className='w-4 h-4 text-yellow-500' />}
-                  {note.priority === 'urgent' && <AlertCircle className='w-4 h-4 text-red-500' />}
-                  {note.priority === 'high' && <AlertCircle className='w-4 h-4 text-orange-500' />}
+                  {note.isBookmarked && (
+                    <Star className='w-4 h-4 text-yellow-500' />
+                  )}
+                  {note.priority === 'urgent' && (
+                    <AlertCircle className='w-4 h-4 text-red-500' />
+                  )}
+                  {note.priority === 'high' && (
+                    <AlertCircle className='w-4 h-4 text-orange-500' />
+                  )}
                   <Button
                     variant='ghost'
                     size='sm'
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       onNoteDelete(note.id);
                     }}
@@ -630,7 +704,8 @@ const NotesList: React.FC<{
                   </Badge>
                   {note.actionItems && note.actionItems.length > 0 && (
                     <Badge variant='outline' className='text-xs'>
-                      {note.actionItems.filter(item => !item.completed).length} todos
+                      {note.actionItems.filter(item => !item.completed).length}{' '}
+                      todos
                     </Badge>
                   )}
                 </div>
@@ -641,7 +716,7 @@ const NotesList: React.FC<{
 
               {note.tags && note.tags.length > 0 && (
                 <div className='flex flex-wrap gap-1 mt-2'>
-                  {note.tags.slice(0, 3).map((tag) => (
+                  {note.tags.slice(0, 3).map(tag => (
                     <Badge key={tag} variant='outline' className='text-xs'>
                       #{tag}
                     </Badge>
@@ -781,7 +856,8 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
         throw new Error(data.error || 'Invalid response format');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load notes';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to load notes';
       setError(errorMessage);
       onError?.(errorMessage, 'fetch_notes');
     } finally {
@@ -792,126 +868,148 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
   /**
    * Save note to backend
    */
-  const saveNote = useCallback(async (noteData: Partial<EditorState>, noteId?: string) => {
-    if (!userId) return null;
+  const saveNote = useCallback(
+    async (noteData: Partial<EditorState>, noteId?: string) => {
+      if (!userId) return null;
 
-    try {
-      setEditorState(prev => ({ ...prev, isAutoSaving: true }));
+      try {
+        setEditorState(prev => ({ ...prev, isAutoSaving: true }));
 
-      const requestBody: CreateNoteRequestBody | UpdateNoteRequestBody = {
-        title: noteData.title || 'Untitled Note',
-        content: noteData.content || '',
-        category: noteData.category || 'personal',
-        priority: noteData.priority || 'medium',
-        tags: noteData.tags || [],
-        isBookmarked: noteData.isBookmarked || false,
-        isPrivate: noteData.isPrivate ?? true,
-        actionItems: noteData.actionItems || [],
-        ...(moduleId && { moduleId }),
-        ...(lessonId && { lessonId }),
-        ...(sessionInfo?.sessionId && { sessionId: sessionInfo.sessionId }),
-      };
+        const requestBody: CreateNoteRequestBody | UpdateNoteRequestBody = {
+          title: noteData.title || 'Untitled Note',
+          content: noteData.content || '',
+          category: noteData.category || 'personal',
+          priority: noteData.priority || 'medium',
+          tags: noteData.tags || [],
+          isBookmarked: noteData.isBookmarked || false,
+          isPrivate: noteData.isPrivate ?? true,
+          actionItems: noteData.actionItems || [],
+          ...(moduleId && { moduleId }),
+          ...(lessonId && { lessonId }),
+          ...(sessionInfo?.sessionId && { sessionId: sessionInfo.sessionId }),
+        };
 
-      const response = await fetch(
-        noteId ? `/api/workbook/notes/${noteId}` : '/api/workbook/notes',
-        {
-          method: noteId ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(requestBody),
+        const response = await fetch(
+          noteId ? `/api/workbook/notes/${noteId}` : '/api/workbook/notes',
+          {
+            method: noteId ? 'PUT' : 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(requestBody),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || `Failed to ${noteId ? 'update' : 'create'} note`
+          );
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${noteId ? 'update' : 'create'} note`);
-      }
+        const data = await response.json();
 
-      const data = await response.json();
+        if (data.success && data.data) {
+          const note = data.data;
 
-      if (data.success && data.data) {
-        const note = data.data;
+          // Update local state
+          if (noteId) {
+            setNotes(prev => prev.map(n => (n.id === noteId ? note : n)));
+            onNoteUpdated?.(note);
+          } else {
+            setNotes(prev => [note, ...prev]);
+            onNoteCreated?.(note);
+          }
 
-        // Update local state
-        if (noteId) {
-          setNotes(prev => prev.map(n => n.id === noteId ? note : n));
-          onNoteUpdated?.(note);
+          setSelectedNote(note);
+          setEditorState(prev => ({
+            ...prev,
+            hasUnsavedChanges: false,
+            lastSaved: new Date(),
+          }));
+
+          return note;
         } else {
-          setNotes(prev => [note, ...prev]);
-          onNoteCreated?.(note);
+          throw new Error(data.error || 'Invalid response format');
         }
-
-        setSelectedNote(note);
-        setEditorState(prev => ({
-          ...prev,
-          hasUnsavedChanges: false,
-          lastSaved: new Date(),
-        }));
-
-        return note;
-      } else {
-        throw new Error(data.error || 'Invalid response format');
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to save note';
+        setError(errorMessage);
+        onError?.(errorMessage, 'save_note');
+        return null;
+      } finally {
+        setEditorState(prev => ({ ...prev, isAutoSaving: false }));
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save note';
-      setError(errorMessage);
-      onError?.(errorMessage, 'save_note');
-      return null;
-    } finally {
-      setEditorState(prev => ({ ...prev, isAutoSaving: false }));
-    }
-  }, [userId, moduleId, lessonId, sessionInfo?.sessionId, onNoteCreated, onNoteUpdated, onError]);
+    },
+    [
+      userId,
+      moduleId,
+      lessonId,
+      sessionInfo?.sessionId,
+      onNoteCreated,
+      onNoteUpdated,
+      onError,
+    ]
+  );
 
   /**
    * Delete note
    */
-  const deleteNote = useCallback(async (noteId: string) => {
-    if (!userId) return;
+  const deleteNote = useCallback(
+    async (noteId: string) => {
+      if (!userId) return;
 
-    try {
-      const response = await fetch(`/api/workbook/notes/${noteId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete note');
-      }
-
-      // Update local state
-      setNotes(prev => prev.filter(n => n.id !== noteId));
-      if (selectedNote?.id === noteId) {
-        setSelectedNote(null);
-        setEditorState({
-          content: '',
-          title: '',
-          category: 'personal',
-          priority: 'medium',
-          tags: [],
-          isBookmarked: false,
-          isPrivate: true,
-          hasUnsavedChanges: false,
-          isAutoSaving: false,
-          actionItems: [],
+      try {
+        const response = await fetch(`/api/workbook/notes/${noteId}`, {
+          method: 'DELETE',
+          credentials: 'include',
         });
-      }
 
-      onNoteDeleted?.(noteId);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete note';
-      setError(errorMessage);
-      onError?.(errorMessage, 'delete_note');
-    }
-  }, [userId, selectedNote?.id, onNoteDeleted, onError]);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete note');
+        }
+
+        // Update local state
+        setNotes(prev => prev.filter(n => n.id !== noteId));
+        if (selectedNote?.id === noteId) {
+          setSelectedNote(null);
+          setEditorState({
+            content: '',
+            title: '',
+            category: 'personal',
+            priority: 'medium',
+            tags: [],
+            isBookmarked: false,
+            isPrivate: true,
+            hasUnsavedChanges: false,
+            isAutoSaving: false,
+            actionItems: [],
+          });
+        }
+
+        onNoteDeleted?.(noteId);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to delete note';
+        setError(errorMessage);
+        onError?.(errorMessage, 'delete_note');
+      }
+    },
+    [userId, selectedNote?.id, onNoteDeleted, onError]
+  );
 
   /**
    * Auto-save functionality
    */
   useEffect(() => {
-    if (!autoSave.enabled || !editorState.hasUnsavedChanges || !selectedNote?.id) {
+    if (
+      !autoSave.enabled ||
+      !editorState.hasUnsavedChanges ||
+      !selectedNote?.id
+    ) {
       return;
     }
 
@@ -930,7 +1028,15 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [editorState.hasUnsavedChanges, editorState.content, editorState.title, autoSave.enabled, autoSave.intervalSeconds, selectedNote?.id, saveNote]);
+  }, [
+    editorState.hasUnsavedChanges,
+    editorState.content,
+    editorState.title,
+    autoSave.enabled,
+    autoSave.intervalSeconds,
+    selectedNote?.id,
+    saveNote,
+  ]);
 
   /**
    * Initialize component
@@ -944,62 +1050,69 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
   /**
    * Handle content changes
    */
-  const handleContentChange = useCallback((field: keyof EditorState, value: any) => {
-    setEditorState(prev => ({
-      ...prev,
-      [field]: value,
-      hasUnsavedChanges: true,
-    }));
+  const handleContentChange = useCallback(
+    (field: keyof EditorState, value: any) => {
+      setEditorState(prev => ({
+        ...prev,
+        [field]: value,
+        hasUnsavedChanges: true,
+      }));
 
-    if (field === 'actionItems') {
-      onActionItemsChanged?.(value);
-    }
-  }, [onActionItemsChanged]);
+      if (field === 'actionItems') {
+        onActionItemsChanged?.(value);
+      }
+    },
+    [onActionItemsChanged]
+  );
 
   /**
    * Handle note selection
    */
-  const handleNoteSelect = useCallback(async (note: WorkbookNote) => {
-    try {
-      setLoading(true);
+  const handleNoteSelect = useCallback(
+    async (note: WorkbookNote) => {
+      try {
+        setLoading(true);
 
-      // Fetch detailed note
-      const response = await fetch(`/api/workbook/notes/${note.id}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch note details');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        const detailedNote = data.data;
-        setSelectedNote(detailedNote);
-        setEditorState({
-          content: detailedNote.content || '',
-          title: detailedNote.title || '',
-          category: detailedNote.category || 'personal',
-          priority: detailedNote.priority || 'medium',
-          tags: detailedNote.tags || [],
-          isBookmarked: detailedNote.isBookmarked || false,
-          isPrivate: detailedNote.isPrivate ?? true,
-          hasUnsavedChanges: false,
-          lastSaved: new Date(detailedNote.updatedAt),
-          isAutoSaving: false,
-          actionItems: detailedNote.actionItems || [],
+        // Fetch detailed note
+        const response = await fetch(`/api/workbook/notes/${note.id}`, {
+          method: 'GET',
+          credentials: 'include',
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch note details');
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const detailedNote = data.data;
+          setSelectedNote(detailedNote);
+          setEditorState({
+            content: detailedNote.content || '',
+            title: detailedNote.title || '',
+            category: detailedNote.category || 'personal',
+            priority: detailedNote.priority || 'medium',
+            tags: detailedNote.tags || [],
+            isBookmarked: detailedNote.isBookmarked || false,
+            isPrivate: detailedNote.isPrivate ?? true,
+            hasUnsavedChanges: false,
+            lastSaved: new Date(detailedNote.updatedAt),
+            isAutoSaving: false,
+            actionItems: detailedNote.actionItems || [],
+          });
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to load note';
+        setError(errorMessage);
+        onError?.(errorMessage, 'select_note');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load note';
-      setError(errorMessage);
-      onError?.(errorMessage, 'select_note');
-    } finally {
-      setLoading(false);
-    }
-  }, [onError]);
+    },
+    [onError]
+  );
 
   /**
    * Create new note
@@ -1023,41 +1136,49 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
   /**
    * Apply text formatting
    */
-  const applyFormatting = useCallback((format: Partial<FormattingOptions>) => {
-    setFormatting(prev => ({ ...prev, ...format }));
+  const applyFormatting = useCallback(
+    (format: Partial<FormattingOptions>) => {
+      setFormatting(prev => ({ ...prev, ...format }));
 
-    // Apply formatting to textarea (basic implementation)
-    if (contentRef.current) {
-      const textarea = contentRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
+      // Apply formatting to textarea (basic implementation)
+      if (contentRef.current) {
+        const textarea = contentRef.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
 
-      if (selectedText) {
-        let formattedText = selectedText;
+        if (selectedText) {
+          let formattedText = selectedText;
 
-        // Apply basic markdown-style formatting
-        if (format.bold !== undefined && format.bold) {
-          formattedText = `**${formattedText}**`;
+          // Apply basic markdown-style formatting
+          if (format.bold !== undefined && format.bold) {
+            formattedText = `**${formattedText}**`;
+          }
+          if (format.italic !== undefined && format.italic) {
+            formattedText = `*${formattedText}*`;
+          }
+
+          const newContent =
+            textarea.value.substring(0, start) +
+            formattedText +
+            textarea.value.substring(end);
+
+          handleContentChange('content', newContent);
         }
-        if (format.italic !== undefined && format.italic) {
-          formattedText = `*${formattedText}*`;
-        }
-
-        const newContent =
-          textarea.value.substring(0, start) +
-          formattedText +
-          textarea.value.substring(end);
-
-        handleContentChange('content', newContent);
       }
-    }
-  }, [handleContentChange]);
+    },
+    [handleContentChange]
+  );
 
   const contentStyles = useMemo(() => {
     const styles: React.CSSProperties = {
       textAlign: formatting.alignment,
-      fontSize: formatting.fontSize === 'small' ? '14px' : formatting.fontSize === 'large' ? '18px' : '16px',
+      fontSize:
+        formatting.fontSize === 'small'
+          ? '14px'
+          : formatting.fontSize === 'large'
+            ? '18px'
+            : '16px',
       fontWeight: formatting.bold ? 'bold' : 'normal',
       fontStyle: formatting.italic ? 'italic' : 'normal',
       textDecoration: formatting.underline ? 'underline' : 'none',
@@ -1066,7 +1187,9 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
   }, [formatting]);
 
   return (
-    <div className={`flex h-[600px] bg-background-secondary border border-border-primary rounded-lg overflow-hidden ${className}`}>
+    <div
+      className={`flex h-[600px] bg-background-secondary border border-border-primary rounded-lg overflow-hidden ${className}`}
+    >
       {/* Notes List Sidebar */}
       {showNotesList && (
         <div className='w-80 border-r border-border-primary flex flex-col'>
@@ -1128,7 +1251,9 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
                   </span>
                 )}
                 {editorState.hasUnsavedChanges && (
-                  <span className='text-xs text-orange-500'>Unsaved changes</span>
+                  <span className='text-xs text-orange-500'>
+                    Unsaved changes
+                  </span>
                 )}
               </div>
             </div>
@@ -1146,8 +1271,14 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
               )}
 
               <Button
-                onClick={() => selectedNote ? saveNote(editorState, selectedNote.id) : saveNote(editorState)}
-                disabled={!editorState.hasUnsavedChanges || editorState.isAutoSaving}
+                onClick={() =>
+                  selectedNote
+                    ? saveNote(editorState, selectedNote.id)
+                    : saveNote(editorState)
+                }
+                disabled={
+                  !editorState.hasUnsavedChanges || editorState.isAutoSaving
+                }
                 size='sm'
               >
                 <Save className='w-4 h-4 mr-1' />
@@ -1162,7 +1293,12 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
               <label className='block text-text-secondary mb-1'>Category</label>
               <select
                 value={editorState.category}
-                onChange={(e) => handleContentChange('category', e.target.value as NoteCategory)}
+                onChange={e =>
+                  handleContentChange(
+                    'category',
+                    e.target.value as NoteCategory
+                  )
+                }
                 className='w-full px-2 py-1 bg-background-secondary border border-border-primary rounded text-text-primary'
               >
                 <option value='personal'>Personal</option>
@@ -1179,7 +1315,12 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
               <label className='block text-text-secondary mb-1'>Priority</label>
               <select
                 value={editorState.priority}
-                onChange={(e) => handleContentChange('priority', e.target.value as NotePriority)}
+                onChange={e =>
+                  handleContentChange(
+                    'priority',
+                    e.target.value as NotePriority
+                  )
+                }
                 className='w-full px-2 py-1 bg-background-secondary border border-border-primary rounded text-text-primary'
               >
                 <option value='low'>Low</option>
@@ -1194,7 +1335,9 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
                 <input
                   type='checkbox'
                   checked={editorState.isBookmarked}
-                  onChange={(e) => handleContentChange('isBookmarked', e.target.checked)}
+                  onChange={e =>
+                    handleContentChange('isBookmarked', e.target.checked)
+                  }
                   className='rounded border-border-primary'
                 />
                 Bookmark
@@ -1203,7 +1346,9 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
                 <input
                   type='checkbox'
                   checked={editorState.isPrivate}
-                  onChange={(e) => handleContentChange('isPrivate', e.target.checked)}
+                  onChange={e =>
+                    handleContentChange('isPrivate', e.target.checked)
+                  }
                   className='rounded border-border-primary'
                 />
                 Private
@@ -1216,7 +1361,15 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
                 type='text'
                 placeholder='comma-separated'
                 value={editorState.tags.join(', ')}
-                onChange={(e) => handleContentChange('tags', e.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}
+                onChange={e =>
+                  handleContentChange(
+                    'tags',
+                    e.target.value
+                      .split(',')
+                      .map(tag => tag.trim())
+                      .filter(Boolean)
+                  )
+                }
                 className='w-full px-2 py-1 bg-background-secondary border border-border-primary rounded text-text-primary'
               />
             </div>
@@ -1257,7 +1410,7 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
                 type='text'
                 placeholder='Note title...'
                 value={editorState.title}
-                onChange={(e) => handleContentChange('title', e.target.value)}
+                onChange={e => handleContentChange('title', e.target.value)}
                 className='w-full text-xl font-semibold bg-transparent border-none outline-none text-text-primary placeholder-text-secondary'
               />
             </div>
@@ -1268,7 +1421,7 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
                 ref={contentRef}
                 placeholder='Start writing your note...'
                 value={editorState.content}
-                onChange={(e) => handleContentChange('content', e.target.value)}
+                onChange={e => handleContentChange('content', e.target.value)}
                 style={contentStyles}
                 maxLength={maxContentLength}
                 className='w-full h-full resize-none bg-transparent border-none outline-none text-text-primary placeholder-text-secondary'
@@ -1287,7 +1440,9 @@ export const NoteTaker: React.FC<NoteTakerProps> = ({
               <div className='p-4 h-full overflow-y-auto'>
                 <ActionItemsManager
                   actionItems={editorState.actionItems}
-                  onActionItemsChange={(items) => handleContentChange('actionItems', items)}
+                  onActionItemsChange={items =>
+                    handleContentChange('actionItems', items)
+                  }
                   disabled={editorState.isAutoSaving}
                 />
               </div>

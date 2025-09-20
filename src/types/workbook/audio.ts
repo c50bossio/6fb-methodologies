@@ -3,7 +3,7 @@
  * Complete types for audio features in the workbook system
  */
 
-import { UUID, Timestamp, JSONObject } from './core';
+import type { UUID, Timestamp, JSONObject } from './core';
 
 // Audio Recording Types
 export interface AudioRecording {

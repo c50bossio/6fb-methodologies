@@ -271,7 +271,9 @@ async function updateLessonProgress(
     `,
       [
         now,
-        completionData.timeSpentMinutes ? completionData.timeSpentMinutes * 60 : 0,
+        completionData.timeSpentMinutes
+          ? completionData.timeSpentMinutes * 60
+          : 0,
         completionData.score,
         userId,
         lessonId,
@@ -296,7 +298,9 @@ async function updateLessonProgress(
         lessonId,
         moduleId,
         now,
-        completionData.timeSpentMinutes ? completionData.timeSpentMinutes * 60 : 0,
+        completionData.timeSpentMinutes
+          ? completionData.timeSpentMinutes * 60
+          : 0,
         completionData.score,
       ]
     );
@@ -329,7 +333,8 @@ async function updateModuleProgress(
 
   const totalLessons = parseInt(moduleStats?.total_lessons || '0');
   const completedLessons = parseInt(moduleStats?.completed_lessons || '0');
-  const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const progressPercent =
+    totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   const isModuleCompleted = progressPercent === 100;
 
   // Update or create module progress
@@ -478,7 +483,7 @@ export async function POST(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -547,7 +552,8 @@ export async function POST(
     );
 
     if (!accessValidation.isValid) {
-      const statusCode = accessValidation.code === 'LESSON_NOT_FOUND' ? 404 : 403;
+      const statusCode =
+        accessValidation.code === 'LESSON_NOT_FOUND' ? 404 : 403;
       return NextResponse.json(
         {
           success: false,
@@ -562,7 +568,7 @@ export async function POST(
     const lesson = accessValidation.lesson!;
 
     // Use database transaction for consistency
-    const result = await db.transaction(async (client) => {
+    const result = await db.transaction(async client => {
       // Update lesson progress
       const progressRecord = await updateLessonProgress(
         workbookUser.id,
@@ -643,7 +649,6 @@ export async function POST(
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Lesson completion POST error:', error);
 

@@ -26,7 +26,8 @@ export const ProgressStatus = {
   EXPIRED: 'expired',
 } as const;
 
-export type ProgressStatusType = typeof ProgressStatus[keyof typeof ProgressStatus];
+export type ProgressStatusType =
+  (typeof ProgressStatus)[keyof typeof ProgressStatus];
 
 export const ActivityType = {
   LESSON_START: 'lesson_start',
@@ -43,7 +44,7 @@ export const ActivityType = {
   SESSION_LEAVE: 'session_leave',
 } as const;
 
-export type ActivityTypeType = typeof ActivityType[keyof typeof ActivityType];
+export type ActivityTypeType = (typeof ActivityType)[keyof typeof ActivityType];
 
 export const CompletionReasonType = {
   CONTENT_VIEWED: 'content_viewed',
@@ -54,7 +55,8 @@ export const CompletionReasonType = {
   AUTOMATIC_COMPLETION: 'automatic_completion',
 } as const;
 
-export type CompletionReason = typeof CompletionReasonType[keyof typeof CompletionReasonType];
+export type CompletionReason =
+  (typeof CompletionReasonType)[keyof typeof CompletionReasonType];
 
 // =============================================================================
 // Progress Tracking Interfaces
@@ -205,7 +207,13 @@ export interface AssessmentProgress {
   // Attempt tracking
   attemptNumber: number;
   maxAttempts?: number;
-  status: 'not_started' | 'in_progress' | 'submitted' | 'graded' | 'passed' | 'failed';
+  status:
+    | 'not_started'
+    | 'in_progress'
+    | 'submitted'
+    | 'graded'
+    | 'passed'
+    | 'failed';
 
   // Timing
   startedAt?: Timestamp;
@@ -292,8 +300,13 @@ export interface ProgressStateTransition {
   from: ProgressStatusType;
   to: ProgressStatusType;
   condition?: (progress: ModuleProgress | LessonProgress) => boolean;
-  action?: (progress: ModuleProgress | LessonProgress) => Partial<ModuleProgress | LessonProgress>;
-  validation?: (progress: ModuleProgress | LessonProgress) => { valid: boolean; errors?: string[] };
+  action?: (
+    progress: ModuleProgress | LessonProgress
+  ) => Partial<ModuleProgress | LessonProgress>;
+  validation?: (progress: ModuleProgress | LessonProgress) => {
+    valid: boolean;
+    errors?: string[];
+  };
 }
 
 export interface ProgressUpdate {
@@ -418,13 +431,27 @@ export interface ProgressReport {
 // Base schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const ProgressStatusSchema = z.enum(['not_started', 'in_progress', 'completed', 'locked', 'failed', 'expired']);
+export const ProgressStatusSchema = z.enum([
+  'not_started',
+  'in_progress',
+  'completed',
+  'locked',
+  'failed',
+  'expired',
+]);
 export const ActivityTypeSchema = z.enum([
-  'lesson_start', 'lesson_progress', 'lesson_complete',
-  'module_start', 'module_complete',
-  'assessment_start', 'assessment_submit', 'assessment_complete',
-  'note_create', 'audio_record',
-  'session_join', 'session_leave'
+  'lesson_start',
+  'lesson_progress',
+  'lesson_complete',
+  'module_start',
+  'module_complete',
+  'assessment_start',
+  'assessment_submit',
+  'assessment_complete',
+  'note_create',
+  'audio_record',
+  'session_join',
+  'session_leave',
 ]);
 
 // Progress metrics schema
@@ -447,11 +474,13 @@ export const ProgressMetricsSchema = z.object({
   averageScore: z.number().min(0).max(100).optional(),
   averageTimePerLesson: z.number().min(0),
   retakeCount: z.number().min(0),
-  weeklyGoal: z.object({
-    target: z.number().min(0),
-    current: z.number().min(0),
-    achieved: z.boolean(),
-  }).optional(),
+  weeklyGoal: z
+    .object({
+      target: z.number().min(0),
+      current: z.number().min(0),
+      achieved: z.boolean(),
+    })
+    .optional(),
 });
 
 // Module progress schema
@@ -469,7 +498,16 @@ export const ModuleProgressSchema = z.object({
   currentLessonId: UUIDSchema.optional(),
   currentLessonPosition: z.number().min(0).max(100).optional(),
   completionRate: z.number().min(0).max(100),
-  completionReason: z.enum(['content_viewed', 'time_requirement_met', 'assessment_passed', 'interaction_completed', 'manual_completion', 'automatic_completion']).optional(),
+  completionReason: z
+    .enum([
+      'content_viewed',
+      'time_requirement_met',
+      'assessment_passed',
+      'interaction_completed',
+      'manual_completion',
+      'automatic_completion',
+    ])
+    .optional(),
   assessmentsCompleted: z.number().min(0),
   totalAssessments: z.number().min(0),
   averageScore: z.number().min(0).max(100).optional(),
@@ -531,7 +569,14 @@ export const AssessmentProgressSchema = z.object({
   assessmentId: UUIDSchema,
   attemptNumber: z.number().min(1),
   maxAttempts: z.number().min(1).optional(),
-  status: z.enum(['not_started', 'in_progress', 'submitted', 'graded', 'passed', 'failed']),
+  status: z.enum([
+    'not_started',
+    'in_progress',
+    'submitted',
+    'graded',
+    'passed',
+    'failed',
+  ]),
   startedAt: TimestampSchema.optional(),
   submittedAt: TimestampSchema.optional(),
   completedAt: TimestampSchema.optional(),
@@ -543,14 +588,16 @@ export const AssessmentProgressSchema = z.object({
   totalQuestions: z.number().min(0),
   answeredQuestions: z.number().min(0),
   correctAnswers: z.number().min(0),
-  responses: z.array(z.object({
-    questionId: z.string(),
-    answer: z.any(),
-    isCorrect: z.boolean().optional(),
-    pointsEarned: z.number().min(0),
-    timeSpent: z.number().min(0),
-    attempts: z.number().min(1),
-  })),
+  responses: z.array(
+    z.object({
+      questionId: z.string(),
+      answer: z.any(),
+      isCorrect: z.boolean().optional(),
+      pointsEarned: z.number().min(0),
+      timeSpent: z.number().min(0),
+      attempts: z.number().min(1),
+    })
+  ),
   feedback: z.string().optional(),
   allowReview: z.boolean(),
   reviewedAt: TimestampSchema.optional(),
@@ -574,17 +621,21 @@ export const ActivityRecordSchema = z.object({
   duration: z.number().min(0).optional(),
   result: z.string().optional(),
   timestamp: TimestampSchema,
-  deviceInfo: z.object({
-    type: z.enum(['desktop', 'mobile', 'tablet']),
-    browser: z.string().optional(),
-    os: z.string().optional(),
-  }).optional(),
+  deviceInfo: z
+    .object({
+      type: z.enum(['desktop', 'mobile', 'tablet']),
+      browser: z.string().optional(),
+      os: z.string().optional(),
+    })
+    .optional(),
   ipAddress: z.string().optional(),
-  location: z.object({
-    country: z.string().optional(),
-    region: z.string().optional(),
-    city: z.string().optional(),
-  }).optional(),
+  location: z
+    .object({
+      country: z.string().optional(),
+      region: z.string().optional(),
+      city: z.string().optional(),
+    })
+    .optional(),
   metadata: z.record(z.any()),
 });
 
@@ -595,7 +646,8 @@ export const CreateModuleProgressInputSchema = ModuleProgressSchema.omit({
   updatedAt: true,
 });
 
-export const UpdateModuleProgressInputSchema = CreateModuleProgressInputSchema.partial();
+export const UpdateModuleProgressInputSchema =
+  CreateModuleProgressInputSchema.partial();
 
 export const CreateLessonProgressInputSchema = LessonProgressSchema.omit({
   id: true,
@@ -603,7 +655,8 @@ export const CreateLessonProgressInputSchema = LessonProgressSchema.omit({
   updatedAt: true,
 });
 
-export const UpdateLessonProgressInputSchema = CreateLessonProgressInputSchema.partial();
+export const UpdateLessonProgressInputSchema =
+  CreateLessonProgressInputSchema.partial();
 
 // =============================================================================
 // State Transition Management
@@ -617,8 +670,8 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
   {
     from: ProgressStatus.NOT_STARTED,
     to: ProgressStatus.IN_PROGRESS,
-    condition: (progress) => true, // Always allowed
-    action: (progress) => ({
+    condition: progress => true, // Always allowed
+    action: progress => ({
       startedAt: new Date().toISOString(),
       lastAccessedAt: new Date().toISOString(),
     }),
@@ -626,15 +679,17 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
   {
     from: ProgressStatus.NOT_STARTED,
     to: ProgressStatus.LOCKED,
-    condition: (progress) => !('prerequisitesMet' in progress) || !progress.prerequisitesMet,
+    condition: progress =>
+      !('prerequisitesMet' in progress) || !progress.prerequisitesMet,
   },
 
   // From LOCKED
   {
     from: ProgressStatus.LOCKED,
     to: ProgressStatus.NOT_STARTED,
-    condition: (progress) => ('prerequisitesMet' in progress) && progress.prerequisitesMet,
-    action: (progress) => ({
+    condition: progress =>
+      'prerequisitesMet' in progress && progress.prerequisitesMet,
+    action: progress => ({
       unlockedAt: new Date().toISOString(),
     }),
   },
@@ -643,12 +698,12 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
   {
     from: ProgressStatus.IN_PROGRESS,
     to: ProgressStatus.COMPLETED,
-    condition: (progress) => progress.completionRate >= 100,
-    action: (progress) => ({
+    condition: progress => progress.completionRate >= 100,
+    action: progress => ({
       completedAt: new Date().toISOString(),
       status: ProgressStatus.COMPLETED,
     }),
-    validation: (progress) => {
+    validation: progress => {
       if ('meetsCriteria' in progress) {
         const criteria = progress.meetsCriteria;
         const unmetCriteria = Object.entries(criteria)
@@ -658,7 +713,9 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
         if (unmetCriteria.length > 0) {
           return {
             valid: false,
-            errors: [`Completion criteria not met: ${unmetCriteria.join(', ')}`],
+            errors: [
+              `Completion criteria not met: ${unmetCriteria.join(', ')}`,
+            ],
           };
         }
       }
@@ -668,9 +725,15 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
   {
     from: ProgressStatus.IN_PROGRESS,
     to: ProgressStatus.FAILED,
-    condition: (progress) => {
-      if ('assessmentScore' in progress && progress.assessmentScore !== undefined) {
-        return progress.assessmentScore < ('passingScore' in progress ? progress.passingScore || 70 : 70);
+    condition: progress => {
+      if (
+        'assessmentScore' in progress &&
+        progress.assessmentScore !== undefined
+      ) {
+        return (
+          progress.assessmentScore <
+          ('passingScore' in progress ? progress.passingScore || 70 : 70)
+        );
       }
       return false;
     },
@@ -680,9 +743,11 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
   {
     from: ProgressStatus.FAILED,
     to: ProgressStatus.IN_PROGRESS,
-    condition: (progress) => {
+    condition: progress => {
       if ('attempts' in progress && 'maxAttempts' in progress) {
-        return !progress.maxAttempts || progress.attempts < progress.maxAttempts;
+        return (
+          !progress.maxAttempts || progress.attempts < progress.maxAttempts
+        );
       }
       return true;
     },
@@ -692,7 +757,7 @@ export const PROGRESS_STATE_TRANSITIONS: ProgressStateTransition[] = [
   {
     from: ProgressStatus.COMPLETED,
     to: ProgressStatus.IN_PROGRESS,
-    condition: (progress) => true, // Allow re-taking completed content
+    condition: progress => true, // Allow re-taking completed content
   },
 ];
 
@@ -708,14 +773,22 @@ export function isValidTransition(
   to: ProgressStatusType,
   progress: ModuleProgress | LessonProgress
 ): { valid: boolean; errors?: string[] } {
-  const transition = PROGRESS_STATE_TRANSITIONS.find(t => t.from === from && t.to === to);
+  const transition = PROGRESS_STATE_TRANSITIONS.find(
+    t => t.from === from && t.to === to
+  );
 
   if (!transition) {
-    return { valid: false, errors: [`Invalid transition from ${from} to ${to}`] };
+    return {
+      valid: false,
+      errors: [`Invalid transition from ${from} to ${to}`],
+    };
   }
 
   if (transition.condition && !transition.condition(progress)) {
-    return { valid: false, errors: [`Transition condition not met for ${from} to ${to}`] };
+    return {
+      valid: false,
+      errors: [`Transition condition not met for ${from} to ${to}`],
+    };
   }
 
   if (transition.validation) {
@@ -737,7 +810,9 @@ export function applyStateTransition(
   );
 
   if (!transition) {
-    throw new Error(`Invalid transition from ${progress.status} to ${newStatus}`);
+    throw new Error(
+      `Invalid transition from ${progress.status} to ${newStatus}`
+    );
   }
 
   const updates: Partial<ModuleProgress | LessonProgress> = {
@@ -757,7 +832,12 @@ export function applyStateTransition(
  */
 export function calculateProgressPercentage(
   progress: ModuleProgress | LessonProgress,
-  weights: { content: number; time: number; assessments: number; interactions: number } = {
+  weights: {
+    content: number;
+    time: number;
+    assessments: number;
+    interactions: number;
+  } = {
     content: 0.4,
     time: 0.2,
     assessments: 0.3,
@@ -769,11 +849,14 @@ export function calculateProgressPercentage(
 
   // Content progress
   if ('lessonsCompleted' in progress) {
-    const contentProgress = (progress.lessonsCompleted / progress.totalLessons) * 100;
+    const contentProgress =
+      (progress.lessonsCompleted / progress.totalLessons) * 100;
     weightedSum += contentProgress * weights.content;
     totalWeight += weights.content;
   } else if ('contentBlocksCompleted' in progress) {
-    const contentProgress = (progress.contentBlocksCompleted.length / progress.totalContentBlocks) * 100;
+    const contentProgress =
+      (progress.contentBlocksCompleted.length / progress.totalContentBlocks) *
+      100;
     weightedSum += contentProgress * weights.content;
     totalWeight += weights.content;
   }
@@ -786,7 +869,8 @@ export function calculateProgressPercentage(
 
   // Interaction progress
   if ('interactionsCompleted' in progress) {
-    const interactionProgress = (progress.interactionsCompleted / progress.totalInteractions) * 100;
+    const interactionProgress =
+      (progress.interactionsCompleted / progress.totalInteractions) * 100;
     weightedSum += interactionProgress * weights.interactions;
     totalWeight += weights.interactions;
   }
@@ -813,24 +897,36 @@ export function checkCompletionCriteria(
   const criteria = lesson.completionCriteria;
 
   // Check if all content blocks are viewed
-  if (criteria.viewAllContent &&
-      lessonProgress.contentBlocksViewed.length < lessonProgress.totalContentBlocks) {
+  if (
+    criteria.viewAllContent &&
+    lessonProgress.contentBlocksViewed.length <
+      lessonProgress.totalContentBlocks
+  ) {
     missing.push('View all content blocks');
   }
 
   // Check assessment requirements
-  if (criteria.passAssessment && lessonProgress.hasAssessment && !lessonProgress.assessmentPassed) {
+  if (
+    criteria.passAssessment &&
+    lessonProgress.hasAssessment &&
+    !lessonProgress.assessmentPassed
+  ) {
     missing.push('Pass assessment');
   }
 
   // Check minimum time spent
-  if (criteria.minimumTimeSpent > 0 && lessonProgress.timeSpent < criteria.minimumTimeSpent) {
+  if (
+    criteria.minimumTimeSpent > 0 &&
+    lessonProgress.timeSpent < criteria.minimumTimeSpent
+  ) {
     missing.push(`Spend at least ${criteria.minimumTimeSpent} minutes`);
   }
 
   // Check interaction requirements
-  if (criteria.interactionRequired &&
-      lessonProgress.interactionsCompleted < lessonProgress.totalInteractions) {
+  if (
+    criteria.interactionRequired &&
+    lessonProgress.interactionsCompleted < lessonProgress.totalInteractions
+  ) {
     missing.push('Complete all required interactions');
   }
 
@@ -846,11 +942,15 @@ export function calculateLearningStreak(
 ): { current: number; longest: number; lastDate: string } {
   // Sort activities by date (most recent first)
   const sortedActivities = activities
-    .filter(activity =>
-      activity.type === ActivityType.LESSON_COMPLETE ||
-      activity.type === ActivityType.MODULE_COMPLETE
+    .filter(
+      activity =>
+        activity.type === ActivityType.LESSON_COMPLETE ||
+        activity.type === ActivityType.MODULE_COMPLETE
     )
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
 
   if (sortedActivities.length === 0) {
     return { current: 0, longest: 0, lastDate: '' };
@@ -858,8 +958,8 @@ export function calculateLearningStreak(
 
   // Group activities by date
   const activityDates = new Set(
-    sortedActivities.map(activity =>
-      new Date(activity.timestamp).toISOString().split('T')[0]
+    sortedActivities.map(
+      activity => new Date(activity.timestamp).toISOString().split('T')[0]
     )
   );
 
@@ -871,7 +971,8 @@ export function calculateLearningStreak(
 
   const today = currentDate.toISOString().split('T')[0];
   const yesterday = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000)
-    .toISOString().split('T')[0];
+    .toISOString()
+    .split('T')[0];
 
   // Calculate current streak
   for (let i = 0; i < uniqueDates.length; i++) {
@@ -889,7 +990,8 @@ export function calculateLearningStreak(
     } else {
       const prevDate = uniqueDates[i - 1];
       const daysDiff = Math.round(
-        (new Date(prevDate).getTime() - new Date(date).getTime()) / (24 * 60 * 60 * 1000)
+        (new Date(prevDate).getTime() - new Date(date).getTime()) /
+          (24 * 60 * 60 * 1000)
       );
 
       if (daysDiff === 1) {
@@ -933,8 +1035,8 @@ export function generateProgressAnalytics(
 
   // Calculate basic metrics
   const activeDays = new Set(
-    periodActivities.map(activity =>
-      new Date(activity.timestamp).toISOString().split('T')[0]
+    periodActivities.map(
+      activity => new Date(activity.timestamp).toISOString().split('T')[0]
     )
   ).size;
 
@@ -946,7 +1048,8 @@ export function generateProgressAnalytics(
     periodActivities.map(activity => activity.sessionId)
   ).size;
 
-  const averageSessionDuration = sessionCount > 0 ? totalTimeSpent / sessionCount : 0;
+  const averageSessionDuration =
+    sessionCount > 0 ? totalTimeSpent / sessionCount : 0;
 
   // Get completions in this period
   const lessonsCompleted = periodActivities.filter(
@@ -963,11 +1066,17 @@ export function generateProgressAnalytics(
 
   // Calculate average score from assessment activities
   const assessmentActivities = periodActivities.filter(
-    activity => activity.type === ActivityType.ASSESSMENT_COMPLETE && activity.details.score
+    activity =>
+      activity.type === ActivityType.ASSESSMENT_COMPLETE &&
+      activity.details.score
   );
-  const averageScore = assessmentActivities.length > 0
-    ? assessmentActivities.reduce((sum, activity) => sum + activity.details.score, 0) / assessmentActivities.length
-    : 0;
+  const averageScore =
+    assessmentActivities.length > 0
+      ? assessmentActivities.reduce(
+          (sum, activity) => sum + activity.details.score,
+          0
+        ) / assessmentActivities.length
+      : 0;
 
   // Find most active patterns
   const hourCounts = new Array(24).fill(0);
@@ -995,12 +1104,17 @@ export function generateProgressAnalytics(
     modulesCompleted,
     assessmentsTaken,
     averageScore,
-    notesCreated: periodActivities.filter(a => a.type === ActivityType.NOTE_CREATE).length,
+    notesCreated: periodActivities.filter(
+      a => a.type === ActivityType.NOTE_CREATE
+    ).length,
     audioRecorded: periodActivities
       .filter(a => a.type === ActivityType.AUDIO_RECORD && a.duration)
       .reduce((sum, a) => sum + (a.duration || 0), 0),
-    downloadsCount: periodActivities.filter(a => a.details.action === 'download').length,
-    searchQueries: periodActivities.filter(a => a.details.action === 'search').length,
+    downloadsCount: periodActivities.filter(
+      a => a.details.action === 'download'
+    ).length,
+    searchQueries: periodActivities.filter(a => a.details.action === 'search')
+      .length,
     mostActiveHour,
     mostActiveDay,
     learningVelocity: lessonsCompleted / Math.max(1, activeDays / 7), // lessons per week
@@ -1041,7 +1155,9 @@ export function validateProgressData(
     if (error instanceof z.ZodError) {
       return {
         valid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.errors.map(
+          err => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return { valid: false, errors: ['Invalid data format'] };
@@ -1053,34 +1169,48 @@ export function validateProgressData(
 // =============================================================================
 
 export function isModuleProgress(obj: any): obj is ModuleProgress {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.moduleId === 'string' &&
-         typeof obj.lessonsCompleted === 'number';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.moduleId === 'string' &&
+    typeof obj.lessonsCompleted === 'number'
+  );
 }
 
 export function isLessonProgress(obj: any): obj is LessonProgress {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.lessonId === 'string' &&
-         typeof obj.progress === 'number';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.lessonId === 'string' &&
+    typeof obj.progress === 'number'
+  );
 }
 
 export function isAssessmentProgress(obj: any): obj is AssessmentProgress {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.assessmentId === 'string' &&
-         typeof obj.attemptNumber === 'number';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.assessmentId === 'string' &&
+    typeof obj.attemptNumber === 'number'
+  );
 }
 
 // =============================================================================
 // Input/Output Types for API
 // =============================================================================
 
-export type CreateModuleProgressInput = z.infer<typeof CreateModuleProgressInputSchema>;
-export type UpdateModuleProgressInput = z.infer<typeof UpdateModuleProgressInputSchema>;
-export type CreateLessonProgressInput = z.infer<typeof CreateLessonProgressInputSchema>;
-export type UpdateLessonProgressInput = z.infer<typeof UpdateLessonProgressInputSchema>;
+export type CreateModuleProgressInput = z.infer<
+  typeof CreateModuleProgressInputSchema
+>;
+export type UpdateModuleProgressInput = z.infer<
+  typeof UpdateModuleProgressInputSchema
+>;
+export type CreateLessonProgressInput = z.infer<
+  typeof CreateLessonProgressInputSchema
+>;
+export type UpdateLessonProgressInput = z.infer<
+  typeof UpdateLessonProgressInputSchema
+>;
 
 // Export all validation schemas for use in API routes
 export const ValidationSchemas = {

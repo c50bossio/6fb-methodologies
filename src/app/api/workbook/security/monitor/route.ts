@@ -34,11 +34,7 @@ const SUSPICIOUS_PATTERNS = {
     /\/config/i,
     /\/backup/i,
   ],
-  HEADERS: [
-    'x-forwarded-for',
-    'x-real-ip',
-    'x-cluster-client-ip',
-  ],
+  HEADERS: ['x-forwarded-for', 'x-real-ip', 'x-cluster-client-ip'],
 };
 
 // Known attack signatures
@@ -69,13 +65,7 @@ const ATTACK_SIGNATURES = {
     /\/etc\/passwd/i,
     /\/windows\/system32/i,
   ],
-  COMMAND_INJECTION: [
-    /;.*\w+/,
-    /\|.*\w+/,
-    /&&.*\w+/,
-    /\$\(.*\)/,
-    /`.*`/,
-  ],
+  COMMAND_INJECTION: [/;.*\w+/, /\|.*\w+/, /&&.*\w+/, /\$\(.*\)/, /`.*`/],
 };
 
 function checkRateLimit(
@@ -214,7 +204,11 @@ function analyzeRequest(request: NextRequest): {
   }
 
   // Check for unusual request methods
-  if (!['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'].includes(request.method)) {
+  if (
+    !['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'].includes(
+      request.method
+    )
+  ) {
     threats.push('unusual_http_method');
     riskScore += 25;
   }
@@ -227,12 +221,13 @@ function analyzeRequest(request: NextRequest): {
 }
 
 async function getSecurityMetrics(timeframe: string = '24h') {
-  const hours = {
-    '1h': 1,
-    '24h': 24,
-    '7d': 24 * 7,
-    '30d': 24 * 30,
-  }[timeframe] || 24;
+  const hours =
+    {
+      '1h': 1,
+      '24h': 24,
+      '7d': 24 * 7,
+      '30d': 24 * 30,
+    }[timeframe] || 24;
 
   const startTime = new Date(Date.now() - hours * 60 * 60 * 1000);
 
@@ -250,11 +245,11 @@ async function getSecurityMetrics(timeframe: string = '24h') {
       { type: 'high_request_frequency', count: 7 },
     ],
     geographic_distribution: {
-      'US': 60,
-      'CA': 15,
-      'UK': 10,
-      'DE': 8,
-      'OTHER': 7,
+      US: 60,
+      CA: 15,
+      UK: 10,
+      DE: 8,
+      OTHER: 7,
     },
     alert_levels: {
       low: 12,
@@ -288,7 +283,8 @@ export async function GET(request: NextRequest) {
     const clientIP = getClientIP(request);
 
     // Rate limiting for security monitoring
-    if (!checkRateLimit(clientIP, 30, 300000)) { // 30 requests per 5 minutes
+    if (!checkRateLimit(clientIP, 30, 300000)) {
+      // 30 requests per 5 minutes
       return NextResponse.json(
         { error: 'Security monitoring rate limit exceeded' },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
@@ -315,7 +311,9 @@ export async function GET(request: NextRequest) {
     // Validate timeframe
     const validTimeframes = ['1h', '24h', '7d', '30d'];
     if (!validTimeframes.includes(timeframe)) {
-      throw new ValidationError('Invalid timeframe. Valid options: 1h, 24h, 7d, 30d');
+      throw new ValidationError(
+        'Invalid timeframe. Valid options: 1h, 24h, 7d, 30d'
+      );
     }
 
     // Get security metrics
@@ -343,21 +341,39 @@ export async function GET(request: NextRequest) {
 
     // Generate threat assessment
     const threatAssessment = {
-      current_threat_level: requestAnalysis.riskScore > 70 ? 'high'
-        : requestAnalysis.riskScore > 40 ? 'medium'
-        : requestAnalysis.riskScore > 20 ? 'low'
-        : 'minimal',
+      current_threat_level:
+        requestAnalysis.riskScore > 70
+          ? 'high'
+          : requestAnalysis.riskScore > 40
+            ? 'medium'
+            : requestAnalysis.riskScore > 20
+              ? 'low'
+              : 'minimal',
       active_threats: requestAnalysis.threats,
       risk_factors: [
-        ...(requestAnalysis.threats.includes('sql_injection_attempt') ? ['Active SQL injection attempts detected'] : []),
-        ...(requestAnalysis.threats.includes('xss_attempt') ? ['Cross-site scripting attempts detected'] : []),
-        ...(requestAnalysis.threats.includes('high_request_frequency') ? ['Unusual request frequency patterns'] : []),
-        ...(requestAnalysis.threats.includes('suspicious_user_agent') ? ['Suspicious automated tools detected'] : []),
+        ...(requestAnalysis.threats.includes('sql_injection_attempt')
+          ? ['Active SQL injection attempts detected']
+          : []),
+        ...(requestAnalysis.threats.includes('xss_attempt')
+          ? ['Cross-site scripting attempts detected']
+          : []),
+        ...(requestAnalysis.threats.includes('high_request_frequency')
+          ? ['Unusual request frequency patterns']
+          : []),
+        ...(requestAnalysis.threats.includes('suspicious_user_agent')
+          ? ['Suspicious automated tools detected']
+          : []),
       ],
       recommendations: [
-        ...(requestAnalysis.riskScore > 50 ? ['Enable enhanced monitoring mode'] : []),
-        ...(requestAnalysis.threats.includes('sql_injection_attempt') ? ['Review and update input validation'] : []),
-        ...(requestAnalysis.threats.includes('high_request_frequency') ? ['Consider implementing CAPTCHA'] : []),
+        ...(requestAnalysis.riskScore > 50
+          ? ['Enable enhanced monitoring mode']
+          : []),
+        ...(requestAnalysis.threats.includes('sql_injection_attempt')
+          ? ['Review and update input validation']
+          : []),
+        ...(requestAnalysis.threats.includes('high_request_frequency')
+          ? ['Consider implementing CAPTCHA']
+          : []),
         'Regularly review security logs',
         'Keep all security measures up to date',
       ],
@@ -378,18 +394,26 @@ export async function GET(request: NextRequest) {
       threat_assessment: threatAssessment,
       recent_events: recentEvents.slice(0, 10), // Last 10 events
       alerts: [
-        ...(requestAnalysis.riskScore > 80 ? [{
-          level: 'critical',
-          message: 'High-risk security threat detected',
-          timestamp: new Date().toISOString(),
-          details: requestAnalysis.threats,
-        }] : []),
-        ...(requestAnalysis.riskScore > 50 ? [{
-          level: 'warning',
-          message: 'Moderate security risk detected',
-          timestamp: new Date().toISOString(),
-          details: requestAnalysis.threats,
-        }] : []),
+        ...(requestAnalysis.riskScore > 80
+          ? [
+              {
+                level: 'critical',
+                message: 'High-risk security threat detected',
+                timestamp: new Date().toISOString(),
+                details: requestAnalysis.threats,
+              },
+            ]
+          : []),
+        ...(requestAnalysis.riskScore > 50
+          ? [
+              {
+                level: 'warning',
+                message: 'Moderate security risk detected',
+                timestamp: new Date().toISOString(),
+                details: requestAnalysis.threats,
+              },
+            ]
+          : []),
       ],
     };
 
@@ -440,7 +464,8 @@ export async function POST(request: NextRequest) {
     const clientIP = getClientIP(request);
 
     // Rate limiting for incident reporting
-    if (!checkRateLimit(clientIP, 10, 300000)) { // 10 reports per 5 minutes
+    if (!checkRateLimit(clientIP, 10, 300000)) {
+      // 10 reports per 5 minutes
       return NextResponse.json(
         { error: 'Incident reporting rate limit exceeded' },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
@@ -552,7 +577,10 @@ export async function OPTIONS(request: NextRequest) {
     status: 200,
     headers: {
       ...WORKBOOK_SECURITY_HEADERS,
-      'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://6fbmethodologies.com',
+      'Access-Control-Allow-Origin':
+        process.env.NODE_ENV === 'development'
+          ? '*'
+          : 'https://6fbmethodologies.com',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',

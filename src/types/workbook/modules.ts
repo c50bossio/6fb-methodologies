@@ -3,7 +3,7 @@
  * Comprehensive types for content structure and delivery
  */
 
-import { UUID, Timestamp, JSONObject } from './core';
+import type { UUID, Timestamp, JSONObject } from './core';
 
 // Content Types
 export type ContentType =

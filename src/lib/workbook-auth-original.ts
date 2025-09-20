@@ -19,7 +19,12 @@ const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
 
 // Security monitoring
 interface SecurityEvent {
-  type: 'auth_attempt' | 'auth_success' | 'auth_failure' | 'token_refresh' | 'suspicious_activity';
+  type:
+    | 'auth_attempt'
+    | 'auth_success'
+    | 'auth_failure'
+    | 'token_refresh'
+    | 'suspicious_activity';
   userId?: string;
   email?: string;
   ip: string;
@@ -29,7 +34,10 @@ interface SecurityEvent {
 }
 
 // In-memory store for failed attempts and security events
-const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil?: number }>();
+const failedAttempts = new Map<
+  string,
+  { count: number; lastAttempt: number; lockedUntil?: number }
+>();
 const securityEvents: SecurityEvent[] = [];
 const MAX_SECURITY_EVENTS = 1000; // Keep last 1000 events
 
@@ -203,7 +211,10 @@ export async function authenticateUser(
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check for suspicious activity
-    if (options.request && detectSuspiciousActivity(options.request, normalizedEmail)) {
+    if (
+      options.request &&
+      detectSuspiciousActivity(options.request, normalizedEmail)
+    ) {
       return {
         success: false,
         error: 'suspicious_activity',
@@ -283,7 +294,7 @@ export async function authenticateUser(
       ip: options.ip || 'unknown',
       userAgent: options.userAgent,
       timestamp: Date.now(),
-      details: { role, membershipVerified: options.verifyMembership !== false }
+      details: { role, membershipVerified: options.verifyMembership !== false },
     });
 
     return {
@@ -308,7 +319,9 @@ export async function authenticateUser(
         ip: options.ip,
         userAgent: options.userAgent,
         timestamp: Date.now(),
-        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       });
     }
 
@@ -589,7 +602,10 @@ export function generateSessionId(): string {
 /**
  * Validate input for common security issues
  */
-export function validateInput(input: string, type: 'email' | 'password' | 'general'): {
+export function validateInput(
+  input: string,
+  type: 'email' | 'password' | 'general'
+): {
   isValid: boolean;
   error?: string;
 } {
@@ -647,15 +663,23 @@ export function detectSuspiciousActivity(
   request: NextRequest,
   userEmail?: string
 ): boolean {
-  const ip = request.headers.get('x-forwarded-for') ||
-            request.headers.get('x-real-ip') || 'unknown';
+  const ip =
+    request.headers.get('x-forwarded-for') ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
   const userAgent = request.headers.get('user-agent') || '';
   const referer = request.headers.get('referer') || '';
 
   // Check for common bot patterns
   const botPatterns = [
-    /bot/i, /crawler/i, /spider/i, /scraper/i,
-    /curl/i, /wget/i, /python/i, /go-http/i
+    /bot/i,
+    /crawler/i,
+    /spider/i,
+    /scraper/i,
+    /curl/i,
+    /wget/i,
+    /python/i,
+    /go-http/i,
   ];
 
   if (botPatterns.some(pattern => pattern.test(userAgent))) {
@@ -665,21 +689,25 @@ export function detectSuspiciousActivity(
       ip,
       userAgent,
       timestamp: Date.now(),
-      details: { reason: 'bot_detected', userAgent }
+      details: { reason: 'bot_detected', userAgent },
     });
     return true;
   }
 
   // Check for suspicious referers
-  if (referer && !referer.includes('6fbmethodologies.com') &&
-      !referer.includes('localhost') && referer.includes('http')) {
+  if (
+    referer &&
+    !referer.includes('6fbmethodologies.com') &&
+    !referer.includes('localhost') &&
+    referer.includes('http')
+  ) {
     recordSecurityEvent({
       type: 'suspicious_activity',
       email: userEmail,
       ip,
       userAgent,
       timestamp: Date.now(),
-      details: { reason: 'suspicious_referer', referer }
+      details: { reason: 'suspicious_referer', referer },
     });
     return true;
   }
@@ -690,7 +718,9 @@ export function detectSuspiciousActivity(
 /**
  * Enhanced security headers for different environments
  */
-export function getSecurityHeaders(environment: 'development' | 'production' = 'development'): Record<string, string> {
+export function getSecurityHeaders(
+  environment: 'development' | 'production' = 'development'
+): Record<string, string> {
   const baseHeaders = {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
@@ -704,7 +734,8 @@ export function getSecurityHeaders(environment: 'development' | 'production' = '
   if (environment === 'production') {
     return {
       ...baseHeaders,
-      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+      'Strict-Transport-Security':
+        'max-age=31536000; includeSubDomains; preload',
       'Content-Security-Policy':
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline' https://cdn.openai.com; " +
@@ -778,7 +809,10 @@ export async function hashPassword(password: string): Promise<string> {
 /**
  * Verify password against hash
  */
-export async function verifyPasswordHash(password: string, hash: string): Promise<boolean> {
+export async function verifyPasswordHash(
+  password: string,
+  hash: string
+): Promise<boolean> {
   try {
     return await bcrypt.compare(password, hash);
   } catch (error) {
@@ -816,7 +850,9 @@ export function recordFailedAttempt(ip: string, email?: string): void {
   // Lock account if too many failures
   if (attempts.count >= FAILED_ATTEMPTS_LIMIT) {
     attempts.lockedUntil = now + LOCKOUT_DURATION;
-    console.warn(`🚨 IP ${ip} locked out due to ${attempts.count} failed attempts`);
+    console.warn(
+      `🚨 IP ${ip} locked out due to ${attempts.count} failed attempts`
+    );
   }
 
   failedAttempts.set(ip, attempts);
@@ -827,7 +863,10 @@ export function recordFailedAttempt(ip: string, email?: string): void {
     email,
     ip,
     timestamp: now,
-    details: { attemptCount: attempts.count, isLockedOut: !!attempts.lockedUntil }
+    details: {
+      attemptCount: attempts.count,
+      isLockedOut: !!attempts.lockedUntil,
+    },
   });
 }
 
@@ -914,7 +953,7 @@ export async function verifyWorkbookPassword(
       type: 'auth_success',
       email: normalizedEmail,
       ip,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
     console.log(`🔐 Password verification for ${normalizedEmail}: SUCCESS`);
   } else {

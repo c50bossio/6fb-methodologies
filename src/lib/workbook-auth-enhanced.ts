@@ -24,11 +24,13 @@ import {
 // ==============================================================
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.WORKBOOK_JWT_SECRET || 'your-super-secret-jwt-key-for-workbook-auth'
+  process.env.WORKBOOK_JWT_SECRET ||
+    'your-super-secret-jwt-key-for-workbook-auth'
 );
 
 const REFRESH_SECRET = new TextEncoder().encode(
-  process.env.WORKBOOK_REFRESH_SECRET || 'your-super-secret-refresh-key-for-workbook'
+  process.env.WORKBOOK_REFRESH_SECRET ||
+    'your-super-secret-refresh-key-for-workbook'
 );
 
 const JWT_ISSUER = '6fb-methodologies';
@@ -108,10 +110,7 @@ const TIER_PERMISSIONS: Record<SubscriptionTier, string[]> = {
     ...TIER_PERMISSIONS.basic,
     WORKBOOK_PERMISSIONS.VIEW_PREMIUM_CONTENT,
   ],
-  vip: [
-    ...TIER_PERMISSIONS.premium,
-    WORKBOOK_PERMISSIONS.VIEW_VIP_CONTENT,
-  ],
+  vip: [...TIER_PERMISSIONS.premium, WORKBOOK_PERMISSIONS.VIEW_VIP_CONTENT],
   enterprise: [
     ...TIER_PERMISSIONS.vip,
     WORKBOOK_PERMISSIONS.VIEW_ENTERPRISE_CONTENT,
@@ -288,14 +287,18 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
     // Validate payload structure
     return JWTPayloadSchema.parse(payload);
   } catch (error) {
-    throw new Error(`Invalid access token: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Invalid access token: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
 /**
  * Verify and decode refresh token
  */
-export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
+export async function verifyRefreshToken(
+  token: string
+): Promise<RefreshTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, REFRESH_SECRET, {
       issuer: JWT_ISSUER,
@@ -305,7 +308,9 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
     // Validate payload structure
     return RefreshTokenPayloadSchema.parse(payload);
   } catch (error) {
-    throw new Error(`Invalid refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Invalid refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -321,7 +326,10 @@ export function generateCsrfToken(): string {
 /**
  * Validate CSRF token
  */
-export function validateCsrfToken(token: string, maxAge: number = 60 * 60 * 1000): boolean {
+export function validateCsrfToken(
+  token: string,
+  maxAge: number = 60 * 60 * 1000
+): boolean {
   try {
     const [timestampStr, random] = token.split('-');
     const timestamp = parseInt(timestampStr, 10);
@@ -467,9 +475,7 @@ export function getUserPermissions(
   const tierPermissions = TIER_PERMISSIONS[subscriptionTier] || [];
 
   // Add role-based permissions
-  const rolePermissions = roles.flatMap(role =>
-    ROLE_PERMISSIONS[role] || []
-  );
+  const rolePermissions = roles.flatMap(role => ROLE_PERMISSIONS[role] || []);
 
   // Combine and deduplicate permissions
   return [...new Set([...tierPermissions, ...rolePermissions])];
@@ -492,8 +498,10 @@ export function hasPermission(
   }
 
   // Check for admin permissions (admins have all permissions)
-  if (session.permissions.includes(WORKBOOK_PERMISSIONS.SUPER_ADMIN) ||
-      session.permissions.includes(WORKBOOK_PERMISSIONS.ADMIN)) {
+  if (
+    session.permissions.includes(WORKBOOK_PERMISSIONS.SUPER_ADMIN) ||
+    session.permissions.includes(WORKBOOK_PERMISSIONS.ADMIN)
+  ) {
     return true;
   }
 
@@ -601,7 +609,10 @@ export async function validateSession(
     }
 
     // Check maximum session duration
-    if (session.iat && (now - session.iat * 1000) > securityConfig.maxSessionDuration) {
+    if (
+      session.iat &&
+      now - session.iat * 1000 > securityConfig.maxSessionDuration
+    ) {
       return {
         isValid: false,
         error: 'Session has exceeded maximum duration',
@@ -613,8 +624,10 @@ export async function validateSession(
     // Additional security checks if request is provided
     if (request) {
       // Check CSRF token for state-changing operations
-      if (securityConfig.requireCsrfToken &&
-          ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+      if (
+        securityConfig.requireCsrfToken &&
+        ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)
+      ) {
         const csrfToken = extractCsrfToken(request);
         if (!csrfToken || !validateCsrfToken(csrfToken)) {
           return {
@@ -656,7 +669,6 @@ export async function validateSession(
       isValid: true,
       session: enhancedSession,
     };
-
   } catch (error) {
     return {
       isValid: false,
@@ -710,7 +722,6 @@ export async function authenticateRequest(
       isAuthenticated: true,
       session: validation.session!,
     };
-
   } catch (error) {
     return {
       isAuthenticated: false,
@@ -737,11 +748,16 @@ function parseExpirationTime(expiresIn: string): number {
   const unit = match[2];
 
   switch (unit) {
-    case 's': return value;
-    case 'm': return value * 60;
-    case 'h': return value * 60 * 60;
-    case 'd': return value * 60 * 60 * 24;
-    default: throw new Error(`Invalid time unit: ${unit}`);
+    case 's':
+      return value;
+    case 'm':
+      return value * 60;
+    case 'h':
+      return value * 60 * 60;
+    case 'd':
+      return value * 60 * 60 * 24;
+    default:
+      throw new Error(`Invalid time unit: ${unit}`);
   }
 }
 
@@ -792,7 +808,9 @@ export async function createSessionContext(
   };
 
   // Generate tokens
-  const expiryTime = options.rememberMe ? REMEMBER_ME_EXPIRY : ACCESS_TOKEN_EXPIRY;
+  const expiryTime = options.rememberMe
+    ? REMEMBER_ME_EXPIRY
+    : ACCESS_TOKEN_EXPIRY;
   const accessToken = await generateAccessToken(jwtPayload, expiryTime);
 
   let refreshToken: string | undefined;

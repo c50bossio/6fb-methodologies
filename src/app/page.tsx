@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/Header';
 import { HeroSection } from '@/components/sections/HeroSection';
+import { CityGrid } from '@/components/sections/CityGrid';
 import { WorkshopOverview } from '@/components/sections/WorkshopOverview';
 import { SpeakerProfiles } from '@/components/sections/SpeakerProfiles';
 import { WorkshopAgenda } from '@/components/sections/WorkshopAgenda';
@@ -14,6 +15,7 @@ export default function Home() {
     <main className='min-h-screen bg-background-primary'>
       <Header />
       <HeroSection />
+      <CityGrid />
       <WorkshopOverview />
       <SpeakerProfiles />
       <WorkshopAgenda />

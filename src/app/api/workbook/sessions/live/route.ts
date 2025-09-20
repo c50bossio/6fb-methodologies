@@ -16,13 +16,16 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 // Real-time connection store (in production, use Redis)
 const activeConnections = new Map<string, Set<string>>(); // sessionId -> Set of userIds
-const userPresence = new Map<string, {
-  sessionId: string;
-  userId: string;
-  joinedAt: Date;
-  lastSeen: Date;
-  metadata: any;
-}>();
+const userPresence = new Map<
+  string,
+  {
+    sessionId: string;
+    userId: string;
+    joinedAt: Date;
+    lastSeen: Date;
+    metadata: any;
+  }
+>();
 
 function checkRateLimit(
   userId: string,
@@ -63,10 +66,19 @@ async function authenticateRequest(request: NextRequest) {
   return { session: session! };
 }
 
-function broadcastToSession(sessionId: string, event: string, data: any, excludeUserId?: string) {
+function broadcastToSession(
+  sessionId: string,
+  event: string,
+  data: any,
+  excludeUserId?: string
+) {
   // In production, this would use Socket.io or similar
   // For now, we'll store events that can be polled
-  console.log(`Broadcasting to session ${sessionId}:`, { event, data, excludeUserId });
+  console.log(`Broadcasting to session ${sessionId}:`, {
+    event,
+    data,
+    excludeUserId,
+  });
 
   // Store event for polling-based real-time updates
   const eventId = uuidv4();
@@ -84,7 +96,12 @@ function broadcastToSession(sessionId: string, event: string, data: any, exclude
   return eventId;
 }
 
-async function updateUserPresence(userId: string, sessionId: string, action: 'join' | 'leave' | 'update', metadata: any = {}) {
+async function updateUserPresence(
+  userId: string,
+  sessionId: string,
+  action: 'join' | 'leave' | 'update',
+  metadata: any = {}
+) {
   const now = new Date();
 
   if (action === 'join') {
@@ -102,22 +119,30 @@ async function updateUserPresence(userId: string, sessionId: string, action: 'jo
     activeConnections.get(sessionId)!.add(userId);
 
     // Broadcast user joined event
-    broadcastToSession(sessionId, 'user_joined', {
-      userId,
-      joinedAt: now,
-      metadata,
-    }, userId);
-
+    broadcastToSession(
+      sessionId,
+      'user_joined',
+      {
+        userId,
+        joinedAt: now,
+        metadata,
+      },
+      userId
+    );
   } else if (action === 'leave') {
     userPresence.delete(userId);
     activeConnections.get(sessionId)?.delete(userId);
 
     // Broadcast user left event
-    broadcastToSession(sessionId, 'user_left', {
-      userId,
-      leftAt: now,
-    }, userId);
-
+    broadcastToSession(
+      sessionId,
+      'user_left',
+      {
+        userId,
+        leftAt: now,
+      },
+      userId
+    );
   } else if (action === 'update') {
     const presence = userPresence.get(userId);
     if (presence) {
@@ -125,11 +150,16 @@ async function updateUserPresence(userId: string, sessionId: string, action: 'jo
       presence.metadata = { ...presence.metadata, ...metadata };
 
       // Broadcast presence update
-      broadcastToSession(sessionId, 'user_presence_updated', {
-        userId,
-        lastSeen: now,
-        metadata: presence.metadata,
-      }, userId);
+      broadcastToSession(
+        sessionId,
+        'user_presence_updated',
+        {
+          userId,
+          lastSeen: now,
+          metadata: presence.metadata,
+        },
+        userId
+      );
     }
   }
 }
@@ -155,7 +185,14 @@ export async function GET(request: NextRequest) {
 
     // Rate limiting
     const rateLimits = getRateLimits(auth.session.role);
-    if (!checkRateLimit(auth.session.userId, 'list', rateLimits.liveSessionList.limit, rateLimits.liveSessionList.window * 1000)) {
+    if (
+      !checkRateLimit(
+        auth.session.userId,
+        'list',
+        rateLimits.liveSessionList.limit,
+        rateLimits.liveSessionList.window * 1000
+      )
+    ) {
       return NextResponse.json(
         { error: 'Live sessions list rate limit exceeded' },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
@@ -234,15 +271,19 @@ export async function GET(request: NextRequest) {
     // Get presence data for active sessions
     const sessionsWithPresence = sessions.map(session => {
       const connections = activeConnections.get(session.id) || new Set();
-      const presenceData = Array.from(connections).map(userId => {
-        const presence = userPresence.get(userId);
-        return presence ? {
-          userId: presence.userId,
-          joinedAt: presence.joinedAt,
-          lastSeen: presence.lastSeen,
-          metadata: presence.metadata,
-        } : null;
-      }).filter(Boolean);
+      const presenceData = Array.from(connections)
+        .map(userId => {
+          const presence = userPresence.get(userId);
+          return presence
+            ? {
+                userId: presence.userId,
+                joinedAt: presence.joinedAt,
+                lastSeen: presence.lastSeen,
+                metadata: presence.metadata,
+              }
+            : null;
+        })
+        .filter(Boolean);
 
       return {
         ...session,
@@ -332,7 +373,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limiting for session creation (more restrictive)
-    if (!checkRateLimit(auth.session.userId, 'create', 5, 300000)) { // 5 sessions per 5 minutes
+    if (!checkRateLimit(auth.session.userId, 'create', 5, 300000)) {
+      // 5 sessions per 5 minutes
       return NextResponse.json(
         { error: 'Session creation rate limit exceeded' },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
@@ -355,15 +397,21 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!title || title.length < 3) {
-      throw new ValidationError('Session title must be at least 3 characters long');
+      throw new ValidationError(
+        'Session title must be at least 3 characters long'
+      );
     }
 
     if (title.length > 200) {
-      throw new ValidationError('Session title must be less than 200 characters');
+      throw new ValidationError(
+        'Session title must be less than 200 characters'
+      );
     }
 
     if (description && description.length > 1000) {
-      throw new ValidationError('Session description must be less than 1000 characters');
+      throw new ValidationError(
+        'Session description must be less than 1000 characters'
+      );
     }
 
     if (maxParticipants < 1 || maxParticipants > 1000) {
@@ -387,7 +435,8 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('Scheduled end time must be after start time');
     }
 
-    const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+    const durationHours =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
     if (durationHours > 8) {
       throw new ValidationError('Session duration cannot exceed 8 hours');
     }
@@ -418,7 +467,9 @@ export async function POST(request: NextRequest) {
     );
 
     if (conflictingSessions.length > 0) {
-      throw new ValidationError('You have a conflicting session scheduled during this time');
+      throw new ValidationError(
+        'You have a conflicting session scheduled during this time'
+      );
     }
 
     // Create live session
@@ -468,7 +519,12 @@ export async function POST(request: NextRequest) {
         sessionId,
         auth.session.userId,
         'instructor',
-        JSON.stringify(['can_speak', 'can_moderate', 'can_record', 'can_share_screen']),
+        JSON.stringify([
+          'can_speak',
+          'can_moderate',
+          'can_record',
+          'can_share_screen',
+        ]),
         now_timestamp,
         now_timestamp,
         now_timestamp,
@@ -511,7 +567,10 @@ export async function OPTIONS(request: NextRequest) {
     status: 200,
     headers: {
       ...WORKBOOK_SECURITY_HEADERS,
-      'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://6fbmethodologies.com',
+      'Access-Control-Allow-Origin':
+        process.env.NODE_ENV === 'development'
+          ? '*'
+          : 'https://6fbmethodologies.com',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',

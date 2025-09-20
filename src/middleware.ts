@@ -14,13 +14,11 @@ const SECURITY_CONFIG = {
     blockDuration: 60 * 60 * 1000, // Block for 1 hour after exceeding limit
   },
   blockedPaths: [
-    '/api/admin',
     '/.env',
     '/config',
     '/backup',
     '/phpmyadmin',
     '/wp-admin',
-    '/admin',
     '/.git',
   ],
 };
@@ -198,11 +196,12 @@ export function middleware(request: NextRequest) {
       const csrfToken = request.headers.get('x-csrf-token');
       const sessionId = request.headers.get('x-session-id') || clientIP;
 
-      // Skip CSRF for webhooks and test endpoints (they use signature verification or are for testing)
+      // Skip CSRF for webhooks, payment endpoints, and test endpoints (they use signature verification or are for testing)
       const skipCSRF =
         pathname.includes('/webhooks/') ||
         pathname.includes('/test-email') ||
         pathname.includes('/verify-member') ||
+        pathname.includes('/create-checkout-session') ||
         (process.env.NODE_ENV === 'development' && pathname.includes('/api/'));
 
       if (!skipCSRF) {
@@ -263,7 +262,9 @@ export function middleware(request: NextRequest) {
     // Log workbook specific activities
     if (pathname.startsWith('/api/workbook/')) {
       // Security event recording disabled to avoid crypto dependencies
-      console.log(`Workbook API access: ${request.method} ${pathname} from ${clientIP}`);
+      console.log(
+        `Workbook API access: ${request.method} ${pathname} from ${clientIP}`
+      );
     }
   }
 

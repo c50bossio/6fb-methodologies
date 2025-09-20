@@ -46,7 +46,7 @@ class SendGridService {
       }
 
       // Build message based on whether template or content is used
-      let msg: any = {
+      const msg: any = {
         to: emailData.to,
         from: emailData.from || this.defaultFrom,
       };
@@ -89,9 +89,7 @@ class SendGridService {
     }
   }
 
-  async sendBulkEmail(
-    emails: EmailData[]
-  ): Promise<{
+  async sendBulkEmail(emails: EmailData[]): Promise<{
     success: boolean;
     sent: number;
     failed: number;

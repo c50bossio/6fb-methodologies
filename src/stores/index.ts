@@ -58,11 +58,7 @@ export const initializeStores = async () => {
   if (user && token && checkSession()) {
     try {
       // Load workbook data in parallel
-      await Promise.allSettled([
-        loadModules(),
-        loadNotes(),
-        loadProgress(),
-      ]);
+      await Promise.allSettled([loadModules(), loadNotes(), loadProgress()]);
     } catch (error) {
       console.error('Failed to initialize store data:', error);
     }
@@ -199,15 +195,15 @@ export const devUtils = {
       return () => {};
     }
 
-    const unsubscribeAuth = useAuthStore.subscribe((state) => {
+    const unsubscribeAuth = useAuthStore.subscribe(state => {
       callback('auth', state);
     });
 
-    const unsubscribeWorkbook = useWorkbookStore.subscribe((state) => {
+    const unsubscribeWorkbook = useWorkbookStore.subscribe(state => {
       callback('workbook', state);
     });
 
-    const unsubscribeLiveSession = useLiveSessionStore.subscribe((state) => {
+    const unsubscribeLiveSession = useLiveSessionStore.subscribe(state => {
       callback('liveSession', state);
     });
 

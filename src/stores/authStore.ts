@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>()(
         sessionTimeout: 120, // 2 hours
 
         // Actions
-        login: async (credentials) => {
+        login: async credentials => {
           set({ isLoading: true, error: null });
 
           try {
@@ -99,7 +99,8 @@ export const useAuthStore = create<AuthState>()(
 
             // Set up automatic token refresh
             const { refreshTokens } = get();
-            const tokenExpiry = JSON.parse(atob(data.token.split('.')[1])).exp * 1000;
+            const tokenExpiry =
+              JSON.parse(atob(data.token.split('.')[1])).exp * 1000;
             const refreshTime = tokenExpiry - Date.now() - 5 * 60 * 1000; // 5 minutes before expiry
 
             if (refreshTime > 0) {
@@ -125,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
           fetch('/api/workbook/auth/logout', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${get().token}`,
+              Authorization: `Bearer ${get().token}`,
             },
           }).catch(console.error);
 
@@ -169,7 +170,8 @@ export const useAuthStore = create<AuthState>()(
             });
 
             // Schedule next refresh
-            const tokenExpiry = JSON.parse(atob(data.token.split('.')[1])).exp * 1000;
+            const tokenExpiry =
+              JSON.parse(atob(data.token.split('.')[1])).exp * 1000;
             const refreshTime = tokenExpiry - Date.now() - 5 * 60 * 1000;
 
             if (refreshTime > 0) {
@@ -183,7 +185,7 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        updateUser: (updates) => {
+        updateUser: updates => {
           const { user } = get();
           if (user) {
             set({
@@ -193,11 +195,11 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        setLoading: (loading) => {
+        setLoading: loading => {
           set({ isLoading: loading });
         },
 
-        setError: (error) => {
+        setError: error => {
           set({ error });
         },
 
@@ -224,20 +226,28 @@ export const useAuthStore = create<AuthState>()(
         },
 
         // Utilities
-        hasPermission: (permission) => {
+        hasPermission: permission => {
           const { user } = get();
           if (!user) return false;
 
           const permissions = {
             'admin.access': ['admin', 'super_admin'].includes(user.role),
             'super_admin.access': user.role === 'super_admin',
-            'premium.features': ['premium', 'enterprise'].includes(user.subscriptionTier),
+            'premium.features': ['premium', 'enterprise'].includes(
+              user.subscriptionTier
+            ),
             'enterprise.features': user.subscriptionTier === 'enterprise',
             'workbook.create': true, // All authenticated users can create
-            'workbook.share': ['basic', 'premium', 'enterprise'].includes(user.subscriptionTier),
-            'live_sessions.host': ['premium', 'enterprise'].includes(user.subscriptionTier),
+            'workbook.share': ['basic', 'premium', 'enterprise'].includes(
+              user.subscriptionTier
+            ),
+            'live_sessions.host': ['premium', 'enterprise'].includes(
+              user.subscriptionTier
+            ),
             'live_sessions.join': true,
-            'analytics.view': ['premium', 'enterprise'].includes(user.subscriptionTier),
+            'analytics.view': ['premium', 'enterprise'].includes(
+              user.subscriptionTier
+            ),
             'export.unlimited': user.subscriptionTier === 'enterprise',
           };
 
@@ -265,7 +275,7 @@ export const useAuthStore = create<AuthState>()(
       {
         name: 'workbook-auth',
         storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({
+        partialize: state => ({
           user: state.user,
           token: state.token,
           refreshToken: state.refreshToken,
@@ -273,7 +283,7 @@ export const useAuthStore = create<AuthState>()(
           lastActivity: state.lastActivity,
           sessionTimeout: state.sessionTimeout,
         }),
-        onRehydrateStorage: () => (state) => {
+        onRehydrateStorage: () => state => {
           if (state && state.isAuthenticated) {
             // Check if session is still valid
             if (!state.checkSession()) {

@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Mic,
   MicOff,
@@ -58,15 +64,38 @@ const WORKSHOP_MODULES = [
 ];
 
 // Audio quality options for user selection
-const AUDIO_QUALITY_OPTIONS: { value: AudioQuality; label: string; description: string }[] = [
-  { value: 'high', label: 'High Quality', description: '44.1kHz, Stereo - Best for music or detailed audio' },
-  { value: 'standard', label: 'Standard', description: '16kHz, Mono - Recommended for voice recordings' },
-  { value: 'background', label: 'Background', description: '8kHz, Mono - Efficient for background capture' },
+const AUDIO_QUALITY_OPTIONS: {
+  value: AudioQuality;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'high',
+    label: 'High Quality',
+    description: '44.1kHz, Stereo - Best for music or detailed audio',
+  },
+  {
+    value: 'standard',
+    label: 'Standard',
+    description: '16kHz, Mono - Recommended for voice recordings',
+  },
+  {
+    value: 'background',
+    label: 'Background',
+    description: '8kHz, Mono - Efficient for background capture',
+  },
 ];
 
 // File upload configuration
 const MAX_UPLOAD_SIZE = 100 * 1024 * 1024; // 100MB
-const SUPPORTED_AUDIO_FORMATS = ['.mp3', '.wav', '.m4a', '.webm', '.ogg', '.aac'];
+const SUPPORTED_AUDIO_FORMATS = [
+  '.mp3',
+  '.wav',
+  '.m4a',
+  '.webm',
+  '.ogg',
+  '.aac',
+];
 const CHUNK_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB chunks
 
 /**
@@ -149,7 +178,10 @@ interface VoiceRecorderProps {
   /** Custom class name for styling */
   className?: string;
   /** Callback when a recording is completed */
-  onRecordingComplete?: (recording: AudioRecording, transcription?: TranscriptionResult) => void;
+  onRecordingComplete?: (
+    recording: AudioRecording,
+    transcription?: TranscriptionResult
+  ) => void;
   /** Callback when a file is uploaded */
   onFileUpload?: (file: File, metadata: RecordingMetadata) => void;
   /** Callback when transcription is completed */
@@ -169,7 +201,13 @@ const AudioLevelVisualizer: React.FC<{
   quality: AudioQuality;
   showFrequencyData?: boolean;
   className?: string;
-}> = ({ level, isActive, quality, showFrequencyData = false, className = '' }) => {
+}> = ({
+  level,
+  isActive,
+  quality,
+  showFrequencyData = false,
+  className = '',
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null);
 
@@ -200,7 +238,12 @@ const AudioLevelVisualizer: React.FC<{
     ctx.clearRect(0, 0, width, height);
 
     // Draw background with quality indicator
-    const qualityColor = quality === 'high' ? '#10B981' : quality === 'standard' ? '#F59E0B' : '#6B7280';
+    const qualityColor =
+      quality === 'high'
+        ? '#10B981'
+        : quality === 'standard'
+          ? '#F59E0B'
+          : '#6B7280';
     ctx.fillStyle = isActive ? '#1F2937' : '#374151';
     ctx.fillRect(0, 0, width, height);
 
@@ -228,21 +271,20 @@ const AudioLevelVisualizer: React.FC<{
         const barHeight = (Math.random() * 0.3 + 0.7) * level * height;
         const alpha = isActive ? 0.8 : 0.3;
 
-        const color = level > 0.7 ? '220, 53, 69' : level > 0.3 ? '255, 193, 7' : '0, 200, 81';
+        const color =
+          level > 0.7
+            ? '220, 53, 69'
+            : level > 0.3
+              ? '255, 193, 7'
+              : '0, 200, 81';
         ctx.fillStyle = `rgba(${color}, ${alpha})`;
-        ctx.fillRect(
-          i * barWidth,
-          height - barHeight,
-          barWidth - 2,
-          barHeight
-        );
+        ctx.fillRect(i * barWidth, height - barHeight, barWidth - 2, barHeight);
       }
     }
 
     // Draw quality indicator
     ctx.fillStyle = qualityColor;
     ctx.fillRect(0, 0, 4, height);
-
   }, [level, isActive, quality, showFrequencyData, frequencyData]);
 
   return (
@@ -277,11 +319,21 @@ const RecordingStatus: React.FC<{
   transcriptionStatus?: TranscriptionStatus;
   chunkCount?: number;
   fileSize?: number;
-}> = ({ state, duration, quality, uploadProgress, transcriptionStatus, chunkCount = 0, fileSize = 0 }) => {
+}> = ({
+  state,
+  duration,
+  quality,
+  uploadProgress,
+  transcriptionStatus,
+  chunkCount = 0,
+  fileSize = 0,
+}) => {
   const getStatusIcon = () => {
     switch (state) {
       case 'recording':
-        return <div className='w-3 h-3 rounded-full bg-red-500 animate-pulse' />;
+        return (
+          <div className='w-3 h-3 rounded-full bg-red-500 animate-pulse' />
+        );
       case 'paused':
         return <Pause className='w-4 h-4 text-yellow-500' />;
       case 'processing':
@@ -373,18 +425,20 @@ const RecordingStatus: React.FC<{
                 uploadProgress.status === 'completed'
                   ? 'bg-green-500'
                   : uploadProgress.status === 'failed'
-                  ? 'bg-red-500'
-                  : 'bg-blue-500'
+                    ? 'bg-red-500'
+                    : 'bg-blue-500'
               }`}
               style={{ width: `${uploadProgress.progress}%` }}
             />
           </div>
           <div className='flex items-center justify-between text-xs text-text-secondary'>
             <span>
-              {formatFileSize(uploadProgress.uploadedBytes)} / {formatFileSize(uploadProgress.totalBytes)}
+              {formatFileSize(uploadProgress.uploadedBytes)} /{' '}
+              {formatFileSize(uploadProgress.totalBytes)}
             </span>
             <span>
-              Chunk {uploadProgress.chunkIndex + 1} / {uploadProgress.totalChunks}
+              Chunk {uploadProgress.chunkIndex + 1} /{' '}
+              {uploadProgress.totalChunks}
             </span>
           </div>
         </div>
@@ -433,24 +487,30 @@ const FileUploadArea: React.FC<{
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    const audioFile = files.find(file => file.type.startsWith('audio/'));
+      const files = Array.from(e.dataTransfer.files);
+      const audioFile = files.find(file => file.type.startsWith('audio/'));
 
-    if (audioFile) {
-      onFileSelect(audioFile);
-    }
-  }, [onFileSelect]);
+      if (audioFile) {
+        onFileSelect(audioFile);
+      }
+    },
+    [onFileSelect]
+  );
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onFileSelect(file);
-    }
-  }, [onFileSelect]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        onFileSelect(file);
+      }
+    },
+    [onFileSelect]
+  );
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -653,9 +713,11 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({
       {showQualitySelector && (
         <Card className='bg-background-accent border-border-primary'>
           <CardContent className='p-4'>
-            <h4 className='font-medium text-text-primary mb-3'>Audio Quality</h4>
+            <h4 className='font-medium text-text-primary mb-3'>
+              Audio Quality
+            </h4>
             <div className='space-y-2'>
-              {AUDIO_QUALITY_OPTIONS.map((option) => (
+              {AUDIO_QUALITY_OPTIONS.map(option => (
                 <label
                   key={option.value}
                   className='flex items-start gap-3 p-3 rounded-lg border border-border-primary cursor-pointer hover:bg-background-secondary transition-colors'
@@ -669,8 +731,12 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({
                     className='mt-1'
                   />
                   <div className='flex-1'>
-                    <div className='font-medium text-text-primary'>{option.label}</div>
-                    <div className='text-sm text-text-secondary'>{option.description}</div>
+                    <div className='font-medium text-text-primary'>
+                      {option.label}
+                    </div>
+                    <div className='text-sm text-text-secondary'>
+                      {option.description}
+                    </div>
                   </div>
                 </label>
               ))}
@@ -705,35 +771,45 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   onUploadProgress,
 }) => {
   // Core recorder state
-  const [recorder] = useState(() => new AudioRecorder({
-    quality: defaultQuality,
-    maxRecordingDuration: maxDuration
-  }));
+  const [recorder] = useState(
+    () =>
+      new AudioRecorder({
+        quality: defaultQuality,
+        maxRecordingDuration: maxDuration,
+      })
+  );
   const [state, setState] = useState<RecordingState>('idle');
-  const [currentRecording, setCurrentRecording] = useState<AudioRecording | null>(null);
+  const [currentRecording, setCurrentRecording] =
+    useState<AudioRecording | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isSupported, setIsSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Enhanced state
-  const [selectedModuleId, setSelectedModuleId] = useState<string>(initialModuleId || '');
-  const [audioQuality, setAudioQuality] = useState<AudioQuality>(defaultQuality);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>(
+    initialModuleId || ''
+  );
+  const [audioQuality, setAudioQuality] =
+    useState<AudioQuality>(defaultQuality);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({
     status: 'idle',
     progress: 0,
     uploadedBytes: 0,
     totalBytes: 0,
     chunkIndex: 0,
-    totalChunks: 0
+    totalChunks: 0,
   });
-  const [transcriptionResult, setTranscriptionResult] = useState<TranscriptionResult | null>(null);
+  const [transcriptionResult, setTranscriptionResult] =
+    useState<TranscriptionResult | null>(null);
   const [showSettings, setShowSettings] = useState(showAdvancedSettings);
-  const [recordingMetadata, setRecordingMetadata] = useState<RecordingMetadata>({
-    tags: [],
-    isPrivate: true,
-    autoTranscribe: autoTranscribe,
-  });
+  const [recordingMetadata, setRecordingMetadata] = useState<RecordingMetadata>(
+    {
+      tags: [],
+      isPrivate: true,
+      autoTranscribe: autoTranscribe,
+    }
+  );
 
   // Refs
   const durationInterval = useRef<number | null>(null);
@@ -764,8 +840,14 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       tags: [
         ...(selectedModuleId ? [`module:${selectedModuleId}`] : []),
         ...(lessonId ? [`lesson:${lessonId}`] : []),
-        ...(sessionInfo?.session ? [`session:${sessionInfo.session.toLowerCase().replace(/\s+/g, '-')}`] : []),
-        ...(sessionInfo?.speaker ? [`speaker:${sessionInfo.speaker.toLowerCase()}`] : []),
+        ...(sessionInfo?.session
+          ? [
+              `session:${sessionInfo.session.toLowerCase().replace(/\s+/g, '-')}`,
+            ]
+          : []),
+        ...(sessionInfo?.speaker
+          ? [`speaker:${sessionInfo.speaker.toLowerCase()}`]
+          : []),
       ].filter(Boolean),
     }));
 
@@ -797,14 +879,19 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         console.log('Chunk uploaded:', result);
       } catch (error) {
         console.error('Chunk upload error:', error);
-        onError?.(error instanceof Error ? error.message : 'Chunk upload failed', 'upload');
+        onError?.(
+          error instanceof Error ? error.message : 'Chunk upload failed',
+          'upload'
+        );
       }
     };
 
     /**
      * Upload complete recording with chunked upload
      */
-    const uploadRecording = async (recording: AudioRecording): Promise<string | null> => {
+    const uploadRecording = async (
+      recording: AudioRecording
+    ): Promise<string | null> => {
       if (!userId) return null;
 
       try {
@@ -842,12 +929,15 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           formData.append('chunkIndex', i.toString());
           formData.append('totalChunks', totalChunks.toString());
           formData.append('originalName', `recording_${recording.id}.webm`);
-          formData.append('metadata', JSON.stringify({
-            ...recordingMetadata,
-            recordingId: recording.id,
-            duration: recording.totalDuration,
-            quality: recording.metadata.quality,
-          }));
+          formData.append(
+            'metadata',
+            JSON.stringify({
+              ...recordingMetadata,
+              recordingId: recording.id,
+              duration: recording.totalDuration,
+              quality: recording.metadata.quality,
+            })
+          );
 
           const response = await fetch('/api/workbook/audio/upload', {
             method: 'POST',
@@ -926,8 +1016,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
         return result.data?.id || null;
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Upload failed';
-        setUploadProgress(prev => ({ ...prev, status: 'failed', error: errorMsg }));
+        const errorMsg =
+          error instanceof Error ? error.message : 'Upload failed';
+        setUploadProgress(prev => ({
+          ...prev,
+          status: 'failed',
+          error: errorMsg,
+        }));
         onError?.(errorMsg, 'upload');
         return null;
       }
@@ -965,9 +1060,12 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           // Poll for transcription completion
           const pollTranscription = async (): Promise<void> => {
             try {
-              const statusResponse = await fetch(`/api/workbook/audio/transcription/${transcriptionId}`, {
-                credentials: 'include',
-              });
+              const statusResponse = await fetch(
+                `/api/workbook/audio/transcription/${transcriptionId}`,
+                {
+                  credentials: 'include',
+                }
+              );
 
               if (statusResponse.ok) {
                 const statusResult = await statusResponse.json();
@@ -978,7 +1076,10 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 if (transcription.status === 'completed') {
                   onTranscriptionComplete?.(transcription);
                 } else if (transcription.status === 'failed') {
-                  onError?.(transcription.error || 'Transcription failed', 'transcription');
+                  onError?.(
+                    transcription.error || 'Transcription failed',
+                    'transcription'
+                  );
                 } else if (transcription.status === 'processing') {
                   // Continue polling
                   setTimeout(pollTranscription, 2000);
@@ -993,7 +1094,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           setTimeout(pollTranscription, 1000);
         }
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Transcription failed';
+        const errorMsg =
+          error instanceof Error ? error.message : 'Transcription failed';
         onError?.(errorMsg, 'transcription');
       }
     };
@@ -1014,7 +1116,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           await recorder.saveRecording(userId, recordingToSave, true);
         }
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Failed to save recording';
+        const errorMsg =
+          error instanceof Error ? error.message : 'Failed to save recording';
         onError?.(errorMsg, 'save');
       }
     };
@@ -1057,7 +1160,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       try {
         await recorder.stopRecording();
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to stop recording';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to stop recording';
         setError(errorMessage);
         onError?.(errorMessage, 'stop');
       }
@@ -1152,7 +1256,19 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
       recorder.destroy();
     };
-  }, [recorder, userId, autoSave, autoTranscribe, maxDuration, selectedModuleId, lessonId, sessionInfo, audioQuality, onRecordingComplete, onError]);
+  }, [
+    recorder,
+    userId,
+    autoSave,
+    autoTranscribe,
+    maxDuration,
+    selectedModuleId,
+    lessonId,
+    sessionInfo,
+    audioQuality,
+    onRecordingComplete,
+    onError,
+  ]);
 
   /**
    * Enhanced action handlers
@@ -1171,7 +1287,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
       await recorder.startRecording(enhancedSessionInfo);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to start recording';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to start recording';
       setError(errorMessage);
       onError?.(errorMessage, 'start');
     }
@@ -1189,7 +1306,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     try {
       await recorder.stopRecording();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to stop recording';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to stop recording';
       setError(errorMessage);
       onError?.(errorMessage, 'stop');
     }
@@ -1201,7 +1319,14 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     setAudioLevel(0);
     setError(null);
     setTranscriptionResult(null);
-    setUploadProgress({ status: 'idle', progress: 0, uploadedBytes: 0, totalBytes: 0, chunkIndex: 0, totalChunks: 0 });
+    setUploadProgress({
+      status: 'idle',
+      progress: 0,
+      uploadedBytes: 0,
+      totalBytes: 0,
+      chunkIndex: 0,
+      totalChunks: 0,
+    });
     startTime.current = null;
 
     if (durationInterval.current) {
@@ -1214,50 +1339,60 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     }
   }, []);
 
-  const handleQualityChange = useCallback((quality: AudioQuality) => {
-    setAudioQuality(quality);
-    recorder.updateConfig({ quality });
-  }, [recorder]);
+  const handleQualityChange = useCallback(
+    (quality: AudioQuality) => {
+      setAudioQuality(quality);
+      recorder.updateConfig({ quality });
+    },
+    [recorder]
+  );
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    if (!userId) return;
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!userId) return;
 
-    try {
-      // Validate file
-      if (file.size > MAX_UPLOAD_SIZE) {
-        throw new Error(`File too large. Maximum size is ${formatFileSize(MAX_UPLOAD_SIZE)}`);
+      try {
+        // Validate file
+        if (file.size > MAX_UPLOAD_SIZE) {
+          throw new Error(
+            `File too large. Maximum size is ${formatFileSize(MAX_UPLOAD_SIZE)}`
+          );
+        }
+
+        const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+        if (!SUPPORTED_AUDIO_FORMATS.includes(fileExtension)) {
+          throw new Error(
+            `Unsupported file format. Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`
+          );
+        }
+
+        // Create recording-like object for the file
+        const fileRecording: AudioRecording = {
+          id: `file_upload_${Date.now()}`,
+          userId,
+          chunks: [],
+          totalDuration: 0, // Will be determined by backend
+          totalSize: file.size,
+          startTime: new Date(),
+          endTime: new Date(),
+          metadata: {
+            quality: 'standard',
+            sampleRate: 16000,
+            channels: 1,
+            mimeType: file.type,
+          },
+        };
+
+        // Notify parent component
+        onFileUpload?.(file, recordingMetadata);
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : 'File upload failed';
+        onError?.(errorMsg, 'file_upload');
       }
-
-      const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
-      if (!SUPPORTED_AUDIO_FORMATS.includes(fileExtension)) {
-        throw new Error(`Unsupported file format. Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`);
-      }
-
-      // Create recording-like object for the file
-      const fileRecording: AudioRecording = {
-        id: `file_upload_${Date.now()}`,
-        userId,
-        chunks: [],
-        totalDuration: 0, // Will be determined by backend
-        totalSize: file.size,
-        startTime: new Date(),
-        endTime: new Date(),
-        metadata: {
-          quality: 'standard',
-          sampleRate: 16000,
-          channels: 1,
-          mimeType: file.type,
-        },
-      };
-
-      // Notify parent component
-      onFileUpload?.(file, recordingMetadata);
-
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'File upload failed';
-      onError?.(errorMsg, 'file_upload');
-    }
-  }, [userId, recordingMetadata, onFileUpload, onError]);
+    },
+    [userId, recordingMetadata, onFileUpload, onError]
+  );
 
   const handleDownloadRecording = useCallback(async () => {
     if (!currentRecording || !userId) return;
@@ -1289,7 +1424,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
    */
   const compatibility = useMemo(() => detectBrowserCompatibility(), []);
   const canSave = useMemo(() => {
-    return currentRecording && state === 'idle' && uploadProgress.status !== 'uploading';
+    return (
+      currentRecording &&
+      state === 'idle' &&
+      uploadProgress.status !== 'uploading'
+    );
   }, [currentRecording, state, uploadProgress.status]);
   const isUploading = useMemo(() => {
     return uploadProgress.status === 'uploading';
@@ -1303,9 +1442,12 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           <div className='flex items-center gap-3 text-red-400'>
             <MicOff className='w-6 h-6' />
             <div>
-              <h3 className='font-medium mb-1'>Audio Recording Not Supported</h3>
+              <h3 className='font-medium mb-1'>
+                Audio Recording Not Supported
+              </h3>
               <p className='text-sm text-red-300'>
-                Your browser doesn't support audio recording. Please try using Chrome, Firefox, or Safari.
+                Your browser doesn't support audio recording. Please try using
+                Chrome, Firefox, or Safari.
               </p>
             </div>
           </div>
@@ -1329,7 +1471,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   Enhanced Voice Recorder
                 </CardTitle>
                 <p className='text-text-secondary text-sm'>
-                  Record audio with automatic transcription and smart organization
+                  Record audio with automatic transcription and smart
+                  organization
                 </p>
               </div>
             </div>
@@ -1374,7 +1517,10 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             {/* Module Selector */}
             <div className='space-y-2'>
-              <label htmlFor='module-select' className='block text-sm font-medium text-text-primary'>
+              <label
+                htmlFor='module-select'
+                className='block text-sm font-medium text-text-primary'
+              >
                 Workshop Module
               </label>
               <div className='relative'>
@@ -1386,9 +1532,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                     setRecordingMetadata(prev => ({
                       ...prev,
                       moduleId: e.target.value,
-                      tags: prev.tags.filter(tag => !tag.startsWith('module:')).concat(
-                        e.target.value ? [`module:${e.target.value}`] : []
-                      ),
+                      tags: prev.tags
+                        .filter(tag => !tag.startsWith('module:'))
+                        .concat(
+                          e.target.value ? [`module:${e.target.value}`] : []
+                        ),
                     }));
                   }}
                   disabled={state !== 'idle'}
@@ -1415,7 +1563,12 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   <input
                     type='checkbox'
                     checked={recordingMetadata.autoTranscribe}
-                    onChange={e => setRecordingMetadata(prev => ({ ...prev, autoTranscribe: e.target.checked }))}
+                    onChange={e =>
+                      setRecordingMetadata(prev => ({
+                        ...prev,
+                        autoTranscribe: e.target.checked,
+                      }))
+                    }
                     disabled={state !== 'idle'}
                     className='rounded border-border-primary'
                   />
@@ -1425,7 +1578,12 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   <input
                     type='checkbox'
                     checked={recordingMetadata.isPrivate}
-                    onChange={e => setRecordingMetadata(prev => ({ ...prev, isPrivate: e.target.checked }))}
+                    onChange={e =>
+                      setRecordingMetadata(prev => ({
+                        ...prev,
+                        isPrivate: e.target.checked,
+                      }))
+                    }
                     disabled={state !== 'idle'}
                     className='rounded border-border-primary'
                   />
@@ -1506,11 +1664,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                       <CheckCircle className='w-5 h-5 text-green-500' />
                     </div>
                     <div>
-                      <h4 className='font-medium text-text-primary'>Recording Complete</h4>
+                      <h4 className='font-medium text-text-primary'>
+                        Recording Complete
+                      </h4>
                       <p className='text-sm text-text-secondary'>
-                        {currentRecording.endTime && currentRecording.startTime &&
-                          `Recorded on ${new Date(currentRecording.endTime).toLocaleString()}`
-                        }
+                        {currentRecording.endTime &&
+                          currentRecording.startTime &&
+                          `Recorded on ${new Date(currentRecording.endTime).toLocaleString()}`}
                       </p>
                     </div>
                   </div>
@@ -1560,7 +1720,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                     <span className='text-text-muted text-sm'>Tags:</span>
                     <div className='flex flex-wrap gap-1'>
                       {recordingMetadata.tags.map((tag, index) => (
-                        <Badge key={index} variant='outline' className='text-xs'>
+                        <Badge
+                          key={index}
+                          variant='outline'
+                          className='text-xs'
+                        >
                           {tag}
                         </Badge>
                       ))}
@@ -1572,25 +1736,36 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 {transcriptionResult && (
                   <div className='space-y-2 border-t border-border-primary pt-4'>
                     <div className='flex items-center justify-between'>
-                      <span className='text-text-muted text-sm'>Transcription:</span>
+                      <span className='text-text-muted text-sm'>
+                        Transcription:
+                      </span>
                       <Badge
                         variant='outline'
                         className={`text-xs ${
-                          transcriptionResult.status === 'completed' ? 'text-green-600' :
-                          transcriptionResult.status === 'processing' ? 'text-blue-600' :
-                          transcriptionResult.status === 'failed' ? 'text-red-600' : ''
+                          transcriptionResult.status === 'completed'
+                            ? 'text-green-600'
+                            : transcriptionResult.status === 'processing'
+                              ? 'text-blue-600'
+                              : transcriptionResult.status === 'failed'
+                                ? 'text-red-600'
+                                : ''
                         }`}
                       >
                         {transcriptionResult.status}
                       </Badge>
                     </div>
-                    {transcriptionResult.status === 'completed' && transcriptionResult.text && (
-                      <div className='bg-background-secondary p-3 rounded-lg text-sm max-h-32 overflow-y-auto'>
-                        <p className='text-text-primary'>{transcriptionResult.text}</p>
-                      </div>
-                    )}
+                    {transcriptionResult.status === 'completed' &&
+                      transcriptionResult.text && (
+                        <div className='bg-background-secondary p-3 rounded-lg text-sm max-h-32 overflow-y-auto'>
+                          <p className='text-text-primary'>
+                            {transcriptionResult.text}
+                          </p>
+                        </div>
+                      )}
                     {transcriptionResult.status === 'failed' && (
-                      <p className='text-red-500 text-sm'>{transcriptionResult.error}</p>
+                      <p className='text-red-500 text-sm'>
+                        {transcriptionResult.error}
+                      </p>
                     )}
                   </div>
                 )}
@@ -1640,21 +1815,35 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           <CardContent className='space-y-4'>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div className='space-y-2'>
-                <label className='block text-sm font-medium text-text-primary'>Recording Title</label>
+                <label className='block text-sm font-medium text-text-primary'>
+                  Recording Title
+                </label>
                 <input
                   type='text'
                   value={recordingMetadata.title || ''}
-                  onChange={e => setRecordingMetadata(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={e =>
+                    setRecordingMetadata(prev => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
                   placeholder='Enter a title for this recording...'
                   className='w-full px-3 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
                 />
               </div>
 
               <div className='space-y-2'>
-                <label className='block text-sm font-medium text-text-primary'>Description</label>
+                <label className='block text-sm font-medium text-text-primary'>
+                  Description
+                </label>
                 <textarea
                   value={recordingMetadata.description || ''}
-                  onChange={e => setRecordingMetadata(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={e =>
+                    setRecordingMetadata(prev => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder='Add a description...'
                   rows={2}
                   className='w-full px-3 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green resize-none'
@@ -1663,14 +1852,24 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             </div>
 
             <div className='space-y-2'>
-              <label className='block text-sm font-medium text-text-primary'>Custom Tags</label>
+              <label className='block text-sm font-medium text-text-primary'>
+                Custom Tags
+              </label>
               <input
                 type='text'
                 placeholder='Add custom tags (comma-separated)...'
                 onChange={e => {
-                  const customTags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
-                  const systemTags = recordingMetadata.tags.filter(tag => tag.includes(':'));
-                  setRecordingMetadata(prev => ({ ...prev, tags: [...systemTags, ...customTags] }));
+                  const customTags = e.target.value
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(Boolean);
+                  const systemTags = recordingMetadata.tags.filter(tag =>
+                    tag.includes(':')
+                  );
+                  setRecordingMetadata(prev => ({
+                    ...prev,
+                    tags: [...systemTags, ...customTags],
+                  }));
                 }}
                 className='w-full px-3 py-2 bg-background-accent border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-tomb45-green'
               />
@@ -1681,17 +1880,28 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
       {/* Usage Tips */}
       <div className='bg-background-accent rounded-lg p-4'>
-        <h4 className='font-medium text-text-primary mb-2'>Tips for Better Recordings</h4>
+        <h4 className='font-medium text-text-primary mb-2'>
+          Tips for Better Recordings
+        </h4>
         <div className='text-sm text-text-secondary space-y-1'>
           <p>• Ensure a quiet environment for optimal audio quality</p>
-          <p>• Speak clearly and maintain consistent distance from microphone</p>
-          <p>• Use "Standard" quality for voice recordings to balance quality and file size</p>
+          <p>
+            • Speak clearly and maintain consistent distance from microphone
+          </p>
+          <p>
+            • Use "Standard" quality for voice recordings to balance quality and
+            file size
+          </p>
           <p>• Enable auto-transcription for searchable text content</p>
           {sessionInfo && (
-            <p>• Recordings are automatically tagged with session information</p>
+            <p>
+              • Recordings are automatically tagged with session information
+            </p>
           )}
           {autoSave && (
-            <p>• Recordings are automatically saved and uploaded to the cloud</p>
+            <p>
+              • Recordings are automatically saved and uploaded to the cloud
+            </p>
           )}
         </div>
       </div>

@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getAllInventoryStatuses,
-  checkInventoryStatus,
   expandInventory,
   resetInventory,
-  getInventoryTransactions,
-  getInventoryExpansions,
 } from '@/lib/inventory';
 
 /**
@@ -60,9 +57,9 @@ export async function GET(request: NextRequest) {
         criticalLevel: 2,
         warningLevel: 5,
         notificationChannels: {
-          sms: !!process.env.TEAM_ALERT_PHONE,
-          slack: !!process.env.SLACK_INVENTORY_WEBHOOK,
-          email: !!process.env.ADMIN_EMAIL,
+          sms: !!process.env['TEAM_ALERT_PHONE'],
+          slack: !!process.env['SLACK_INVENTORY_WEBHOOK'],
+          email: !!process.env['ADMIN_EMAIL'],
         },
       };
     }
@@ -293,7 +290,7 @@ async function handleBulkReset(data: any, authorizedBy: string) {
 }
 
 async function handleManualAlert(data: any, authorizedBy: string) {
-  const { message, urgency, channels } = data;
+  const { message, urgency } = data;
 
   if (!message) {
     return NextResponse.json(

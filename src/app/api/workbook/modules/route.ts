@@ -142,7 +142,10 @@ async function getUserCompletedModules(userId: string): Promise<string[]> {
 /**
  * Get user progress for modules
  */
-async function getUserProgress(userId: string, moduleIds?: string[]): Promise<Map<string, any>> {
+async function getUserProgress(
+  userId: string,
+  moduleIds?: string[]
+): Promise<Map<string, any>> {
   let query = `
     SELECT module_id, progress_percent, status, last_accessed_at, completed_at
     FROM user_progress
@@ -179,7 +182,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -243,7 +246,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate and sanitize pagination
-    const { page, limit } = validatePagination(validatedQuery.page, validatedQuery.limit);
+    const { page, limit } = validatePagination(
+      validatedQuery.page,
+      validatedQuery.limit
+    );
     const offset = (page - 1) * limit;
 
     // Build query conditions
@@ -274,7 +280,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build main query
-    let whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Get total count for pagination
     const countQuery = `
@@ -381,7 +388,8 @@ export async function GET(request: NextRequest) {
 
     // Validate response schema
     try {
-      const validatedResponse = PaginatedResponseSchema(ModuleListItemSchema).parse(response);
+      const validatedResponse =
+        PaginatedResponseSchema(ModuleListItemSchema).parse(response);
 
       // Add performance metrics in development
       if (process.env.NODE_ENV === 'development') {
@@ -394,7 +402,6 @@ export async function GET(request: NextRequest) {
       console.error('Response validation error:', error);
       throw new Error('Failed to validate response format');
     }
-
   } catch (error) {
     console.error('Modules GET error:', error);
 
@@ -448,7 +455,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -487,7 +494,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Modules POST error:', error);
     return NextResponse.json(

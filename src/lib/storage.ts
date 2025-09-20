@@ -324,7 +324,6 @@ export class FileStorageService {
 
       this.updateMetrics(fileMetadata.size);
       return { success: true, fileMetadata };
-
     } catch (error) {
       console.error('File upload failed:', error);
       return {
@@ -356,7 +355,6 @@ export class FileStorageService {
 
       this.metrics.downloadsToday++;
       return signedUrl;
-
     } catch (error) {
       console.error('Failed to generate signed URL:', error);
       throw new Error('Failed to generate download URL');
@@ -430,8 +428,9 @@ export class FileStorageService {
         lessonId: response.Metadata?.lessonid,
         sessionId: response.Metadata?.sessionid,
         tags: response.Metadata?.tags ? JSON.parse(response.Metadata.tags) : [],
-        metadata: response.Metadata?.custommetadata ?
-          JSON.parse(response.Metadata.custommetadata) : {},
+        metadata: response.Metadata?.custommetadata
+          ? JSON.parse(response.Metadata.custommetadata)
+          : {},
       };
     } catch (error) {
       console.error('Failed to get file metadata:', error);
@@ -503,7 +502,8 @@ export class FileStorageService {
       };
 
       const fileList = await this.listFiles(listOptions);
-      const cutoffDate = options.olderThan || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago
+      const cutoffDate =
+        options.olderThan || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago
 
       for (const file of fileList.files) {
         result.summary.processed++;
@@ -536,7 +536,6 @@ export class FileStorageService {
 
       result.summary.totalSaved = this.formatBytes(result.savedBytes);
       return result;
-
     } catch (error) {
       console.error('Cleanup failed:', error);
       result.errors.push(`Cleanup failed: ${error}`);
@@ -618,7 +617,10 @@ export class FileStorageService {
       }
     }
 
-    return { isValid: true, warnings: warnings.length > 0 ? warnings : undefined };
+    return {
+      isValid: true,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    };
   }
 
   /**
@@ -649,7 +651,9 @@ export class FileStorageService {
       mimeType,
       size,
       url: this.generatePublicUrl(key),
-      publicUrl: options.isPublic ? this.generatePublicUrl(key, true) : undefined,
+      publicUrl: options.isPublic
+        ? this.generatePublicUrl(key, true)
+        : undefined,
       key,
       bucket: this.config.bucket,
       uploadedAt: new Date(),
@@ -716,7 +720,6 @@ export class FileStorageService {
         stage: 'upload',
         message: 'Upload complete',
       });
-
     } catch (error) {
       console.error('S3 upload failed:', error);
       throw new Error(`Upload failed: ${error}`);
@@ -851,17 +854,25 @@ export class FileStorageService {
     }));
   }
 
-  private async scanForViruses(file: File | Buffer): Promise<{ clean: boolean; threat?: string }> {
+  private async scanForViruses(
+    file: File | Buffer
+  ): Promise<{ clean: boolean; threat?: string }> {
     // Placeholder for virus scanning integration
     // You would integrate with ClamAV, VirusTotal, or similar service
     return { clean: true };
   }
 
-  private matchesFilters(metadata: FileMetadata, options: FileListOptions): boolean {
+  private matchesFilters(
+    metadata: FileMetadata,
+    options: FileListOptions
+  ): boolean {
     if (options.userId && metadata.userId !== options.userId) return false;
-    if (options.moduleId && metadata.moduleId !== options.moduleId) return false;
-    if (options.mimeType && !metadata.mimeType.includes(options.mimeType)) return false;
-    if (options.startDate && metadata.uploadedAt < options.startDate) return false;
+    if (options.moduleId && metadata.moduleId !== options.moduleId)
+      return false;
+    if (options.mimeType && !metadata.mimeType.includes(options.mimeType))
+      return false;
+    if (options.startDate && metadata.uploadedAt < options.startDate)
+      return false;
     if (options.endDate && metadata.uploadedAt > options.endDate) return false;
     return true;
   }
@@ -907,15 +918,21 @@ export function createStorageConfig(): StorageConfig {
     publicBucket: process.env.AWS_S3_PUBLIC_BUCKET,
     cloudFrontDomain: process.env.AWS_CLOUDFRONT_DOMAIN,
     maxFileSize: parseInt(process.env.AUDIO_MAX_FILE_SIZE || '104857600'), // 100MB
-    allowedMimeTypes: (process.env.UPLOAD_ALLOWED_TYPES || '').split(',').filter(Boolean),
-    defaultExpiration: parseInt(process.env.AWS_S3_DEFAULT_EXPIRATION || '3600'),
+    allowedMimeTypes: (process.env.UPLOAD_ALLOWED_TYPES || '')
+      .split(',')
+      .filter(Boolean),
+    defaultExpiration: parseInt(
+      process.env.AWS_S3_DEFAULT_EXPIRATION || '3600'
+    ),
     enableVirusScanning: process.env.UPLOAD_SCAN_FOR_VIRUSES === 'true',
     quarantineBucket: process.env.UPLOAD_QUARANTINE_BUCKET,
   };
 
   // Validate required configuration
   if (!config.accessKeyId || !config.secretAccessKey || !config.bucket) {
-    throw new Error('Missing required AWS configuration: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or AWS_S3_BUCKET_NAME');
+    throw new Error(
+      'Missing required AWS configuration: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or AWS_S3_BUCKET_NAME'
+    );
   }
 
   return config;

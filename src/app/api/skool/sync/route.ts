@@ -9,7 +9,7 @@ import {
 } from '@/lib/skool-members';
 
 // POST endpoint to sync existing Skool members
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('🔄 Starting Skool member sync...');
 
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       totalMembers: getVerifiedSkoolMemberCount(),
       stats,
       apiConfigured: !!(
-        process.env.SKOOL_API_KEY && process.env.SKOOL_GROUP_URL
+        process.env['SKOOL_API_KEY'] && process.env['SKOOL_GROUP_URL']
       ),
       endpoints: {
         'POST /api/skool/sync': 'Sync existing Skool members',

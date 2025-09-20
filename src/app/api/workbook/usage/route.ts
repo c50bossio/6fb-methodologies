@@ -95,7 +95,11 @@ interface UsageAnalytics {
     total_cost_cents: number;
     transcription_cost_cents: number;
     average_cost_per_minute: number;
-    cost_by_month: Array<{ month: string; cost_cents: number; minutes: number }>;
+    cost_by_month: Array<{
+      month: string;
+      cost_cents: number;
+      minutes: number;
+    }>;
   };
   engagement_metrics: {
     sessions_this_week: number;
@@ -155,7 +159,9 @@ export async function GET(request: NextRequest) {
     // Validate timeframe
     const validTimeframes = ['7d', '30d', '90d', '1y'];
     if (!validTimeframes.includes(timeframe)) {
-      throw new ValidationError('Invalid timeframe. Valid options: 7d, 30d, 90d, 1y');
+      throw new ValidationError(
+        'Invalid timeframe. Valid options: 7d, 30d, 90d, 1y'
+      );
     }
 
     const timeframeDays = {
@@ -243,13 +249,18 @@ export async function GET(request: NextRequest) {
 
     let currentStreak = 0;
     const today = new Date().toISOString().split('T')[0];
-    let checkDate = new Date();
+    const checkDate = new Date();
 
     for (const activity of streakData) {
-      const activityDate = new Date(activity.activity_date).toISOString().split('T')[0];
+      const activityDate = new Date(activity.activity_date)
+        .toISOString()
+        .split('T')[0];
       const expectedDate = checkDate.toISOString().split('T')[0];
 
-      if (activityDate === expectedDate || (currentStreak === 0 && activityDate === today)) {
+      if (
+        activityDate === expectedDate ||
+        (currentStreak === 0 && activityDate === today)
+      ) {
         currentStreak++;
         checkDate.setDate(checkDate.getDate() - 1);
       } else {
@@ -317,41 +328,63 @@ export async function GET(request: NextRequest) {
 
       costBreakdown = {
         total_cost_cents: audioStats.total_transcription_cost_cents || 0,
-        transcription_cost_cents: audioStats.total_transcription_cost_cents || 0,
-        average_cost_per_minute: audioStats.total_transcriptions > 0
-          ? (audioStats.total_transcription_cost_cents || 0) / audioStats.total_transcriptions
-          : 0,
+        transcription_cost_cents:
+          audioStats.total_transcription_cost_cents || 0,
+        average_cost_per_minute:
+          audioStats.total_transcriptions > 0
+            ? (audioStats.total_transcription_cost_cents || 0) /
+              audioStats.total_transcriptions
+            : 0,
         cost_by_month: costByMonth,
       };
     }
 
     // Calculate performance insights
-    const completionRate = learningProgress.modules_started > 0
-      ? (learningProgress.modules_completed / learningProgress.modules_started) * 100
-      : 0;
+    const completionRate =
+      learningProgress.modules_started > 0
+        ? (learningProgress.modules_completed /
+            learningProgress.modules_started) *
+          100
+        : 0;
 
-    const learningVelocity = learningProgress.lessons_completed / Math.max(timeframeDays / 7, 1); // lessons per week
+    const learningVelocity =
+      learningProgress.lessons_completed / Math.max(timeframeDays / 7, 1); // lessons per week
 
     // Simple engagement trend calculation
     const recentSessions = engagementStats.sessions_this_week || 0;
-    const expectedWeeklySessions = (engagementStats.sessions_this_month || 0) / 4;
-    const engagementTrend = recentSessions > expectedWeeklySessions * 1.1 ? 'increasing'
-      : recentSessions < expectedWeeklySessions * 0.9 ? 'decreasing'
-      : 'stable';
+    const expectedWeeklySessions =
+      (engagementStats.sessions_this_month || 0) / 4;
+    const engagementTrend =
+      recentSessions > expectedWeeklySessions * 1.1
+        ? 'increasing'
+        : recentSessions < expectedWeeklySessions * 0.9
+          ? 'decreasing'
+          : 'stable';
 
     // Generate recommendations
     const recommendations = [];
     if (completionRate < 50) {
-      recommendations.push('Focus on completing started modules to improve your learning outcomes');
+      recommendations.push(
+        'Focus on completing started modules to improve your learning outcomes'
+      );
     }
     if (currentStreak === 0) {
-      recommendations.push('Start a daily learning streak to build consistent study habits');
+      recommendations.push(
+        'Start a daily learning streak to build consistent study habits'
+      );
     }
     if (learningVelocity < 1) {
-      recommendations.push('Consider setting aside more time for lessons to accelerate your progress');
+      recommendations.push(
+        'Consider setting aside more time for lessons to accelerate your progress'
+      );
     }
-    if ((notesStats.action_items_completed || 0) < (notesStats.action_items_created || 1) * 0.5) {
-      recommendations.push('Complete more action items to put your learning into practice');
+    if (
+      (notesStats.action_items_completed || 0) <
+      (notesStats.action_items_created || 1) * 0.5
+    ) {
+      recommendations.push(
+        'Complete more action items to put your learning into practice'
+      );
     }
 
     const analytics: UsageAnalytics = {
@@ -364,27 +397,44 @@ export async function GET(request: NextRequest) {
       },
       activity_summary: {
         total_sessions: parseInt(sessionSummary.total_sessions) || 0,
-        total_session_time_minutes: Math.round(parseFloat(sessionSummary.total_session_time_minutes) || 0),
-        total_audio_recordings: parseInt(audioStats.total_audio_recordings) || 0,
+        total_session_time_minutes: Math.round(
+          parseFloat(sessionSummary.total_session_time_minutes) || 0
+        ),
+        total_audio_recordings:
+          parseInt(audioStats.total_audio_recordings) || 0,
         total_transcriptions: parseInt(audioStats.total_transcriptions) || 0,
         total_notes: parseInt(notesStats.total_notes) || 0,
-        last_activity: sessionSummary.last_activity || userProfile.last_login_at,
+        last_activity:
+          sessionSummary.last_activity || userProfile.last_login_at,
       },
       usage_limits: {
-        daily_transcription_limit_minutes: userProfile.daily_transcription_limit_minutes,
-        daily_transcription_used_minutes: userProfile.daily_transcription_used_minutes,
+        daily_transcription_limit_minutes:
+          userProfile.daily_transcription_limit_minutes,
+        daily_transcription_used_minutes:
+          userProfile.daily_transcription_used_minutes,
         monthly_cost_limit_cents: userProfile.monthly_cost_limit_cents,
         monthly_cost_used_cents: userProfile.monthly_transcription_cost_cents,
-        daily_remaining_minutes: Math.max(0, userProfile.daily_transcription_limit_minutes - userProfile.daily_transcription_used_minutes),
-        monthly_remaining_budget_cents: Math.max(0, userProfile.monthly_cost_limit_cents - userProfile.monthly_transcription_cost_cents),
+        daily_remaining_minutes: Math.max(
+          0,
+          userProfile.daily_transcription_limit_minutes -
+            userProfile.daily_transcription_used_minutes
+        ),
+        monthly_remaining_budget_cents: Math.max(
+          0,
+          userProfile.monthly_cost_limit_cents -
+            userProfile.monthly_transcription_cost_cents
+        ),
       },
       learning_progress: {
         modules_started: parseInt(learningProgress.modules_started) || 0,
         modules_completed: parseInt(learningProgress.modules_completed) || 0,
         lessons_completed: parseInt(learningProgress.lessons_completed) || 0,
-        overall_progress_percent: Math.round(parseFloat(learningProgress.overall_progress_percent) || 0),
+        overall_progress_percent: Math.round(
+          parseFloat(learningProgress.overall_progress_percent) || 0
+        ),
         current_streak_days: currentStreak,
-        total_study_time_minutes: parseInt(learningProgress.total_study_time_minutes) || 0,
+        total_study_time_minutes:
+          parseInt(learningProgress.total_study_time_minutes) || 0,
       },
       cost_breakdown: costBreakdown || {
         total_cost_cents: 0,
@@ -395,15 +445,23 @@ export async function GET(request: NextRequest) {
       engagement_metrics: {
         sessions_this_week: parseInt(engagementStats.sessions_this_week) || 0,
         sessions_this_month: parseInt(engagementStats.sessions_this_month) || 0,
-        average_session_duration_minutes: Math.round(parseFloat(engagementStats.average_session_duration_minutes) || 0),
+        average_session_duration_minutes: Math.round(
+          parseFloat(engagementStats.average_session_duration_minutes) || 0
+        ),
         most_active_hour: parseInt(activeHourData?.hour) || 9,
         most_active_day: activeDayData?.day_name || 'Monday',
-        participation_score: Math.round((completionRate + (currentStreak * 5) + Math.min(learningVelocity * 10, 50)) / 3),
+        participation_score: Math.round(
+          (completionRate +
+            currentStreak * 5 +
+            Math.min(learningVelocity * 10, 50)) /
+            3
+        ),
       },
       content_interaction: {
         notes_created: parseInt(notesStats.total_notes) || 0,
         action_items_created: parseInt(notesStats.action_items_created) || 0,
-        action_items_completed: parseInt(notesStats.action_items_completed) || 0,
+        action_items_completed:
+          parseInt(notesStats.action_items_completed) || 0,
         searches_performed: 0, // Would need to track search queries
         exports_generated: 0, // Would get from data_exports table
       },
@@ -411,7 +469,10 @@ export async function GET(request: NextRequest) {
         completion_rate: Math.round(completionRate),
         engagement_trend,
         learning_velocity: Math.round(learningVelocity * 10) / 10,
-        retention_score: Math.min(Math.round((currentStreak * 10) + (completionRate / 2)), 100),
+        retention_score: Math.min(
+          Math.round(currentStreak * 10 + completionRate / 2),
+          100
+        ),
         recommendations,
       },
     };

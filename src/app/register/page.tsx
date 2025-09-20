@@ -52,12 +52,8 @@ function RegisterPageContent() {
     null
   );
 
-  // CSRF hook for secure API requests
-  const {
-    authenticatedFetch,
-    isReady: csrfReady,
-    error: csrfError,
-  } = useCSRF();
+  // CSRF hook for secure API requests (disabled for payment endpoint)
+  const { } = useCSRF();
   const [formData, setFormData] = useState<RegistrationData>({
     firstName: '',
     lastName: '',
@@ -97,12 +93,12 @@ function RegisterPageContent() {
       // Get simple URL parameters
       const type = (searchParams.get('type') as TicketType) || 'GA';
       const quantity = parseInt(searchParams.get('quantity') || '1');
-      const cityId = searchParams.get('city');
+      const cityIdFromUrl = searchParams.get('city');
 
       console.log('🔍 Registration page - URL parameters:', {
         type,
         quantity,
-        cityIdFromUrl: cityId,
+        cityIdFromUrl,
       });
 
       // Get city selection data from sessionStorage with fallback to URL
@@ -118,12 +114,12 @@ function RegisterPageContent() {
       }
 
       // Fallback: If no sessionStorage city data but we have cityId from URL, try to resolve it
-      if (!citySelectionData && cityId) {
-        console.log('🔍 No sessionStorage city data, attempting to resolve from URL cityId:', cityId);
+      if (!citySelectionData && cityIdFromUrl) {
+        console.log('🔍 No sessionStorage city data, attempting to resolve from URL cityId:', cityIdFromUrl);
 
         // Import cities dynamically to resolve cityId
         import('@/lib/cities').then(({ getCityById }) => {
-          const cityFromId = getCityById(cityId);
+          const cityFromId = getCityById(cityIdFromUrl);
           if (cityFromId) {
             const resolvedCityData = {
               cityId: cityFromId.id,
@@ -143,7 +139,7 @@ function RegisterPageContent() {
               console.error('Failed to save resolved city to sessionStorage:', error);
             }
           } else {
-            console.warn('❌ Could not resolve cityId from URL:', cityId);
+            console.warn('❌ Could not resolve cityId from URL:', cityIdFromUrl);
           }
         }).catch(error => {
           console.error('Failed to import cities for URL fallback:', error);
@@ -195,9 +191,10 @@ function RegisterPageContent() {
         const defaultPrice = type === 'VIP' ? 1500 : 1000;
 
         // Check if member status is passed via URL parameters
-        const memberStatus = searchParams.get('isMember') === 'true' ||
-                            searchParams.get('isVerified') === 'true' ||
-                            false;
+        const memberStatus =
+          searchParams.get('isMember') === 'true' ||
+          searchParams.get('isVerified') === 'true' ||
+          false;
 
         setPricingData({
           originalPrice: defaultPrice,
@@ -433,6 +430,13 @@ function RegisterPageContent() {
         );
       }
 
+      console.log('🚀 Creating checkout session with city data:', {
+        cityId: selectedCity.cityId,
+        cityName: selectedCity.cityName,
+        ticketType: pricingData.ticketType,
+        customerEmail: formData.email,
+      });
+
       // Create checkout session (CSRF-exempt endpoint)
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -482,9 +486,10 @@ function RegisterPageContent() {
       console.error('Checkout error:', error);
 
       // Provide specific error messages
-      const errorMessage = error instanceof Error
-        ? error.message
-        : 'Failed to proceed to payment. Please try again.';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to proceed to payment. Please try again.';
 
       // Show user-friendly alert
       alert(errorMessage);

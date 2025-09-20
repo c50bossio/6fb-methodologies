@@ -4,8 +4,6 @@ import {
   checkInventoryStatus,
   expandInventory,
   resetInventory,
-  getInventoryTransactions,
-  getInventoryExpansions,
   validateInventoryForCheckout,
 } from '@/lib/inventory';
 
@@ -210,7 +208,7 @@ export async function DELETE(request: NextRequest) {
       );
 
       // Send alert about inventory reset
-      if (process.env.TEAM_ALERT_PHONE) {
+      if (process.env['TEAM_ALERT_PHONE']) {
         // Could send SMS alert about reset
         console.log('Inventory reset alert:', { cityId, authorizedBy, reason });
       }

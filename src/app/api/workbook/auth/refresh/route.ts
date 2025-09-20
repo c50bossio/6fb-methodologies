@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'ip_locked_out', action: 'token_refresh' }
+        details: { reason: 'ip_locked_out', action: 'token_refresh' },
       });
 
       return createErrorResponse(
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'rate_limited', action: 'token_refresh' }
+        details: { reason: 'rate_limited', action: 'token_refresh' },
       });
       return rateLimitResult;
     }
@@ -116,7 +116,10 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'suspicious_refresh_request', action: 'token_refresh' }
+        details: {
+          reason: 'suspicious_refresh_request',
+          action: 'token_refresh',
+        },
       });
 
       return createErrorResponse(
@@ -134,7 +137,9 @@ export async function POST(request: NextRequest) {
         requestBody = RefreshRequestSchema.parse(body);
       }
     } catch (error) {
-      console.warn(`❌ Invalid request body from IP: ${clientIP}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `❌ Invalid request body from IP: ${clientIP}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       return createErrorResponse(
         'Invalid request format',
         'Request body must be valid JSON.',
@@ -147,7 +152,9 @@ export async function POST(request: NextRequest) {
 
     if (!refreshToken && requestBody?.refreshToken) {
       refreshToken = requestBody.refreshToken;
-      console.log(`🔑 Using refresh token from request body from IP: ${clientIP}`);
+      console.log(
+        `🔑 Using refresh token from request body from IP: ${clientIP}`
+      );
     } else if (refreshToken) {
       console.log(`🔑 Using refresh token from cookie from IP: ${clientIP}`);
     }
@@ -159,7 +166,7 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'no_refresh_token', action: 'token_refresh' }
+        details: { reason: 'no_refresh_token', action: 'token_refresh' },
       });
 
       return createErrorResponse(
@@ -178,7 +185,7 @@ export async function POST(request: NextRequest) {
         ip: clientIP,
         userAgent,
         timestamp: Date.now(),
-        details: { reason: 'invalid_refresh_token', action: 'token_refresh' }
+        details: { reason: 'invalid_refresh_token', action: 'token_refresh' },
       });
 
       // Clear invalid cookies and return error
@@ -196,7 +203,9 @@ export async function POST(request: NextRequest) {
     try {
       validatedPayload = RefreshTokenPayloadSchema.parse(decoded);
     } catch (error) {
-      console.warn(`❌ Invalid refresh token payload from IP: ${clientIP}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `❌ Invalid refresh token payload from IP: ${clientIP}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       recordSecurityEvent({
         type: 'auth_failure',
         ip: clientIP,
@@ -205,8 +214,8 @@ export async function POST(request: NextRequest) {
         details: {
           reason: 'invalid_refresh_token_payload',
           error: error instanceof Error ? error.message : 'Unknown error',
-          action: 'token_refresh'
-        }
+          action: 'token_refresh',
+        },
       });
 
       const response = createErrorResponse(
@@ -222,7 +231,9 @@ export async function POST(request: NextRequest) {
     const authResult = await refreshAuthToken(refreshToken);
 
     if (!authResult.success) {
-      console.warn(`❌ Token refresh failed from IP: ${clientIP}: ${authResult.error}`);
+      console.warn(
+        `❌ Token refresh failed from IP: ${clientIP}: ${authResult.error}`
+      );
       recordSecurityEvent({
         type: 'auth_failure',
         ip: clientIP,
@@ -232,14 +243,15 @@ export async function POST(request: NextRequest) {
           reason: 'refresh_failed',
           error: authResult.error,
           userId: validatedPayload.userId,
-          action: 'token_refresh_failed'
-        }
+          action: 'token_refresh_failed',
+        },
       });
 
       // Clear invalid cookies and return error
       const response = createErrorResponse(
         authResult.error || 'Token refresh failed',
-        authResult.message || 'Unable to refresh your session. Please log in again.',
+        authResult.message ||
+          'Unable to refresh your session. Please log in again.',
         401
       );
 
@@ -248,7 +260,9 @@ export async function POST(request: NextRequest) {
 
     // Validate that session was created
     if (!authResult.session) {
-      console.error(`❌ Token refresh succeeded but no session data for user: ${validatedPayload.userId} from IP: ${clientIP}`);
+      console.error(
+        `❌ Token refresh succeeded but no session data for user: ${validatedPayload.userId} from IP: ${clientIP}`
+      );
       const response = createErrorResponse(
         'Token refresh service error',
         'Session creation failed during refresh.',
@@ -258,7 +272,9 @@ export async function POST(request: NextRequest) {
       return clearAuthCookies(response);
     }
 
-    console.log(`✅ Token refresh successful for user: ${authResult.session.userId} from IP: ${clientIP}`);
+    console.log(
+      `✅ Token refresh successful for user: ${authResult.session.userId} from IP: ${clientIP}`
+    );
 
     // Record successful token refresh
     recordSecurityEvent({
@@ -268,7 +284,7 @@ export async function POST(request: NextRequest) {
       ip: clientIP,
       userAgent,
       timestamp: Date.now(),
-      details: { action: 'token_refresh_success' }
+      details: { action: 'token_refresh_success' },
     });
 
     // Prepare response data with validation
@@ -289,7 +305,10 @@ export async function POST(request: NextRequest) {
     try {
       RefreshResponseSchema.parse(responseData);
     } catch (error) {
-      console.error(`❌ Response validation failed for user: ${authResult.session.userId}:`, error);
+      console.error(
+        `❌ Response validation failed for user: ${authResult.session.userId}:`,
+        error
+      );
       return createErrorResponse(
         'Token refresh service error',
         'Invalid response format',
@@ -352,8 +371,8 @@ export async function POST(request: NextRequest) {
       details: {
         reason: 'refresh_service_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        action: 'token_refresh_exception'
-      }
+        action: 'token_refresh_exception',
+      },
     });
 
     return createErrorResponse(

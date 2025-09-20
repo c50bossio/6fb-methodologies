@@ -28,7 +28,8 @@ export const TranscriptionStatus = {
   REJECTED: 'rejected',
 } as const;
 
-export type TranscriptionStatusType = typeof TranscriptionStatus[keyof typeof TranscriptionStatus];
+export type TranscriptionStatusType =
+  (typeof TranscriptionStatus)[keyof typeof TranscriptionStatus];
 
 export const TranscriptionProvider = {
   OPENAI_WHISPER: 'openai_whisper',
@@ -40,7 +41,8 @@ export const TranscriptionProvider = {
   CUSTOM: 'custom',
 } as const;
 
-export type TranscriptionProviderType = typeof TranscriptionProvider[keyof typeof TranscriptionProvider];
+export type TranscriptionProviderType =
+  (typeof TranscriptionProvider)[keyof typeof TranscriptionProvider];
 
 export const WhisperModel = {
   TINY: 'whisper-1',
@@ -50,7 +52,7 @@ export const WhisperModel = {
   LARGE: 'whisper-1',
 } as const;
 
-export type WhisperModelType = typeof WhisperModel[keyof typeof WhisperModel];
+export type WhisperModelType = (typeof WhisperModel)[keyof typeof WhisperModel];
 
 export const TranscriptionLanguage = {
   AUTO: 'auto',
@@ -71,7 +73,8 @@ export const TranscriptionLanguage = {
   TURKISH: 'tr',
 } as const;
 
-export type TranscriptionLanguageType = typeof TranscriptionLanguage[keyof typeof TranscriptionLanguage];
+export type TranscriptionLanguageType =
+  (typeof TranscriptionLanguage)[keyof typeof TranscriptionLanguage];
 
 export const OutputFormat = {
   JSON: 'json',
@@ -82,7 +85,7 @@ export const OutputFormat = {
   VERBOSE_JSON: 'verbose_json',
 } as const;
 
-export type OutputFormatType = typeof OutputFormat[keyof typeof OutputFormat];
+export type OutputFormatType = (typeof OutputFormat)[keyof typeof OutputFormat];
 
 // =============================================================================
 // OpenAI Whisper API Types
@@ -191,7 +194,13 @@ export interface TranscriptionQuality {
 
   // Issues detected
   issues: Array<{
-    type: 'low_confidence' | 'background_noise' | 'multiple_speakers' | 'poor_audio' | 'fast_speech' | 'accent';
+    type:
+      | 'low_confidence'
+      | 'background_noise'
+      | 'multiple_speakers'
+      | 'poor_audio'
+      | 'fast_speech'
+      | 'accent';
     severity: 'low' | 'medium' | 'high';
     description: string;
     segments?: number[]; // affected segment IDs
@@ -200,7 +209,11 @@ export interface TranscriptionQuality {
 
   // Recommendations
   recommendations: Array<{
-    type: 'reprocess' | 'manual_review' | 'speaker_separation' | 'noise_reduction';
+    type:
+      | 'reprocess'
+      | 'manual_review'
+      | 'speaker_separation'
+      | 'noise_reduction';
     priority: 'low' | 'medium' | 'high';
     description: string;
     estimatedImpact: number; // 0-100 expected improvement
@@ -247,7 +260,15 @@ export interface TranscriptionSearchIndex {
   // Named entity recognition
   entities: Array<{
     text: string;
-    type: 'PERSON' | 'ORGANIZATION' | 'LOCATION' | 'DATE' | 'TIME' | 'MONEY' | 'PERCENTAGE' | 'OTHER';
+    type:
+      | 'PERSON'
+      | 'ORGANIZATION'
+      | 'LOCATION'
+      | 'DATE'
+      | 'TIME'
+      | 'MONEY'
+      | 'PERCENTAGE'
+      | 'OTHER';
     confidence: number; // 0-1
     positions: Array<{
       segmentId: number;
@@ -605,10 +626,51 @@ export interface TranscriptionJob {
 // Base schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const TranscriptionStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'reviewing', 'approved', 'rejected']);
-export const TranscriptionProviderSchema = z.enum(['openai_whisper', 'azure_speech', 'google_speech', 'aws_transcribe', 'assemblyai', 'deepgram', 'custom']);
-export const TranscriptionLanguageSchema = z.enum(['auto', 'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'hi', 'nl', 'pl', 'tr']);
-export const OutputFormatSchema = z.enum(['json', 'text', 'srt', 'vtt', 'tsv', 'verbose_json']);
+export const TranscriptionStatusSchema = z.enum([
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+  'cancelled',
+  'reviewing',
+  'approved',
+  'rejected',
+]);
+export const TranscriptionProviderSchema = z.enum([
+  'openai_whisper',
+  'azure_speech',
+  'google_speech',
+  'aws_transcribe',
+  'assemblyai',
+  'deepgram',
+  'custom',
+]);
+export const TranscriptionLanguageSchema = z.enum([
+  'auto',
+  'en',
+  'es',
+  'fr',
+  'de',
+  'it',
+  'pt',
+  'ru',
+  'ja',
+  'ko',
+  'zh',
+  'ar',
+  'hi',
+  'nl',
+  'pl',
+  'tr',
+]);
+export const OutputFormatSchema = z.enum([
+  'json',
+  'text',
+  'srt',
+  'vtt',
+  'tsv',
+  'verbose_json',
+]);
 
 // Whisper response schemas
 export const WhisperWordSchema = z.object({
@@ -672,19 +734,35 @@ export const TranscriptionQualitySchema = z.object({
   completeness: z.number().min(0).max(100),
   readability: z.number().min(0).max(100),
   timing: z.number().min(0).max(100),
-  issues: z.array(z.object({
-    type: z.enum(['low_confidence', 'background_noise', 'multiple_speakers', 'poor_audio', 'fast_speech', 'accent']),
-    severity: z.enum(['low', 'medium', 'high']),
-    description: z.string(),
-    segments: z.array(z.number()).optional(),
-    suggestions: z.array(z.string()).optional(),
-  })),
-  recommendations: z.array(z.object({
-    type: z.enum(['reprocess', 'manual_review', 'speaker_separation', 'noise_reduction']),
-    priority: z.enum(['low', 'medium', 'high']),
-    description: z.string(),
-    estimatedImpact: z.number().min(0).max(100),
-  })),
+  issues: z.array(
+    z.object({
+      type: z.enum([
+        'low_confidence',
+        'background_noise',
+        'multiple_speakers',
+        'poor_audio',
+        'fast_speech',
+        'accent',
+      ]),
+      severity: z.enum(['low', 'medium', 'high']),
+      description: z.string(),
+      segments: z.array(z.number()).optional(),
+      suggestions: z.array(z.string()).optional(),
+    })
+  ),
+  recommendations: z.array(
+    z.object({
+      type: z.enum([
+        'reprocess',
+        'manual_review',
+        'speaker_separation',
+        'noise_reduction',
+      ]),
+      priority: z.enum(['low', 'medium', 'high']),
+      description: z.string(),
+      estimatedImpact: z.number().min(0).max(100),
+    })
+  ),
   processedAt: TimestampSchema,
   analysisVersion: z.string(),
 });
@@ -693,28 +771,34 @@ export const TranscriptionQualitySchema = z.object({
 export const SearchQuerySchema = z.object({
   query: z.string().min(1),
   type: z.enum(['text', 'semantic', 'hybrid']),
-  filters: z.object({
-    userId: UUIDSchema.optional(),
-    moduleId: UUIDSchema.optional(),
-    lessonId: UUIDSchema.optional(),
-    language: TranscriptionLanguageSchema.optional(),
-    dateRange: z.object({
-      start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    }).optional(),
-    confidenceThreshold: z.number().min(0).max(100).optional(),
-    tags: z.array(z.string()).optional(),
-  }).optional(),
-  options: z.object({
-    fuzzy: z.boolean().optional(),
-    caseSensitive: z.boolean().optional(),
-    wholeWords: z.boolean().optional(),
-    includeContext: z.boolean().optional(),
-    maxResults: z.number().min(1).max(1000).optional(),
-    offset: z.number().min(0).optional(),
-    sortBy: z.enum(['relevance', 'timestamp', 'confidence']).optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional(),
-  }).optional(),
+  filters: z
+    .object({
+      userId: UUIDSchema.optional(),
+      moduleId: UUIDSchema.optional(),
+      lessonId: UUIDSchema.optional(),
+      language: TranscriptionLanguageSchema.optional(),
+      dateRange: z
+        .object({
+          start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        })
+        .optional(),
+      confidenceThreshold: z.number().min(0).max(100).optional(),
+      tags: z.array(z.string()).optional(),
+    })
+    .optional(),
+  options: z
+    .object({
+      fuzzy: z.boolean().optional(),
+      caseSensitive: z.boolean().optional(),
+      wholeWords: z.boolean().optional(),
+      includeContext: z.boolean().optional(),
+      maxResults: z.number().min(1).max(1000).optional(),
+      offset: z.number().min(0).optional(),
+      sortBy: z.enum(['relevance', 'timestamp', 'confidence']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
+    })
+    .optional(),
 });
 
 // Main transcription record schema
@@ -753,21 +837,27 @@ export const TranscriptionRecordSchema = z.object({
     text: z.string(),
     wordCount: z.number().min(0),
     segmentCount: z.number().min(0),
-    segments: z.array(z.object({
-      id: z.number(),
-      start: z.number().min(0),
-      end: z.number().min(0),
-      text: z.string(),
-      confidence: z.number().min(0).max(100).optional(),
-      speaker: z.string().optional(),
-    })),
-    words: z.array(z.object({
-      word: z.string(),
-      start: z.number().min(0),
-      end: z.number().min(0),
-      confidence: z.number().min(0).max(100),
-      speaker: z.string().optional(),
-    })).optional(),
+    segments: z.array(
+      z.object({
+        id: z.number(),
+        start: z.number().min(0),
+        end: z.number().min(0),
+        text: z.string(),
+        confidence: z.number().min(0).max(100).optional(),
+        speaker: z.string().optional(),
+      })
+    ),
+    words: z
+      .array(
+        z.object({
+          word: z.string(),
+          start: z.number().min(0),
+          end: z.number().min(0),
+          confidence: z.number().min(0).max(100),
+          speaker: z.string().optional(),
+        })
+      )
+      .optional(),
   }),
   confidence: ConfidenceMetricsSchema,
   quality: TranscriptionQualitySchema,
@@ -808,7 +898,8 @@ export const CreateTranscriptionInputSchema = TranscriptionRecordSchema.omit({
   processing: true,
 });
 
-export const UpdateTranscriptionInputSchema = CreateTranscriptionInputSchema.partial();
+export const UpdateTranscriptionInputSchema =
+  CreateTranscriptionInputSchema.partial();
 
 // =============================================================================
 // Utility Functions
@@ -819,22 +910,32 @@ export const UpdateTranscriptionInputSchema = CreateTranscriptionInputSchema.par
  */
 export function convertWhisperResponse(
   whisperResponse: WhisperResponse,
-  audioMetadata: { duration: number; fileSize: number; format: string; sampleRate: number; channels: number }
+  audioMetadata: {
+    duration: number;
+    fileSize: number;
+    format: string;
+    sampleRate: number;
+    channels: number;
+  }
 ): Partial<TranscriptionRecord['content']> {
-  const segments = whisperResponse.segments?.map(segment => ({
-    id: segment.id,
-    start: segment.start,
-    end: segment.end,
-    text: segment.text.trim(),
-    confidence: segment.avg_logprob ? Math.round((1 - Math.abs(segment.avg_logprob)) * 100) : undefined,
-  })) || [];
+  const segments =
+    whisperResponse.segments?.map(segment => ({
+      id: segment.id,
+      start: segment.start,
+      end: segment.end,
+      text: segment.text.trim(),
+      confidence: segment.avg_logprob
+        ? Math.round((1 - Math.abs(segment.avg_logprob)) * 100)
+        : undefined,
+    })) || [];
 
-  const words = whisperResponse.words?.map(word => ({
-    word: word.word,
-    start: word.start,
-    end: word.end,
-    confidence: Math.round(word.probability * 100),
-  })) || [];
+  const words =
+    whisperResponse.words?.map(word => ({
+      word: word.word,
+      start: word.start,
+      end: word.end,
+      confidence: Math.round(word.probability * 100),
+    })) || [];
 
   return {
     text: whisperResponse.text.trim(),
@@ -848,7 +949,9 @@ export function convertWhisperResponse(
 /**
  * Calculate confidence metrics from Whisper response
  */
-export function calculateConfidenceMetrics(whisperResponse: WhisperResponse): ConfidenceMetrics {
+export function calculateConfidenceMetrics(
+  whisperResponse: WhisperResponse
+): ConfidenceMetrics {
   const segments = whisperResponse.segments || [];
   const words = whisperResponse.words || [];
 
@@ -863,13 +966,30 @@ export function calculateConfidenceMetrics(whisperResponse: WhisperResponse): Co
     );
   }
 
-  const overall = wordConfidences.length > 0 ?
-    Math.round(wordConfidences.reduce((sum, conf) => sum + conf, 0) / wordConfidences.length) : 0;
+  const overall =
+    wordConfidences.length > 0
+      ? Math.round(
+          wordConfidences.reduce((sum, conf) => sum + conf, 0) /
+            wordConfidences.length
+        )
+      : 0;
 
   const distribution = {
-    high: Math.round((wordConfidences.filter(conf => conf > 80).length / Math.max(1, wordConfidences.length)) * 100),
-    medium: Math.round((wordConfidences.filter(conf => conf >= 60 && conf <= 80).length / Math.max(1, wordConfidences.length)) * 100),
-    low: Math.round((wordConfidences.filter(conf => conf < 60).length / Math.max(1, wordConfidences.length)) * 100),
+    high: Math.round(
+      (wordConfidences.filter(conf => conf > 80).length /
+        Math.max(1, wordConfidences.length)) *
+        100
+    ),
+    medium: Math.round(
+      (wordConfidences.filter(conf => conf >= 60 && conf <= 80).length /
+        Math.max(1, wordConfidences.length)) *
+        100
+    ),
+    low: Math.round(
+      (wordConfidences.filter(conf => conf < 60).length /
+        Math.max(1, wordConfidences.length)) *
+        100
+    ),
   };
 
   const segmentConfidences = segments.map(segment =>
@@ -879,25 +999,48 @@ export function calculateConfidenceMetrics(whisperResponse: WhisperResponse): Co
   return {
     overall,
     average: overall,
-    minimum: wordConfidences.length > 0 ? Math.round(Math.min(...wordConfidences)) : 0,
-    maximum: wordConfidences.length > 0 ? Math.round(Math.max(...wordConfidences)) : 0,
+    minimum:
+      wordConfidences.length > 0 ? Math.round(Math.min(...wordConfidences)) : 0,
+    maximum:
+      wordConfidences.length > 0 ? Math.round(Math.max(...wordConfidences)) : 0,
     distribution,
     segments: {
       totalSegments: segments.length,
-      highConfidenceSegments: segmentConfidences.filter(conf => conf > 80).length,
-      lowConfidenceSegments: segmentConfidences.filter(conf => conf < 60).length,
-      averageSegmentConfidence: segmentConfidences.length > 0 ?
-        Math.round(segmentConfidences.reduce((sum, conf) => sum + conf, 0) / segmentConfidences.length) : 0,
+      highConfidenceSegments: segmentConfidences.filter(conf => conf > 80)
+        .length,
+      lowConfidenceSegments: segmentConfidences.filter(conf => conf < 60)
+        .length,
+      averageSegmentConfidence:
+        segmentConfidences.length > 0
+          ? Math.round(
+              segmentConfidences.reduce((sum, conf) => sum + conf, 0) /
+                segmentConfidences.length
+            )
+          : 0,
     },
     qualityIndicators: {
-      noSpeechProbability: segments.length > 0 ?
-        segments.reduce((sum, segment) => sum + segment.no_speech_prob, 0) / segments.length : 0,
-      compressionRatio: segments.length > 0 ?
-        segments.reduce((sum, segment) => sum + segment.compression_ratio, 0) / segments.length : 0,
-      avgLogProb: segments.length > 0 ?
-        segments.reduce((sum, segment) => sum + segment.avg_logprob, 0) / segments.length : 0,
-      temperature: segments.length > 0 ?
-        segments.reduce((sum, segment) => sum + segment.temperature, 0) / segments.length : 0,
+      noSpeechProbability:
+        segments.length > 0
+          ? segments.reduce((sum, segment) => sum + segment.no_speech_prob, 0) /
+            segments.length
+          : 0,
+      compressionRatio:
+        segments.length > 0
+          ? segments.reduce(
+              (sum, segment) => sum + segment.compression_ratio,
+              0
+            ) / segments.length
+          : 0,
+      avgLogProb:
+        segments.length > 0
+          ? segments.reduce((sum, segment) => sum + segment.avg_logprob, 0) /
+            segments.length
+          : 0,
+      temperature:
+        segments.length > 0
+          ? segments.reduce((sum, segment) => sum + segment.temperature, 0) /
+            segments.length
+          : 0,
     },
   };
 }
@@ -924,7 +1067,10 @@ export function analyzeTranscriptionQuality(
       type: 'low_confidence',
       severity: confidence.overall < 50 ? 'high' : 'medium',
       description: `Overall confidence is ${confidence.overall}%, which may indicate audio quality issues`,
-      suggestions: ['Consider re-recording with better audio quality', 'Use noise reduction'],
+      suggestions: [
+        'Consider re-recording with better audio quality',
+        'Use noise reduction',
+      ],
     });
   }
 
@@ -947,7 +1093,10 @@ export function analyzeTranscriptionQuality(
       type: 'poor_audio',
       severity: compressionRatio > 3.0 ? 'high' : 'medium',
       description: 'Audio compression indicates potential quality issues',
-      suggestions: ['Check audio format and bitrate', 'Use higher quality recording settings'],
+      suggestions: [
+        'Check audio format and bitrate',
+        'Use higher quality recording settings',
+      ],
     });
     qualityScore *= 0.85;
   }
@@ -992,17 +1141,26 @@ export function analyzeTranscriptionQuality(
 export function extractKeywords(
   text: string,
   segments: TranscriptionRecord['content']['segments']
-): Array<{ word: string; frequency: number; importance: number; positions: Array<{ segmentId: number; wordIndex: number; timestamp: number }> }> {
+): Array<{
+  word: string;
+  frequency: number;
+  importance: number;
+  positions: Array<{ segmentId: number; wordIndex: number; timestamp: number }>;
+}> {
   // Simple keyword extraction - in production, use more sophisticated NLP
   const words = text.toLowerCase().match(/\b\w+\b/g) || [];
   const wordCounts = new Map<string, number>();
-  const positions = new Map<string, Array<{ segmentId: number; wordIndex: number; timestamp: number }>>();
+  const positions = new Map<
+    string,
+    Array<{ segmentId: number; wordIndex: number; timestamp: number }>
+  >();
 
   // Count word frequencies and track positions
   segments.forEach(segment => {
     const segmentWords = segment.text.toLowerCase().match(/\b\w+\b/g) || [];
     segmentWords.forEach((word, index) => {
-      if (word.length > 3) { // Filter out short words
+      if (word.length > 3) {
+        // Filter out short words
         wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
 
         if (!positions.has(word)) {
@@ -1051,11 +1209,28 @@ export function searchTranscriptions(
   transcriptions.forEach(transcription => {
     // Apply filters
     if (query.filters) {
-      if (query.filters.userId && transcription.userId !== query.filters.userId) return;
-      if (query.filters.moduleId && transcription.moduleId !== query.filters.moduleId) return;
-      if (query.filters.lessonId && transcription.lessonId !== query.filters.lessonId) return;
-      if (query.filters.language && transcription.inputConfig.language !== query.filters.language) return;
-      if (query.filters.confidenceThreshold && transcription.confidence.overall < query.filters.confidenceThreshold) return;
+      if (query.filters.userId && transcription.userId !== query.filters.userId)
+        return;
+      if (
+        query.filters.moduleId &&
+        transcription.moduleId !== query.filters.moduleId
+      )
+        return;
+      if (
+        query.filters.lessonId &&
+        transcription.lessonId !== query.filters.lessonId
+      )
+        return;
+      if (
+        query.filters.language &&
+        transcription.inputConfig.language !== query.filters.language
+      )
+        return;
+      if (
+        query.filters.confidenceThreshold &&
+        transcription.confidence.overall < query.filters.confidenceThreshold
+      )
+        return;
     }
 
     // Search in content
@@ -1072,8 +1247,14 @@ export function searchTranscriptions(
       });
 
       if (matchFound) {
-        const contextStart = Math.max(0, segment.text.indexOf(query.query) - 50);
-        const contextEnd = Math.min(segment.text.length, segment.text.indexOf(query.query) + query.query.length + 50);
+        const contextStart = Math.max(
+          0,
+          segment.text.indexOf(query.query) - 50
+        );
+        const contextEnd = Math.min(
+          segment.text.length,
+          segment.text.indexOf(query.query) + query.query.length + 50
+        );
 
         results.push({
           transcriptionId: transcription.id,
@@ -1084,9 +1265,15 @@ export function searchTranscriptions(
             '<mark>$1</mark>'
           ),
           context: {
-            before: segment.text.substring(contextStart, segment.text.indexOf(query.query)),
+            before: segment.text.substring(
+              contextStart,
+              segment.text.indexOf(query.query)
+            ),
             match: query.query,
-            after: segment.text.substring(segment.text.indexOf(query.query) + query.query.length, contextEnd),
+            after: segment.text.substring(
+              segment.text.indexOf(query.query) + query.query.length,
+              contextEnd
+            ),
           },
           location: {
             segmentId: segment.id,
@@ -1117,7 +1304,11 @@ export function searchTranscriptions(
 /**
  * Validate transcription data
  */
-export function validateTranscriptionRecord(data: unknown): { valid: boolean; errors?: string[]; data?: TranscriptionRecord } {
+export function validateTranscriptionRecord(data: unknown): {
+  valid: boolean;
+  errors?: string[];
+  data?: TranscriptionRecord;
+} {
   try {
     const validData = TranscriptionRecordSchema.parse(data);
     return { valid: true, data: validData };
@@ -1125,7 +1316,9 @@ export function validateTranscriptionRecord(data: unknown): { valid: boolean; er
     if (error instanceof z.ZodError) {
       return {
         valid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.errors.map(
+          err => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return { valid: false, errors: ['Invalid data format'] };
@@ -1200,32 +1393,40 @@ function formatVTTTime(seconds: number): string {
 // =============================================================================
 
 export function isTranscriptionRecord(obj: any): obj is TranscriptionRecord {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.audioRecordingId === 'string' &&
-         typeof obj.status === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.audioRecordingId === 'string' &&
+    typeof obj.status === 'string'
+  );
 }
 
 export function isWhisperResponse(obj: any): obj is WhisperResponse {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.text === 'string';
+  return (
+    typeof obj === 'object' && obj !== null && typeof obj.text === 'string'
+  );
 }
 
 export function isSearchResult(obj: any): obj is SearchResult {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.transcriptionId === 'string' &&
-         typeof obj.relevanceScore === 'number';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.transcriptionId === 'string' &&
+    typeof obj.relevanceScore === 'number'
+  );
 }
 
 // =============================================================================
 // Input/Output Types for API
 // =============================================================================
 
-export type CreateTranscriptionInput = z.infer<typeof CreateTranscriptionInputSchema>;
-export type UpdateTranscriptionInput = z.infer<typeof UpdateTranscriptionInputSchema>;
+export type CreateTranscriptionInput = z.infer<
+  typeof CreateTranscriptionInputSchema
+>;
+export type UpdateTranscriptionInput = z.infer<
+  typeof UpdateTranscriptionInputSchema
+>;
 export type SearchQueryInput = z.infer<typeof SearchQuerySchema>;
 
 // Export all validation schemas for use in API routes

@@ -24,7 +24,7 @@ export const ModuleStatus = {
   MAINTENANCE: 'maintenance',
 } as const;
 
-export type ModuleStatusType = typeof ModuleStatus[keyof typeof ModuleStatus];
+export type ModuleStatusType = (typeof ModuleStatus)[keyof typeof ModuleStatus];
 
 export const ModuleType = {
   VIDEO: 'video',
@@ -35,7 +35,7 @@ export const ModuleType = {
   LIVE_SESSION: 'live_session',
 } as const;
 
-export type ModuleTypeType = typeof ModuleType[keyof typeof ModuleType];
+export type ModuleTypeType = (typeof ModuleType)[keyof typeof ModuleType];
 
 export const DifficultyLevel = {
   BEGINNER: 'beginner',
@@ -44,7 +44,8 @@ export const DifficultyLevel = {
   EXPERT: 'expert',
 } as const;
 
-export type DifficultyLevelType = typeof DifficultyLevel[keyof typeof DifficultyLevel];
+export type DifficultyLevelType =
+  (typeof DifficultyLevel)[keyof typeof DifficultyLevel];
 
 export const ContentFormat = {
   TEXT: 'text',
@@ -58,7 +59,8 @@ export const ContentFormat = {
   EMBED: 'embed',
 } as const;
 
-export type ContentFormatType = typeof ContentFormat[keyof typeof ContentFormat];
+export type ContentFormatType =
+  (typeof ContentFormat)[keyof typeof ContentFormat];
 
 // =============================================================================
 // Content Block Structures (JSONB Support)
@@ -182,7 +184,13 @@ export type ContentBlock =
 
 export interface QuizQuestion {
   id: string;
-  type: 'multiple_choice' | 'single_choice' | 'text' | 'number' | 'essay' | 'code';
+  type:
+    | 'multiple_choice'
+    | 'single_choice'
+    | 'text'
+    | 'number'
+    | 'essay'
+    | 'code';
   question: string;
   explanation?: string;
   points: number;
@@ -247,7 +255,13 @@ export interface LearningObjective {
   category: 'knowledge' | 'skills' | 'behavior';
   measurable: boolean;
   assessmentMethods: string[];
-  bloomLevel: 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate' | 'create';
+  bloomLevel:
+    | 'remember'
+    | 'understand'
+    | 'apply'
+    | 'analyze'
+    | 'evaluate'
+    | 'create';
 }
 
 // =============================================================================
@@ -484,10 +498,37 @@ export interface ModuleProgressSummary {
 // Base schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const ModuleStatusSchema = z.enum(['draft', 'published', 'archived', 'maintenance']);
-export const ModuleTypeSchema = z.enum(['video', 'interactive', 'document', 'quiz', 'workshop', 'live_session']);
-export const DifficultyLevelSchema = z.enum(['beginner', 'intermediate', 'advanced', 'expert']);
-export const ContentFormatSchema = z.enum(['text', 'html', 'markdown', 'video', 'audio', 'image', 'pdf', 'interactive', 'embed']);
+export const ModuleStatusSchema = z.enum([
+  'draft',
+  'published',
+  'archived',
+  'maintenance',
+]);
+export const ModuleTypeSchema = z.enum([
+  'video',
+  'interactive',
+  'document',
+  'quiz',
+  'workshop',
+  'live_session',
+]);
+export const DifficultyLevelSchema = z.enum([
+  'beginner',
+  'intermediate',
+  'advanced',
+  'expert',
+]);
+export const ContentFormatSchema = z.enum([
+  'text',
+  'html',
+  'markdown',
+  'video',
+  'audio',
+  'image',
+  'pdf',
+  'interactive',
+  'embed',
+]);
 
 // Content block schemas
 export const BaseContentBlockSchema = z.object({
@@ -516,20 +557,28 @@ export const VideoContentBlockSchema = BaseContentBlockSchema.extend({
     url: z.string().url(),
     thumbnail: z.string().url().optional(),
     duration: z.number().min(0),
-    subtitles: z.array(z.object({
-      language: z.string(),
-      url: z.string().url(),
-    })).optional(),
+    subtitles: z
+      .array(
+        z.object({
+          language: z.string(),
+          url: z.string().url(),
+        })
+      )
+      .optional(),
     quality: z.object({
       '720p': z.string().url().optional(),
       '1080p': z.string().url().optional(),
       '4k': z.string().url().optional(),
     }),
-    chapters: z.array(z.object({
-      title: z.string(),
-      startTime: z.number().min(0),
-      endTime: z.number().min(0),
-    })).optional(),
+    chapters: z
+      .array(
+        z.object({
+          title: z.string(),
+          startTime: z.number().min(0),
+          endTime: z.number().min(0),
+        })
+      )
+      .optional(),
   }),
 });
 
@@ -542,24 +591,37 @@ export const ContentBlockSchema = z.union([
 // Assessment schemas
 export const QuizQuestionSchema = z.object({
   id: z.string(),
-  type: z.enum(['multiple_choice', 'single_choice', 'text', 'number', 'essay', 'code']),
+  type: z.enum([
+    'multiple_choice',
+    'single_choice',
+    'text',
+    'number',
+    'essay',
+    'code',
+  ]),
   question: z.string(),
   explanation: z.string().optional(),
   points: z.number().min(0),
   order: z.number().min(0),
   required: z.boolean(),
-  options: z.array(z.object({
-    id: z.string(),
-    text: z.string(),
-    isCorrect: z.boolean().optional(),
-    explanation: z.string().optional(),
-  })).optional(),
-  validation: z.object({
-    minLength: z.number().optional(),
-    maxLength: z.number().optional(),
-    pattern: z.string().optional(),
-    correctAnswer: z.union([z.string(), z.number()]).optional(),
-  }).optional(),
+  options: z
+    .array(
+      z.object({
+        id: z.string(),
+        text: z.string(),
+        isCorrect: z.boolean().optional(),
+        explanation: z.string().optional(),
+      })
+    )
+    .optional(),
+  validation: z
+    .object({
+      minLength: z.number().optional(),
+      maxLength: z.number().optional(),
+      pattern: z.string().optional(),
+      correctAnswer: z.union([z.string(), z.number()]).optional(),
+    })
+    .optional(),
   metadata: z.record(z.any()),
 });
 
@@ -586,12 +648,14 @@ export const PrerequisiteSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   required: z.boolean(),
-  condition: z.object({
-    skillLevel: z.number().optional(),
-    minimumTime: z.number().optional(),
-    minimumScore: z.number().optional(),
-    completionRequired: z.boolean().optional(),
-  }).optional(),
+  condition: z
+    .object({
+      skillLevel: z.number().optional(),
+      minimumTime: z.number().optional(),
+      minimumScore: z.number().optional(),
+      completionRequired: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const LearningObjectiveSchema = z.object({
@@ -600,7 +664,14 @@ export const LearningObjectiveSchema = z.object({
   category: z.enum(['knowledge', 'skills', 'behavior']),
   measurable: z.boolean(),
   assessmentMethods: z.array(z.string()),
-  bloomLevel: z.enum(['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create']),
+  bloomLevel: z.enum([
+    'remember',
+    'understand',
+    'apply',
+    'analyze',
+    'evaluate',
+    'create',
+  ]),
 });
 
 // Lesson schema
@@ -700,10 +771,12 @@ export const WorkshopModuleSchema = z.object({
   instructorImage: z.string().url().optional(),
   thumbnail: z.string().url().optional(),
   banner: z.string().url().optional(),
-  trailer: z.object({
-    url: z.string().url(),
-    duration: z.number().min(0),
-  }).optional(),
+  trailer: z
+    .object({
+      url: z.string().url(),
+      duration: z.number().min(0),
+    })
+    .optional(),
   settings: ModuleSettingsSchema,
   certificateEnabled: z.boolean(),
   certificateTemplate: z.string().optional(),
@@ -714,10 +787,12 @@ export const WorkshopModuleSchema = z.object({
     allAssessmentsRequired: z.boolean(),
   }),
   isPremium: z.boolean(),
-  price: z.object({
-    amount: z.number().min(0),
-    currency: z.string().length(3),
-  }).optional(),
+  price: z
+    .object({
+      amount: z.number().min(0),
+      currency: z.string().length(3),
+    })
+    .optional(),
   accessLevel: z.enum(['free', 'basic', 'premium', 'enterprise']),
   status: ModuleStatusSchema,
   publishedAt: TimestampSchema.optional(),
@@ -730,11 +805,15 @@ export const WorkshopModuleSchema = z.object({
   changelogUrl: z.string().url().optional(),
   lastModifiedBy: UUIDSchema,
   language: z.string().min(2).max(10),
-  translations: z.record(z.object({
-    title: z.string(),
-    description: z.string(),
-    summary: z.string().optional(),
-  })).optional(),
+  translations: z
+    .record(
+      z.object({
+        title: z.string(),
+        description: z.string(),
+        summary: z.string().optional(),
+      })
+    )
+    .optional(),
   metadata: z.record(z.any()),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
@@ -783,7 +862,9 @@ export function checkPrerequisites(
         break;
       case 'module':
         if (prereq.targetId) {
-          const moduleProgress = userProgress.find(p => p.moduleId === prereq.targetId);
+          const moduleProgress = userProgress.find(
+            p => p.moduleId === prereq.targetId
+          );
           if (!moduleProgress || moduleProgress.status !== 'completed') {
             missing.push(prereq);
           }
@@ -809,11 +890,15 @@ export function calculateModuleCompletion(
   completedLessons: string[],
   timeSpent: number
 ): number {
-  const lessonCompletion = (completedLessons.length / module.totalLessons) * 100;
-  const timeCompletion = Math.min((timeSpent / module.estimatedDuration) * 100, 100);
+  const lessonCompletion =
+    (completedLessons.length / module.totalLessons) * 100;
+  const timeCompletion = Math.min(
+    (timeSpent / module.estimatedDuration) * 100,
+    100
+  );
 
   // Weight lesson completion more heavily than time
-  return Math.round((lessonCompletion * 0.7) + (timeCompletion * 0.3));
+  return Math.round(lessonCompletion * 0.7 + timeCompletion * 0.3);
 }
 
 /**
@@ -856,7 +941,10 @@ export function getPreviousLesson(
 /**
  * Validate content block structure
  */
-export function validateContentBlock(block: any): { valid: boolean; errors?: string[] } {
+export function validateContentBlock(block: any): {
+  valid: boolean;
+  errors?: string[];
+} {
   try {
     ContentBlockSchema.parse(block);
     return { valid: true };
@@ -864,7 +952,9 @@ export function validateContentBlock(block: any): { valid: boolean; errors?: str
     if (error instanceof z.ZodError) {
       return {
         valid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.errors.map(
+          err => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return { valid: false, errors: ['Invalid content block format'] };
@@ -901,10 +991,19 @@ export function generateNavigationState(
     };
   }
 
-  const nextLesson = getNextLesson(module, currentLessonId, completedLessons, userProgress);
+  const nextLesson = getNextLesson(
+    module,
+    currentLessonId,
+    completedLessons,
+    userProgress
+  );
   const previousLesson = getPreviousLesson(module, currentLessonId);
 
-  const completionPercentage = calculateModuleCompletion(module, completedLessons, 0);
+  const completionPercentage = calculateModuleCompletion(
+    module,
+    completedLessons,
+    0
+  );
   const remainingLessons = module.lessons.slice(
     module.lessons.findIndex(l => l.id === currentLessonId) + 1
   );
@@ -963,8 +1062,10 @@ export function canAccessModule(
     enterprise: 3,
   };
 
-  const userTierLevel = tierHierarchy[userSubscriptionTier as keyof typeof tierHierarchy] || 0;
-  const moduleTierLevel = tierHierarchy[module.accessLevel as keyof typeof tierHierarchy] || 0;
+  const userTierLevel =
+    tierHierarchy[userSubscriptionTier as keyof typeof tierHierarchy] || 0;
+  const moduleTierLevel =
+    tierHierarchy[module.accessLevel as keyof typeof tierHierarchy] || 0;
 
   return userTierLevel >= moduleTierLevel;
 }
@@ -974,27 +1075,33 @@ export function canAccessModule(
 // =============================================================================
 
 export function isWorkshopModule(obj: any): obj is WorkshopModule {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.title === 'string' &&
-         Array.isArray(obj.lessons);
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.title === 'string' &&
+    Array.isArray(obj.lessons)
+  );
 }
 
 export function isWorkshopLesson(obj: any): obj is WorkshopLesson {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.moduleId === 'string' &&
-         typeof obj.title === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.moduleId === 'string' &&
+    typeof obj.title === 'string'
+  );
 }
 
 export function isContentBlock(obj: any): obj is ContentBlock {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.type === 'string' &&
-         typeof obj.order === 'number';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.type === 'string' &&
+    typeof obj.order === 'number'
+  );
 }
 
 // =============================================================================

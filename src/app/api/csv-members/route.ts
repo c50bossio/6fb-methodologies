@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST endpoint to reload CSV file (for monthly updates)
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('🔄 Reloading CSV member data...');
 

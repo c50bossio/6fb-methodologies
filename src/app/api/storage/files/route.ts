@@ -62,7 +62,9 @@ interface StatsResponse {
  * GET /api/storage/files
  * List user files with filtering and pagination
  */
-export async function GET(request: NextRequest): Promise<NextResponse<FilesListResponse>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<FilesListResponse>> {
   try {
     // Authentication check
     const authResult = await verifyToken(request);
@@ -127,7 +129,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<FilesListR
     }
 
     if (mimeType) {
-      filteredFiles = filteredFiles.filter(file => file.mime_type.includes(mimeType));
+      filteredFiles = filteredFiles.filter(file =>
+        file.mime_type.includes(mimeType)
+      );
     }
 
     if (dateRange) {
@@ -200,14 +204,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<FilesListR
         filters: {
           moduleId,
           mimeType,
-          dateRange: dateRange ? {
-            start: dateRange.start.toISOString(),
-            end: dateRange.end.toISOString(),
-          } : undefined,
+          dateRange: dateRange
+            ? {
+                start: dateRange.start.toISOString(),
+                end: dateRange.end.toISOString(),
+              }
+            : undefined,
         },
       },
     });
-
   } catch (error) {
     console.error('Files list endpoint error:', error);
     return NextResponse.json(
@@ -283,7 +288,10 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
         }
 
         // Delete from database
-        const dbDeleteSuccess = await deleteFileFromDatabase(fileId, authResult.userId);
+        const dbDeleteSuccess = await deleteFileFromDatabase(
+          fileId,
+          authResult.userId
+        );
         if (!dbDeleteSuccess) {
           results.failed.push({ fileId, error: 'Database deletion failed' });
           continue;
@@ -298,7 +306,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
           fileSize: fileRecord.file_size_bytes,
           bulkDelete: true,
         });
-
       } catch (error) {
         results.failed.push({
           fileId,
@@ -315,13 +322,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
         results,
       },
     });
-
   } catch (error) {
     console.error('Bulk delete endpoint error:', error);
-    return NextResponse.json(
-      { error: 'Bulk delete failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Bulk delete failed' }, { status: 500 });
   }
 }
 

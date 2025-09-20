@@ -6,7 +6,13 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { LiveSession, SessionParticipant, SessionPoll, QAQuestion, WebSocketMessage } from '@/types/live-session';
+import {
+  LiveSession,
+  SessionParticipant,
+  SessionPoll,
+  QAQuestion,
+  WebSocketMessage,
+} from '@/types/live-session';
 
 export interface ChatMessage {
   id: string;
@@ -73,7 +79,12 @@ export interface LiveSessionState {
 
   // Connection state
   connectionState: {
-    status: 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed';
+    status:
+      | 'disconnected'
+      | 'connecting'
+      | 'connected'
+      | 'reconnecting'
+      | 'failed';
     quality: ConnectionQuality | null;
     reconnectAttempts: number;
     lastHeartbeat: string | null;
@@ -111,12 +122,17 @@ export interface LiveSessionState {
   joinSession: (sessionId: string) => Promise<void>;
   leaveSession: () => void;
   loadSession: (sessionId: string) => Promise<void>;
-  updateSessionSettings: (settings: Partial<LiveSession['settings']>) => Promise<void>;
+  updateSessionSettings: (
+    settings: Partial<LiveSession['settings']>
+  ) => Promise<void>;
 
   // Actions - Participants
   addParticipant: (participant: SessionParticipant) => void;
   removeParticipant: (participantId: string) => void;
-  updateParticipant: (participantId: string, updates: Partial<SessionParticipant>) => void;
+  updateParticipant: (
+    participantId: string,
+    updates: Partial<SessionParticipant>
+  ) => void;
   promoteToModerator: (participantId: string) => Promise<void>;
   muteParticipant: (participantId: string) => Promise<void>;
   kickParticipant: (participantId: string, reason?: string) => Promise<void>;
@@ -131,20 +147,34 @@ export interface LiveSessionState {
   updateSpeakingState: (speaking: boolean) => void;
 
   // Actions - Chat
-  sendMessage: (content: string, isPrivate?: boolean, recipientId?: string) => void;
+  sendMessage: (
+    content: string,
+    isPrivate?: boolean,
+    recipientId?: string
+  ) => void;
   deleteMessage: (messageId: string) => void;
   addReaction: (messageId: string, reactionType: string) => void;
   markAsRead: () => void;
   setTyping: (typing: boolean) => void;
 
   // Actions - Polls
-  createPoll: (poll: Omit<SessionPoll, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
+  createPoll: (
+    poll: Omit<SessionPoll, 'id' | 'createdAt' | 'updatedAt'>
+  ) => Promise<string>;
   closePoll: (pollId: string) => Promise<void>;
-  votePoll: (pollId: string, optionIds: string[], textResponse?: string) => Promise<void>;
+  votePoll: (
+    pollId: string,
+    optionIds: string[],
+    textResponse?: string
+  ) => Promise<void>;
   setActivePoll: (pollId: string | null) => void;
 
   // Actions - Q&A
-  askQuestion: (question: string, details?: string, isAnonymous?: boolean) => Promise<string>;
+  askQuestion: (
+    question: string,
+    details?: string,
+    isAnonymous?: boolean
+  ) => Promise<string>;
   answerQuestion: (questionId: string, answer: string) => Promise<void>;
   voteQuestion: (questionId: string, voteType: 'up' | 'down') => Promise<void>;
   dismissQuestion: (questionId: string) => Promise<void>;
@@ -157,13 +187,17 @@ export interface LiveSessionState {
 
   // Actions - UI
   setActiveView: (view: 'grid' | 'speaker' | 'presentation') => void;
-  setSidebarTab: (tab: 'chat' | 'participants' | 'polls' | 'qa' | 'settings') => void;
+  setSidebarTab: (
+    tab: 'chat' | 'participants' | 'polls' | 'qa' | 'settings'
+  ) => void;
   setSidebarOpen: (open: boolean) => void;
   toggleFullscreen: () => void;
   togglePipMode: () => void;
 
   // Actions - Connection
-  updateConnectionState: (state: Partial<LiveSessionState['connectionState']>) => void;
+  updateConnectionState: (
+    state: Partial<LiveSessionState['connectionState']>
+  ) => void;
   updateConnectionQuality: (quality: ConnectionQuality) => void;
   handleReconnect: () => void;
 
@@ -244,20 +278,23 @@ export const useLiveSessionStore = create<LiveSessionState>()(
         errors: {},
 
         // Actions - Session Management
-        joinSession: async (sessionId) => {
-          set((state) => {
+        joinSession: async sessionId => {
+          set(state => {
             state.isLoading = true;
             delete state.errors.join;
           });
 
           try {
-            const response = await fetch(`/api/workbook/sessions/${sessionId}/join`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            const response = await fetch(
+              `/api/workbook/sessions/${sessionId}/join`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to join session');
@@ -265,7 +302,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
             const sessionData = await response.json();
 
-            set((state) => {
+            set(state => {
               state.currentSession = sessionData.session;
               state.participants = sessionData.participants;
               state.localUserId = sessionData.localUserId;
@@ -276,9 +313,12 @@ export const useLiveSessionStore = create<LiveSessionState>()(
               state.isLoading = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.isLoading = false;
-              state.errors.join = error instanceof Error ? error.message : 'Failed to join session';
+              state.errors.join =
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to join session';
             });
             throw error;
           }
@@ -291,12 +331,12 @@ export const useLiveSessionStore = create<LiveSessionState>()(
             fetch(`/api/workbook/sessions/${currentSession.id}/leave`, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
+                Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
               },
             }).catch(console.error);
           }
 
-          set((state) => {
+          set(state => {
             state.currentSession = null;
             state.participants = [];
             state.chatMessages = [];
@@ -312,18 +352,21 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           });
         },
 
-        loadSession: async (sessionId) => {
-          set((state) => {
+        loadSession: async sessionId => {
+          set(state => {
             state.isLoading = true;
             delete state.errors.load;
           });
 
           try {
-            const response = await fetch(`/api/workbook/sessions/${sessionId}`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            const response = await fetch(
+              `/api/workbook/sessions/${sessionId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to load session');
@@ -331,31 +374,37 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
             const session = await response.json();
 
-            set((state) => {
+            set(state => {
               state.currentSession = session;
               state.isLoading = false;
             });
           } catch (error) {
-            set((state) => {
+            set(state => {
               state.isLoading = false;
-              state.errors.load = error instanceof Error ? error.message : 'Failed to load session';
+              state.errors.load =
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to load session';
             });
           }
         },
 
-        updateSessionSettings: async (settings) => {
+        updateSessionSettings: async settings => {
           const { currentSession } = get();
           if (!currentSession) return;
 
           try {
-            const response = await fetch(`/api/workbook/sessions/${currentSession.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify({ settings }),
-            });
+            const response = await fetch(
+              `/api/workbook/sessions/${currentSession.id}`,
+              {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify({ settings }),
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to update session settings');
@@ -363,7 +412,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
             const updatedSession = await response.json();
 
-            set((state) => {
+            set(state => {
               if (state.currentSession) {
                 state.currentSession.settings = updatedSession.settings;
               }
@@ -374,9 +423,11 @@ export const useLiveSessionStore = create<LiveSessionState>()(
         },
 
         // Actions - Participants
-        addParticipant: (participant) => {
-          set((state) => {
-            const existingIndex = state.participants.findIndex(p => p.id === participant.id);
+        addParticipant: participant => {
+          set(state => {
+            const existingIndex = state.participants.findIndex(
+              p => p.id === participant.id
+            );
             if (existingIndex !== -1) {
               state.participants[existingIndex] = participant;
             } else {
@@ -385,32 +436,39 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           });
         },
 
-        removeParticipant: (participantId) => {
-          set((state) => {
-            state.participants = state.participants.filter(p => p.id !== participantId);
+        removeParticipant: participantId => {
+          set(state => {
+            state.participants = state.participants.filter(
+              p => p.id !== participantId
+            );
           });
         },
 
         updateParticipant: (participantId, updates) => {
-          set((state) => {
-            const index = state.participants.findIndex(p => p.id === participantId);
+          set(state => {
+            const index = state.participants.findIndex(
+              p => p.id === participantId
+            );
             if (index !== -1) {
               Object.assign(state.participants[index], updates);
             }
           });
         },
 
-        promoteToModerator: async (participantId) => {
+        promoteToModerator: async participantId => {
           const { currentSession } = get();
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/participants/${participantId}/promote`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/participants/${participantId}/promote`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
             get().updateParticipant(participantId, { role: 'moderator' });
           } catch (error) {
@@ -418,20 +476,26 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           }
         },
 
-        muteParticipant: async (participantId) => {
+        muteParticipant: async participantId => {
           const { currentSession } = get();
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/participants/${participantId}/mute`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/participants/${participantId}/mute`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
             get().updateParticipant(participantId, {
-              mediaState: { ...get().getParticipantById(participantId)?.mediaState, isMuted: true }
+              mediaState: {
+                ...get().getParticipantById(participantId)?.mediaState,
+                isMuted: true,
+              },
             });
           } catch (error) {
             console.error('Failed to mute participant:', error);
@@ -443,14 +507,17 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/participants/${participantId}/kick`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify({ reason }),
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/participants/${participantId}/kick`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify({ reason }),
+              }
+            );
 
             get().removeParticipant(participantId);
           } catch (error) {
@@ -460,43 +527,43 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
         // Actions - Media Control
         toggleAudio: () => {
-          set((state) => {
+          set(state => {
             state.mediaState.audioEnabled = !state.mediaState.audioEnabled;
           });
         },
 
         toggleVideo: () => {
-          set((state) => {
+          set(state => {
             state.mediaState.videoEnabled = !state.mediaState.videoEnabled;
           });
         },
 
         toggleScreenShare: () => {
-          set((state) => {
+          set(state => {
             state.mediaState.screenSharing = !state.mediaState.screenSharing;
           });
         },
 
-        setVolume: (volume) => {
-          set((state) => {
+        setVolume: volume => {
+          set(state => {
             state.mediaState.volume = Math.max(0, Math.min(100, volume));
           });
         },
 
         toggleOutputMute: () => {
-          set((state) => {
+          set(state => {
             state.mediaState.outputMuted = !state.mediaState.outputMuted;
           });
         },
 
         toggleHandRaise: () => {
-          set((state) => {
+          set(state => {
             state.mediaState.handRaised = !state.mediaState.handRaised;
           });
         },
 
-        updateSpeakingState: (speaking) => {
-          set((state) => {
+        updateSpeakingState: speaking => {
+          set(state => {
             state.mediaState.speaking = speaking;
           });
         },
@@ -519,15 +586,15 @@ export const useLiveSessionStore = create<LiveSessionState>()(
             reactions: [],
           };
 
-          set((state) => {
+          set(state => {
             state.chatMessages.push(message);
           });
 
           // Send to server via Socket.io (handled by Socket hook)
         },
 
-        deleteMessage: (messageId) => {
-          set((state) => {
+        deleteMessage: messageId => {
+          set(state => {
             const message = state.chatMessages.find(m => m.id === messageId);
             if (message) {
               message.isDeleted = true;
@@ -540,12 +607,16 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           const { localUserId } = get();
           if (!localUserId) return;
 
-          set((state) => {
+          set(state => {
             const message = state.chatMessages.find(m => m.id === messageId);
             if (message) {
-              const existingReaction = message.reactions.find(r => r.userId === localUserId && r.type === reactionType);
+              const existingReaction = message.reactions.find(
+                r => r.userId === localUserId && r.type === reactionType
+              );
               if (existingReaction) {
-                message.reactions = message.reactions.filter(r => r !== existingReaction);
+                message.reactions = message.reactions.filter(
+                  r => r !== existingReaction
+                );
               } else {
                 message.reactions.push({
                   userId: localUserId,
@@ -558,29 +629,32 @@ export const useLiveSessionStore = create<LiveSessionState>()(
         },
 
         markAsRead: () => {
-          set((state) => {
+          set(state => {
             state.unreadMessageCount = 0;
           });
         },
 
-        setTyping: (typing) => {
+        setTyping: typing => {
           // Handled by Socket.io
         },
 
         // Actions - Polls
-        createPoll: async (pollData) => {
+        createPoll: async pollData => {
           const { currentSession } = get();
           if (!currentSession) throw new Error('No active session');
 
           try {
-            const response = await fetch(`/api/workbook/sessions/${currentSession.id}/polls`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify(pollData),
-            });
+            const response = await fetch(
+              `/api/workbook/sessions/${currentSession.id}/polls`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify(pollData),
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to create poll');
@@ -588,7 +662,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
             const poll = await response.json();
 
-            set((state) => {
+            set(state => {
               state.activePolls.push(poll);
               state.activePollId = poll.id;
             });
@@ -600,19 +674,22 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           }
         },
 
-        closePoll: async (pollId) => {
+        closePoll: async pollId => {
           const { currentSession } = get();
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/polls/${pollId}/close`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/polls/${pollId}/close`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
-            set((state) => {
+            set(state => {
               const poll = state.activePolls.find(p => p.id === pollId);
               if (poll) {
                 poll.status = 'closed';
@@ -631,16 +708,19 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/polls/${pollId}/vote`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify({ optionIds, textResponse }),
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/polls/${pollId}/vote`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify({ optionIds, textResponse }),
+              }
+            );
 
-            set((state) => {
+            set(state => {
               state.userVotes[pollId] = optionIds;
             });
           } catch (error) {
@@ -648,8 +728,8 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           }
         },
 
-        setActivePoll: (pollId) => {
-          set((state) => {
+        setActivePoll: pollId => {
+          set(state => {
             state.activePollId = pollId;
           });
         },
@@ -660,14 +740,17 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) throw new Error('No active session');
 
           try {
-            const response = await fetch(`/api/workbook/sessions/${currentSession.id}/questions`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify({ question, details, isAnonymous }),
-            });
+            const response = await fetch(
+              `/api/workbook/sessions/${currentSession.id}/questions`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify({ question, details, isAnonymous }),
+              }
+            );
 
             if (!response.ok) {
               throw new Error('Failed to ask question');
@@ -675,7 +758,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
             const questionData = await response.json();
 
-            set((state) => {
+            set(state => {
               state.qaQuestions.push(questionData);
             });
 
@@ -691,16 +774,19 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/questions/${questionId}/answer`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify({ answer }),
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/questions/${questionId}/answer`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify({ answer }),
+              }
+            );
 
-            set((state) => {
+            set(state => {
               const question = state.qaQuestions.find(q => q.id === questionId);
               if (question) {
                 question.status = 'answered';
@@ -722,16 +808,19 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/questions/${questionId}/vote`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-              body: JSON.stringify({ voteType }),
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/questions/${questionId}/vote`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+                body: JSON.stringify({ voteType }),
+              }
+            );
 
-            set((state) => {
+            set(state => {
               const question = state.qaQuestions.find(q => q.id === questionId);
               if (question) {
                 if (voteType === 'up') {
@@ -746,19 +835,22 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           }
         },
 
-        dismissQuestion: async (questionId) => {
+        dismissQuestion: async questionId => {
           const { currentSession } = get();
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/questions/${questionId}/dismiss`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/questions/${questionId}/dismiss`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
-            set((state) => {
+            set(state => {
               const question = state.qaQuestions.find(q => q.id === questionId);
               if (question) {
                 question.status = 'dismissed';
@@ -775,14 +867,17 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/recording/start`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/recording/start`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
-            set((state) => {
+            set(state => {
               state.isRecording = true;
               state.recordingStartTime = new Date().toISOString();
               state.recordingDuration = 0;
@@ -797,14 +892,17 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           if (!currentSession) return;
 
           try {
-            await fetch(`/api/workbook/sessions/${currentSession.id}/recording/stop`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('workbook-token')}`,
-              },
-            });
+            await fetch(
+              `/api/workbook/sessions/${currentSession.id}/recording/stop`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('workbook-token')}`,
+                },
+              }
+            );
 
-            set((state) => {
+            set(state => {
               state.isRecording = false;
               state.recordingStartTime = null;
               state.recordingDuration = 0;
@@ -823,14 +921,14 @@ export const useLiveSessionStore = create<LiveSessionState>()(
         },
 
         // Actions - UI
-        setActiveView: (view) => {
-          set((state) => {
+        setActiveView: view => {
+          set(state => {
             state.activeView = view;
           });
         },
 
-        setSidebarTab: (tab) => {
-          set((state) => {
+        setSidebarTab: tab => {
+          set(state => {
             state.sidebarTab = tab;
             if (tab === 'chat') {
               state.unreadMessageCount = 0;
@@ -838,46 +936,46 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           });
         },
 
-        setSidebarOpen: (open) => {
-          set((state) => {
+        setSidebarOpen: open => {
+          set(state => {
             state.sidebarOpen = open;
           });
         },
 
         toggleFullscreen: () => {
-          set((state) => {
+          set(state => {
             state.fullscreen = !state.fullscreen;
           });
         },
 
         togglePipMode: () => {
-          set((state) => {
+          set(state => {
             state.pipMode = !state.pipMode;
           });
         },
 
         // Actions - Connection
-        updateConnectionState: (updates) => {
-          set((state) => {
+        updateConnectionState: updates => {
+          set(state => {
             Object.assign(state.connectionState, updates);
           });
         },
 
-        updateConnectionQuality: (quality) => {
-          set((state) => {
+        updateConnectionQuality: quality => {
+          set(state => {
             state.connectionState.quality = quality;
           });
         },
 
         handleReconnect: () => {
-          set((state) => {
+          set(state => {
             state.connectionState.status = 'reconnecting';
             state.connectionState.reconnectAttempts++;
           });
         },
 
         // Utilities
-        getParticipantById: (participantId) => {
+        getParticipantById: participantId => {
           return get().participants.find(p => p.id === participantId) || null;
         },
 
@@ -886,17 +984,17 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           return participants.find(p => p.userId === localUserId) || null;
         },
 
-        canPerformAction: (action) => {
+        canPerformAction: action => {
           const { permissions, isHost, isModerator } = get();
 
           if (isHost) return true;
 
           const actionPermissions: Record<string, keyof MediaPermissions> = {
-            'mute_others': 'canModerate',
-            'kick_participants': 'canModerate',
-            'create_polls': 'canPoll',
-            'manage_recording': 'canRecord',
-            'share_screen': 'canScreen',
+            mute_others: 'canModerate',
+            kick_participants: 'canModerate',
+            create_polls: 'canPoll',
+            manage_recording: 'canRecord',
+            share_screen: 'canScreen',
           };
 
           const requiredPermission = actionPermissions[action];
@@ -928,7 +1026,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         },
 
-        exportChatHistory: (format) => {
+        exportChatHistory: format => {
           const { chatMessages } = get();
 
           if (format === 'json') {
@@ -938,7 +1036,10 @@ export const useLiveSessionStore = create<LiveSessionState>()(
           // Text format
           return chatMessages
             .filter(m => !m.isDeleted)
-            .map(m => `[${new Date(m.timestamp).toLocaleTimeString()}] ${m.senderName}: ${m.content}`)
+            .map(
+              m =>
+                `[${new Date(m.timestamp).toLocaleTimeString()}] ${m.senderName}: ${m.content}`
+            )
             .join('\n');
         },
 
@@ -952,7 +1053,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
               get().removeParticipant(data.participantId);
               break;
             case 'chat:message':
-              set((state) => {
+              set(state => {
                 state.chatMessages.push(data);
                 if (state.sidebarTab !== 'chat') {
                   state.unreadMessageCount++;
@@ -960,7 +1061,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
               });
               break;
             case 'poll:created':
-              set((state) => {
+              set(state => {
                 state.activePolls.push(data);
                 state.activePollId = data.id;
               });
@@ -970,12 +1071,18 @@ export const useLiveSessionStore = create<LiveSessionState>()(
               break;
             case 'hand:raised':
               get().updateParticipant(data.participantId, {
-                mediaState: { ...get().getParticipantById(data.participantId)?.mediaState, handRaised: true }
+                mediaState: {
+                  ...get().getParticipantById(data.participantId)?.mediaState,
+                  handRaised: true,
+                },
               });
               break;
             case 'hand:lowered':
               get().updateParticipant(data.participantId, {
-                mediaState: { ...get().getParticipantById(data.participantId)?.mediaState, handRaised: false }
+                mediaState: {
+                  ...get().getParticipantById(data.participantId)?.mediaState,
+                  handRaised: false,
+                },
               });
               break;
             // Add more event handlers as needed
@@ -984,7 +1091,7 @@ export const useLiveSessionStore = create<LiveSessionState>()(
 
         // Cleanup
         cleanup: () => {
-          set((state) => {
+          set(state => {
             state.currentSession = null;
             state.participants = [];
             state.chatMessages = [];

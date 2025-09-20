@@ -101,7 +101,9 @@ export default function PerformanceMonitor({
 
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [history, setHistory] = useState<PerformanceMetrics[]>([]);
-  const [alerts, setAlerts] = useState<Array<{ type: 'warning' | 'error'; message: string; timestamp: number }>>([]);
+  const [alerts, setAlerts] = useState<
+    Array<{ type: 'warning' | 'error'; message: string; timestamp: number }>
+  >([]);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const observerRef = useRef<PerformanceObserver | null>(null);
@@ -116,27 +118,35 @@ export default function PerformanceMonitor({
   };
 
   // Get performance rating
-  const getPerformanceRating = useCallback((metric: keyof typeof thresholds, value: number | null) => {
-    if (value === null) return 'unknown';
-    const threshold = thresholds[metric];
-    if (value <= threshold.good) return 'good';
-    if (value <= threshold.poor) return 'needs-improvement';
-    return 'poor';
-  }, []);
+  const getPerformanceRating = useCallback(
+    (metric: keyof typeof thresholds, value: number | null) => {
+      if (value === null) return 'unknown';
+      const threshold = thresholds[metric];
+      if (value <= threshold.good) return 'good';
+      if (value <= threshold.poor) return 'needs-improvement';
+      return 'poor';
+    },
+    []
+  );
 
   // Collect Core Web Vitals
   const collectCoreWebVitals = useCallback(() => {
     if (!window.performance) return;
 
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const navigation = performance.getEntriesByType(
+      'navigation'
+    )[0] as PerformanceNavigationTiming;
     const paint = performance.getEntriesByType('paint');
 
-    let newMetrics: Partial<PerformanceMetrics> = {};
+    const newMetrics: Partial<PerformanceMetrics> = {};
 
     // Navigation timing
     if (navigation) {
-      newMetrics.domContentLoaded = navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart;
-      newMetrics.loadComplete = navigation.loadEventEnd - navigation.loadEventStart;
+      newMetrics.domContentLoaded =
+        navigation.domContentLoadedEventEnd -
+        navigation.domContentLoadedEventStart;
+      newMetrics.loadComplete =
+        navigation.loadEventEnd - navigation.loadEventStart;
       newMetrics.ttfb = navigation.responseStart - navigation.requestStart;
     }
 
@@ -176,14 +186,15 @@ export default function PerformanceMonitor({
   // Collect Service Worker metrics
   const collectServiceWorkerMetrics = useCallback(async () => {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      return new Promise<Partial<PerformanceMetrics>>((resolve) => {
+      return new Promise<Partial<PerformanceMetrics>>(resolve => {
         const channel = new MessageChannel();
 
-        channel.port1.onmessage = (event) => {
+        channel.port1.onmessage = event => {
           if (event.data.type === 'SW_METRICS') {
             const swMetrics = event.data.metrics;
             const total = swMetrics.cacheHits + swMetrics.cacheMisses;
-            const cacheRatio = total > 0 ? (swMetrics.cacheHits / total) * 100 : 0;
+            const cacheRatio =
+              total > 0 ? (swMetrics.cacheHits / total) * 100 : 0;
 
             resolve({
               cacheHits: swMetrics.cacheHits,
@@ -211,30 +222,47 @@ export default function PerformanceMonitor({
     if (!window.PerformanceObserver) return;
 
     try {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         const entries = list.getEntries();
 
-        entries.forEach((entry) => {
+        entries.forEach(entry => {
           if (entry.entryType === 'largest-contentful-paint') {
             setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
           }
 
           if (entry.entryType === 'first-input') {
-            setMetrics(prev => ({ ...prev, fid: (entry as any).processingStart - entry.startTime }));
+            setMetrics(prev => ({
+              ...prev,
+              fid: (entry as any).processingStart - entry.startTime,
+            }));
           }
 
-          if (entry.entryType === 'layout-shift' && !(entry as any).hadRecentInput) {
-            setMetrics(prev => ({ ...prev, cls: (prev.cls || 0) + (entry as any).value }));
+          if (
+            entry.entryType === 'layout-shift' &&
+            !(entry as any).hadRecentInput
+          ) {
+            setMetrics(prev => ({
+              ...prev,
+              cls: (prev.cls || 0) + (entry as any).value,
+            }));
           }
         });
       });
 
       // Observe all performance entry types
-      ['largest-contentful-paint', 'first-input', 'layout-shift', 'paint'].forEach(type => {
+      [
+        'largest-contentful-paint',
+        'first-input',
+        'layout-shift',
+        'paint',
+      ].forEach(type => {
         try {
           observer.observe({ type, buffered: true });
         } catch (error) {
-          console.warn(`Performance observer type "${type}" not supported:`, error);
+          console.warn(
+            `Performance observer type "${type}" not supported:`,
+            error
+          );
         }
       });
 
@@ -263,60 +291,73 @@ export default function PerformanceMonitor({
 
     // Check for performance alerts
     checkPerformanceAlerts(newMetrics);
-  }, [metrics, collectCoreWebVitals, collectServiceWorkerMetrics, onMetricsUpdate]);
+  }, [
+    metrics,
+    collectCoreWebVitals,
+    collectServiceWorkerMetrics,
+    onMetricsUpdate,
+  ]);
 
   // Check for performance issues and create alerts
-  const checkPerformanceAlerts = useCallback((currentMetrics: PerformanceMetrics) => {
-    const newAlerts: typeof alerts = [];
+  const checkPerformanceAlerts = useCallback(
+    (currentMetrics: PerformanceMetrics) => {
+      const newAlerts: typeof alerts = [];
 
-    // Check Core Web Vitals
-    if (currentMetrics.lcp && currentMetrics.lcp > thresholds.lcp.poor) {
-      newAlerts.push({
-        type: 'error',
-        message: `LCP is poor (${Math.round(currentMetrics.lcp)}ms). Consider optimizing large images or critical rendering path.`,
-        timestamp: Date.now(),
-      });
-    }
-
-    if (currentMetrics.fid && currentMetrics.fid > thresholds.fid.poor) {
-      newAlerts.push({
-        type: 'error',
-        message: `FID is poor (${Math.round(currentMetrics.fid)}ms). Consider reducing JavaScript execution time.`,
-        timestamp: Date.now(),
-      });
-    }
-
-    if (currentMetrics.cls && currentMetrics.cls > thresholds.cls.poor) {
-      newAlerts.push({
-        type: 'error',
-        message: `CLS is poor (${currentMetrics.cls.toFixed(3)}). Consider adding dimensions to images and avoiding dynamic content.`,
-        timestamp: Date.now(),
-      });
-    }
-
-    // Check cache performance
-    if (currentMetrics.cacheRatio < 60 && (currentMetrics.cacheHits + currentMetrics.cacheMisses) > 10) {
-      newAlerts.push({
-        type: 'warning',
-        message: `Cache hit rate is low (${Math.round(currentMetrics.cacheRatio)}%). Consider reviewing caching strategy.`,
-        timestamp: Date.now(),
-      });
-    }
-
-    // Check memory usage
-    if (currentMetrics.usedJSHeapSize && currentMetrics.jsHeapSizeLimit) {
-      const memoryUsage = (currentMetrics.usedJSHeapSize / currentMetrics.jsHeapSizeLimit) * 100;
-      if (memoryUsage > 80) {
+      // Check Core Web Vitals
+      if (currentMetrics.lcp && currentMetrics.lcp > thresholds.lcp.poor) {
         newAlerts.push({
-          type: 'warning',
-          message: `High memory usage (${Math.round(memoryUsage)}%). Consider optimizing memory-intensive operations.`,
+          type: 'error',
+          message: `LCP is poor (${Math.round(currentMetrics.lcp)}ms). Consider optimizing large images or critical rendering path.`,
           timestamp: Date.now(),
         });
       }
-    }
 
-    setAlerts(newAlerts);
-  }, []);
+      if (currentMetrics.fid && currentMetrics.fid > thresholds.fid.poor) {
+        newAlerts.push({
+          type: 'error',
+          message: `FID is poor (${Math.round(currentMetrics.fid)}ms). Consider reducing JavaScript execution time.`,
+          timestamp: Date.now(),
+        });
+      }
+
+      if (currentMetrics.cls && currentMetrics.cls > thresholds.cls.poor) {
+        newAlerts.push({
+          type: 'error',
+          message: `CLS is poor (${currentMetrics.cls.toFixed(3)}). Consider adding dimensions to images and avoiding dynamic content.`,
+          timestamp: Date.now(),
+        });
+      }
+
+      // Check cache performance
+      if (
+        currentMetrics.cacheRatio < 60 &&
+        currentMetrics.cacheHits + currentMetrics.cacheMisses > 10
+      ) {
+        newAlerts.push({
+          type: 'warning',
+          message: `Cache hit rate is low (${Math.round(currentMetrics.cacheRatio)}%). Consider reviewing caching strategy.`,
+          timestamp: Date.now(),
+        });
+      }
+
+      // Check memory usage
+      if (currentMetrics.usedJSHeapSize && currentMetrics.jsHeapSizeLimit) {
+        const memoryUsage =
+          (currentMetrics.usedJSHeapSize / currentMetrics.jsHeapSizeLimit) *
+          100;
+        if (memoryUsage > 80) {
+          newAlerts.push({
+            type: 'warning',
+            message: `High memory usage (${Math.round(memoryUsage)}%). Consider optimizing memory-intensive operations.`,
+            timestamp: Date.now(),
+          });
+        }
+      }
+
+      setAlerts(newAlerts);
+    },
+    []
+  );
 
   // Start monitoring
   const startMonitoring = useCallback(() => {
@@ -353,7 +394,9 @@ export default function PerformanceMonitor({
       timestamp: new Date().toISOString(),
     };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -363,25 +406,28 @@ export default function PerformanceMonitor({
   }, [metrics, history, alerts]);
 
   // Clear Service Worker caches
-  const clearCaches = useCallback(async (cacheType: string = 'all') => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      return new Promise<void>((resolve) => {
-        const channel = new MessageChannel();
+  const clearCaches = useCallback(
+    async (cacheType: string = 'all') => {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        return new Promise<void>(resolve => {
+          const channel = new MessageChannel();
 
-        channel.port1.onmessage = (event) => {
-          if (event.data.type === 'CACHE_CLEARED') {
-            updateMetrics();
-            resolve();
-          }
-        };
+          channel.port1.onmessage = event => {
+            if (event.data.type === 'CACHE_CLEARED') {
+              updateMetrics();
+              resolve();
+            }
+          };
 
-        navigator.serviceWorker.controller.postMessage(
-          { type: 'CLEAR_CACHE', cacheType },
-          [channel.port2]
-        );
-      });
-    }
-  }, [updateMetrics]);
+          navigator.serviceWorker.controller.postMessage(
+            { type: 'CLEAR_CACHE', cacheType },
+            [channel.port2]
+          );
+        });
+      }
+    },
+    [updateMetrics]
+  );
 
   // Format bytes
   const formatBytes = (bytes: number) => {
@@ -399,13 +445,20 @@ export default function PerformanceMonitor({
   };
 
   // Get metric color
-  const getMetricColor = (metric: keyof typeof thresholds, value: number | null) => {
+  const getMetricColor = (
+    metric: keyof typeof thresholds,
+    value: number | null
+  ) => {
     const rating = getPerformanceRating(metric, value);
     switch (rating) {
-      case 'good': return 'text-green-500';
-      case 'needs-improvement': return 'text-yellow-500';
-      case 'poor': return 'text-red-500';
-      default: return 'text-gray-500';
+      case 'good':
+        return 'text-green-500';
+      case 'needs-improvement':
+        return 'text-yellow-500';
+      case 'poor':
+        return 'text-red-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
@@ -418,26 +471,40 @@ export default function PerformanceMonitor({
     return stopMonitoring;
   }, [autoStart, startMonitoring, stopMonitoring]);
 
+  // Don't show the minimal performance monitor in development unless explicitly enabled
   if (!showDetails) {
+    // Only show if explicitly enabled via environment variable
+    if (!process.env.NEXT_PUBLIC_SHOW_PERFORMANCE_MONITOR) {
+      return null;
+    }
+
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Card className="p-4 bg-white shadow-lg">
-          <div className="flex items-center space-x-3">
-            <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-400'}`} />
-            <div className="text-sm">
-              <div className="font-medium">Performance</div>
+      <div className='fixed bottom-4 right-4 z-50'>
+        <Card className='p-4 bg-white shadow-lg'>
+          <div className='flex items-center space-x-3'>
+            <div
+              className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-400'}`}
+            />
+            <div className='text-sm'>
+              <div className='font-medium'>Performance</div>
               {metrics.lcp && (
-                <div className={`text-xs ${getMetricColor('lcp', metrics.lcp)}`}>
+                <div
+                  className={`text-xs ${getMetricColor('lcp', metrics.lcp)}`}
+                >
                   LCP: {formatMs(metrics.lcp)}
                 </div>
               )}
             </div>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => setIsMonitoring(!isMonitoring)}
             >
-              {isMonitoring ? <Activity className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+              {isMonitoring ? (
+                <Activity className='w-4 h-4' />
+              ) : (
+                <Monitor className='w-4 h-4' />
+              )}
             </Button>
           </div>
         </Card>
@@ -446,37 +513,31 @@ export default function PerformanceMonitor({
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Monitor className="w-6 h-6" />
-          <h2 className="text-2xl font-bold">Performance Monitor</h2>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center space-x-3'>
+          <Monitor className='w-6 h-6' />
+          <h2 className='text-2xl font-bold'>Performance Monitor</h2>
           <Badge variant={isMonitoring ? 'default' : 'secondary'}>
             {isMonitoring ? 'Active' : 'Inactive'}
           </Badge>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={exportMetrics}
-          >
-            <Download className="w-4 h-4 mr-2" />
+        <div className='flex items-center space-x-2'>
+          <Button variant='outline' size='sm' onClick={exportMetrics}>
+            <Download className='w-4 h-4 mr-2' />
             Export
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => clearCaches()}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <Button variant='outline' size='sm' onClick={() => clearCaches()}>
+            <RefreshCw className='w-4 h-4 mr-2' />
             Clear Cache
           </Button>
           <Button
             variant={isMonitoring ? 'destructive' : 'default'}
-            onClick={() => isMonitoring ? stopMonitoring() : startMonitoring()}
+            onClick={() =>
+              isMonitoring ? stopMonitoring() : startMonitoring()
+            }
           >
             {isMonitoring ? 'Stop' : 'Start'}
           </Button>
@@ -485,7 +546,7 @@ export default function PerformanceMonitor({
 
       {/* Alerts */}
       {alerts.length > 0 && (
-        <div className="space-y-2">
+        <div className='space-y-2'>
           {alerts.map((alert, index) => (
             <div
               key={index}
@@ -495,15 +556,15 @@ export default function PerformanceMonitor({
                   : 'bg-yellow-50 border-yellow-500 text-yellow-800'
               }`}
             >
-              <div className="flex items-start space-x-2">
+              <div className='flex items-start space-x-2'>
                 {alert.type === 'error' ? (
-                  <XCircle className="w-5 h-5 mt-0.5" />
+                  <XCircle className='w-5 h-5 mt-0.5' />
                 ) : (
-                  <AlertTriangle className="w-5 h-5 mt-0.5" />
+                  <AlertTriangle className='w-5 h-5 mt-0.5' />
                 )}
-                <div className="flex-1">
-                  <p className="text-sm">{alert.message}</p>
-                  <p className="text-xs opacity-75 mt-1">
+                <div className='flex-1'>
+                  <p className='text-sm'>{alert.message}</p>
+                  <p className='text-xs opacity-75 mt-1'>
                     {new Date(alert.timestamp).toLocaleTimeString()}
                   </p>
                 </div>
@@ -514,98 +575,118 @@ export default function PerformanceMonitor({
       )}
 
       {/* Core Web Vitals */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
             <Zap className={`w-5 h-5 ${getMetricColor('lcp', metrics.lcp)}`} />
             <div>
-              <div className="text-sm font-medium">LCP</div>
-              <div className={`text-2xl font-bold ${getMetricColor('lcp', metrics.lcp)}`}>
+              <div className='text-sm font-medium'>LCP</div>
+              <div
+                className={`text-2xl font-bold ${getMetricColor('lcp', metrics.lcp)}`}
+              >
                 {formatMs(metrics.lcp)}
               </div>
-              <div className="text-xs text-gray-500">Largest Contentful Paint</div>
+              <div className='text-xs text-gray-500'>
+                Largest Contentful Paint
+              </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <Clock className={`w-5 h-5 ${getMetricColor('fid', metrics.fid)}`} />
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
+            <Clock
+              className={`w-5 h-5 ${getMetricColor('fid', metrics.fid)}`}
+            />
             <div>
-              <div className="text-sm font-medium">FID</div>
-              <div className={`text-2xl font-bold ${getMetricColor('fid', metrics.fid)}`}>
+              <div className='text-sm font-medium'>FID</div>
+              <div
+                className={`text-2xl font-bold ${getMetricColor('fid', metrics.fid)}`}
+              >
                 {formatMs(metrics.fid)}
               </div>
-              <div className="text-xs text-gray-500">First Input Delay</div>
+              <div className='text-xs text-gray-500'>First Input Delay</div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <TrendingUp className={`w-5 h-5 ${getMetricColor('cls', metrics.cls)}`} />
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
+            <TrendingUp
+              className={`w-5 h-5 ${getMetricColor('cls', metrics.cls)}`}
+            />
             <div>
-              <div className="text-sm font-medium">CLS</div>
-              <div className={`text-2xl font-bold ${getMetricColor('cls', metrics.cls)}`}>
+              <div className='text-sm font-medium'>CLS</div>
+              <div
+                className={`text-2xl font-bold ${getMetricColor('cls', metrics.cls)}`}
+              >
                 {metrics.cls ? metrics.cls.toFixed(3) : 'N/A'}
               </div>
-              <div className="text-xs text-gray-500">Cumulative Layout Shift</div>
+              <div className='text-xs text-gray-500'>
+                Cumulative Layout Shift
+              </div>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Additional Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <Database className="w-5 h-5 text-blue-500" />
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
+            <Database className='w-5 h-5 text-blue-500' />
             <div>
-              <div className="text-sm font-medium">Cache Hit Rate</div>
-              <div className="text-xl font-bold">{Math.round(metrics.cacheRatio)}%</div>
-              <div className="text-xs text-gray-500">
+              <div className='text-sm font-medium'>Cache Hit Rate</div>
+              <div className='text-xl font-bold'>
+                {Math.round(metrics.cacheRatio)}%
+              </div>
+              <div className='text-xs text-gray-500'>
                 {metrics.cacheHits} hits / {metrics.cacheMisses} misses
               </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <Wifi className="w-5 h-5 text-green-500" />
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
+            <Wifi className='w-5 h-5 text-green-500' />
             <div>
-              <div className="text-sm font-medium">Connection</div>
-              <div className="text-xl font-bold">{metrics.effectiveType}</div>
-              <div className="text-xs text-gray-500">
+              <div className='text-sm font-medium'>Connection</div>
+              <div className='text-xl font-bold'>{metrics.effectiveType}</div>
+              <div className='text-xs text-gray-500'>
                 {metrics.rtt ? `${metrics.rtt}ms RTT` : 'Unknown RTT'}
               </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <Upload className="w-5 h-5 text-purple-500" />
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
+            <Upload className='w-5 h-5 text-purple-500' />
             <div>
-              <div className="text-sm font-medium">Resources</div>
-              <div className="text-xl font-bold">{metrics.resourceCount}</div>
-              <div className="text-xs text-gray-500">
+              <div className='text-sm font-medium'>Resources</div>
+              <div className='text-xl font-bold'>{metrics.resourceCount}</div>
+              <div className='text-xs text-gray-500'>
                 {formatBytes(metrics.resourceSize)}
               </div>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <Activity className="w-5 h-5 text-orange-500" />
+        <Card className='p-4'>
+          <div className='flex items-center space-x-3'>
+            <Activity className='w-5 h-5 text-orange-500' />
             <div>
-              <div className="text-sm font-medium">Memory</div>
-              <div className="text-xl font-bold">
-                {metrics.usedJSHeapSize ? formatBytes(metrics.usedJSHeapSize) : 'N/A'}
+              <div className='text-sm font-medium'>Memory</div>
+              <div className='text-xl font-bold'>
+                {metrics.usedJSHeapSize
+                  ? formatBytes(metrics.usedJSHeapSize)
+                  : 'N/A'}
               </div>
-              <div className="text-xs text-gray-500">
-                {metrics.jsHeapSizeLimit ? `of ${formatBytes(metrics.jsHeapSizeLimit)}` : 'Heap usage'}
+              <div className='text-xs text-gray-500'>
+                {metrics.jsHeapSizeLimit
+                  ? `of ${formatBytes(metrics.jsHeapSizeLimit)}`
+                  : 'Heap usage'}
               </div>
             </div>
           </div>
@@ -613,25 +694,29 @@ export default function PerformanceMonitor({
       </div>
 
       {/* Detailed Metrics */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Detailed Metrics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card className='p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Detailed Metrics</h3>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div>
-            <h4 className="font-medium mb-2">Page Load Timing</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <h4 className='font-medium mb-2'>Page Load Timing</h4>
+            <div className='space-y-2 text-sm'>
+              <div className='flex justify-between'>
                 <span>First Contentful Paint:</span>
-                <span className={getMetricColor('fcp', metrics.fcp)}>{formatMs(metrics.fcp)}</span>
+                <span className={getMetricColor('fcp', metrics.fcp)}>
+                  {formatMs(metrics.fcp)}
+                </span>
               </div>
-              <div className="flex justify-between">
+              <div className='flex justify-between'>
                 <span>Time to First Byte:</span>
-                <span className={getMetricColor('ttfb', metrics.ttfb)}>{formatMs(metrics.ttfb)}</span>
+                <span className={getMetricColor('ttfb', metrics.ttfb)}>
+                  {formatMs(metrics.ttfb)}
+                </span>
               </div>
-              <div className="flex justify-between">
+              <div className='flex justify-between'>
                 <span>DOM Content Loaded:</span>
                 <span>{formatMs(metrics.domContentLoaded)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className='flex justify-between'>
                 <span>Load Complete:</span>
                 <span>{formatMs(metrics.loadComplete)}</span>
               </div>
@@ -639,23 +724,25 @@ export default function PerformanceMonitor({
           </div>
 
           <div>
-            <h4 className="font-medium mb-2">Network Information</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <h4 className='font-medium mb-2'>Network Information</h4>
+            <div className='space-y-2 text-sm'>
+              <div className='flex justify-between'>
                 <span>Connection Type:</span>
                 <span>{metrics.connectionType}</span>
               </div>
-              <div className="flex justify-between">
+              <div className='flex justify-between'>
                 <span>Effective Type:</span>
                 <span>{metrics.effectiveType}</span>
               </div>
-              <div className="flex justify-between">
+              <div className='flex justify-between'>
                 <span>Round Trip Time:</span>
                 <span>{metrics.rtt ? `${metrics.rtt}ms` : 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
+              <div className='flex justify-between'>
                 <span>Downlink:</span>
-                <span>{metrics.downlink ? `${metrics.downlink} Mbps` : 'N/A'}</span>
+                <span>
+                  {metrics.downlink ? `${metrics.downlink} Mbps` : 'N/A'}
+                </span>
               </div>
             </div>
           </div>

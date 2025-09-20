@@ -70,7 +70,17 @@ export async function POST(request: NextRequest) {
       directCityId: requestBody.cityId,
       fromRegistrationData: registrationData?.citySelection?.cityId,
       finalCityId: cityId || 'undefined',
+      hasRegistrationData: !!registrationData,
+      hasCitySelection: !!registrationData?.citySelection,
     });
+
+    // Additional detailed logging for city troubleshooting
+    if (cityId) {
+      console.log('✅ CityId found, attempting city lookup:', cityId);
+    } else {
+      console.warn('❌ No cityId provided - will use generic product name');
+      console.log('🔍 Registration data structure:', JSON.stringify(registrationData, null, 2));
+    }
 
     console.log(
       '✅ All validation checks passed, proceeding to create checkout session'
@@ -110,17 +120,18 @@ export async function POST(request: NextRequest) {
 
     // Add registration data to metadata if provided
     if (registrationData) {
-      if (registrationData.firstName)
-        metadata.firstName = registrationData.firstName;
-      if (registrationData.lastName)
-        metadata.lastName = registrationData.lastName;
-      if (registrationData.businessName)
-        metadata.businessName = registrationData.businessName;
-      if (registrationData.businessType)
-        metadata.businessType = registrationData.businessType;
-      if (registrationData.yearsExperience)
-        metadata.yearsExperience = registrationData.yearsExperience;
-      if (registrationData.phone) metadata.phone = registrationData.phone;
+      if (registrationData['firstName'])
+        metadata['firstName'] = registrationData['firstName'];
+      if (registrationData['lastName'])
+        metadata['lastName'] = registrationData['lastName'];
+      if (registrationData['businessName'])
+        metadata['businessName'] = registrationData['businessName'];
+      if (registrationData['businessType'])
+        metadata['businessType'] = registrationData['businessType'];
+      if (registrationData['yearsExperience'])
+        metadata['yearsExperience'] = registrationData['yearsExperience'];
+      if (registrationData['phone'])
+        metadata['phone'] = registrationData['phone'];
 
       // Extract cityId from registrationData if not provided directly
       if (!cityId && registrationData.citySelection?.cityId) {
@@ -143,28 +154,31 @@ export async function POST(request: NextRequest) {
 
       // Add pricing and city selection data to metadata
       if (registrationData.pricing) {
-        metadata.originalPrice =
-          registrationData.pricing.originalPrice?.toString() || '';
-        metadata.finalPrice =
-          registrationData.pricing.finalPrice?.toString() || '';
-        metadata.discountAmount =
-          registrationData.pricing.discountAmount?.toString() || '';
-        metadata.discountReason = registrationData.pricing.discountReason || '';
-        metadata.savings = registrationData.pricing.savings?.toString() || '';
+        metadata['originalPrice'] =
+          registrationData.pricing['originalPrice']?.toString() || '';
+        metadata['finalPrice'] =
+          registrationData.pricing['finalPrice']?.toString() || '';
+        metadata['discountAmount'] =
+          registrationData.pricing['discountAmount']?.toString() || '';
+        metadata['discountReason'] =
+          registrationData.pricing['discountReason'] || '';
+        metadata['savings'] =
+          registrationData.pricing['savings']?.toString() || '';
       }
 
       if (registrationData.citySelection) {
-        metadata.cityName = registrationData.citySelection.cityName || '';
-        metadata.workshopMonth = registrationData.citySelection.month || '';
-        metadata.workshopDates =
-          registrationData.citySelection.dates?.join(', ') || '';
-        metadata.workshopLocation =
-          registrationData.citySelection.location || '';
+        metadata['cityName'] = registrationData.citySelection['cityName'] || '';
+        metadata['workshopMonth'] =
+          registrationData.citySelection['month'] || '';
+        metadata['workshopDates'] =
+          registrationData.citySelection['dates']?.join(', ') || '';
+        metadata['workshopLocation'] =
+          registrationData.citySelection['location'] || '';
       }
     }
 
     // Add customer name to metadata
-    if (customerName) metadata.customerName = customerName;
+    if (customerName) metadata['customerName'] = customerName;
 
     // Create Stripe checkout session
     console.log('🚀 Creating Stripe checkout session with params:', {

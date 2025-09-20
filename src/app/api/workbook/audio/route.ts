@@ -6,7 +6,7 @@ import {
   hasPermission,
   WORKBOOK_PERMISSIONS,
   WORKBOOK_SECURITY_HEADERS,
-  getRateLimits
+  getRateLimits,
 } from '@/lib/workbook-auth';
 import db, { DatabaseError, ValidationError } from '@/lib/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,7 +16,7 @@ import {
   deleteAudioFile,
   getStorageService,
   type AudioFileMetadata,
-  type UploadResult
+  type UploadResult,
 } from '@/lib/storage';
 import OpenAI from 'openai';
 
@@ -157,9 +157,13 @@ export async function POST(request: NextRequest) {
     );
     const language = (formData.get('language') as string) || 'en';
     const model = (formData.get('model') as string) || 'whisper-1';
-    const title = (formData.get('title') as string) || `Recording ${new Date().toISOString()}`;
+    const title =
+      (formData.get('title') as string) ||
+      `Recording ${new Date().toISOString()}`;
     const description = formData.get('description') as string;
-    const tags = formData.get('tags') ? JSON.parse(formData.get('tags') as string) : [];
+    const tags = formData.get('tags')
+      ? JSON.parse(formData.get('tags') as string)
+      : [];
 
     if (!audioFile) {
       throw new ValidationError('Audio file is required');
@@ -201,7 +205,13 @@ export async function POST(request: NextRequest) {
 
     // Enhanced rate limiting based on user role
     const rateLimits = getRateLimits(auth.session.role);
-    if (!checkRateLimit(auth.session.userId, rateLimits.audioRecordings.limit, rateLimits.audioRecordings.window * 1000)) {
+    if (
+      !checkRateLimit(
+        auth.session.userId,
+        rateLimits.audioRecordings.limit,
+        rateLimits.audioRecordings.window * 1000
+      )
+    ) {
       return NextResponse.json(
         { error: 'Recording rate limit exceeded for your subscription level' },
         { status: 429, headers: WORKBOOK_SECURITY_HEADERS }
@@ -214,22 +224,26 @@ export async function POST(request: NextRequest) {
     ); // Rough estimate
 
     // Upload to S3 using the storage service
-    const uploadResult: UploadResult = await uploadAudioFile(audioFile, auth.session.userId, {
-      moduleId,
-      lessonId,
-      sessionId,
-      tags,
-      metadata: {
-        title,
-        description,
-        chunkNumber,
-        estimatedDurationMinutes,
-        userAgent: request.headers.get('user-agent'),
-        uploadTimestamp: new Date().toISOString()
-      },
-      extractWaveform: true,
-      compress: true
-    });
+    const uploadResult: UploadResult = await uploadAudioFile(
+      audioFile,
+      auth.session.userId,
+      {
+        moduleId,
+        lessonId,
+        sessionId,
+        tags,
+        metadata: {
+          title,
+          description,
+          chunkNumber,
+          estimatedDurationMinutes,
+          userAgent: request.headers.get('user-agent'),
+          uploadTimestamp: new Date().toISOString(),
+        },
+        extractWaveform: true,
+        compress: true,
+      }
+    );
 
     if (!uploadResult.success || !uploadResult.fileMetadata) {
       return NextResponse.json(
@@ -273,7 +287,7 @@ export async function POST(request: NextRequest) {
           originalName: audioFile.name,
           estimatedDurationMinutes,
           s3Metadata: s3FileMetadata.metadata,
-          uploadedAt: s3FileMetadata.uploadedAt.toISOString()
+          uploadedAt: s3FileMetadata.uploadedAt.toISOString(),
         }),
         new Date(),
         new Date(),
@@ -440,7 +454,7 @@ export async function POST(request: NextRequest) {
             url: s3FileMetadata.url,
             waveform_data: s3FileMetadata.waveform,
             peaks_data: s3FileMetadata.peaks,
-            created_at: audioRecord.created_at
+            created_at: audioRecord.created_at,
           },
           transcription: {
             id: transcriptionId,

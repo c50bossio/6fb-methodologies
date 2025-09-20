@@ -130,7 +130,10 @@ async function getUserCompletedModules(userId: string): Promise<string[]> {
 /**
  * Get module progress for the user
  */
-async function getModuleProgress(userId: string, moduleId: string): Promise<any> {
+async function getModuleProgress(
+  userId: string,
+  moduleId: string
+): Promise<any> {
   const progress = await db.queryOne(
     `
     SELECT
@@ -179,7 +182,10 @@ async function getModuleLessons(moduleId: string): Promise<any[]> {
 /**
  * Get lesson progress for the user
  */
-async function getLessonProgress(userId: string, moduleId: string): Promise<Map<string, any>> {
+async function getLessonProgress(
+  userId: string,
+  moduleId: string
+): Promise<Map<string, any>> {
   const lessonProgress = await db.query(
     `
     SELECT
@@ -207,7 +213,10 @@ async function getLessonProgress(userId: string, moduleId: string): Promise<Map<
 /**
  * Record module access for analytics
  */
-async function recordModuleAccess(userId: string, moduleId: string): Promise<void> {
+async function recordModuleAccess(
+  userId: string,
+  moduleId: string
+): Promise<void> {
   try {
     await db.query(
       `
@@ -258,7 +267,7 @@ export async function GET(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -337,7 +346,10 @@ export async function GET(
     }
 
     // Check if module is published (unless user is admin)
-    if (!module.is_published && !hasPermission(auth.session, WORKBOOK_PERMISSIONS.ADMIN)) {
+    if (
+      !module.is_published &&
+      !hasPermission(auth.session, WORKBOOK_PERMISSIONS.ADMIN)
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -358,7 +370,8 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: 'Your subscription tier does not include access to this module. Please upgrade your subscription.',
+          error:
+            'Your subscription tier does not include access to this module. Please upgrade your subscription.',
           code: 'SUBSCRIPTION_REQUIRED',
           details: {
             currentTier: workbookUser.subscriptionTier,
@@ -377,7 +390,10 @@ export async function GET(
       module.prerequisites || []
     );
 
-    if (!prerequisitesMet && !hasPermission(auth.session, WORKBOOK_PERMISSIONS.ADMIN)) {
+    if (
+      !prerequisitesMet &&
+      !hasPermission(auth.session, WORKBOOK_PERMISSIONS.ADMIN)
+    ) {
       const missingPrerequisites = (module.prerequisites || []).filter(
         (prereq: string) => !completedModules.includes(prereq)
       );
@@ -420,21 +436,23 @@ export async function GET(
         sortOrder: lesson.sort_order,
         isPublished: lesson.is_published,
         prerequisites: lesson.prerequisites || [],
-        progress: lessonProgress ? {
-          progressPercentage: lessonProgress.progress_percentage || 0,
-          completed: lessonProgress.completed || false,
-          completedAt: lessonProgress.completed_at,
-          timeSpentSeconds: lessonProgress.time_spent_seconds || 0,
-          lastPosition: lessonProgress.last_position || 0,
-          quizScore: lessonProgress.quiz_score,
-        } : {
-          progressPercentage: 0,
-          completed: false,
-          completedAt: null,
-          timeSpentSeconds: 0,
-          lastPosition: 0,
-          quizScore: null,
-        },
+        progress: lessonProgress
+          ? {
+              progressPercentage: lessonProgress.progress_percentage || 0,
+              completed: lessonProgress.completed || false,
+              completedAt: lessonProgress.completed_at,
+              timeSpentSeconds: lessonProgress.time_spent_seconds || 0,
+              lastPosition: lessonProgress.last_position || 0,
+              quizScore: lessonProgress.quiz_score,
+            }
+          : {
+              progressPercentage: 0,
+              completed: false,
+              completedAt: null,
+              timeSpentSeconds: 0,
+              lastPosition: 0,
+              quizScore: null,
+            },
         createdAt: lesson.created_at,
         updatedAt: lesson.updated_at,
       };
@@ -459,15 +477,17 @@ export async function GET(
       tags: module.tags || [],
       createdAt: module.created_at,
       updatedAt: module.updated_at,
-      progress: progress ? {
-        progressPercent: progress.progress_percent || 0,
-        status: progress.status || 'not_started',
-        timeSpentMinutes: progress.time_spent_minutes || 0,
-        lastAccessedAt: progress.last_accessed_at,
-        completedAt: progress.completed_at,
-        createdAt: progress.created_at,
-        updatedAt: progress.updated_at,
-      } : null,
+      progress: progress
+        ? {
+            progressPercent: progress.progress_percent || 0,
+            status: progress.status || 'not_started',
+            timeSpentMinutes: progress.time_spent_minutes || 0,
+            lastAccessedAt: progress.last_accessed_at,
+            completedAt: progress.completed_at,
+            createdAt: progress.created_at,
+            updatedAt: progress.updated_at,
+          }
+        : null,
       lessons: lessonsWithProgress,
       prerequisitesMet,
       accessGranted: hasAccess,
@@ -513,7 +533,6 @@ export async function GET(
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Module details GET error:', error);
 
@@ -584,7 +603,7 @@ export async function PUT(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -611,7 +630,6 @@ export async function PUT(
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Module PUT error:', error);
     return NextResponse.json(
@@ -655,7 +673,7 @@ export async function DELETE(
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -682,7 +700,6 @@ export async function DELETE(
       },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Module DELETE error:', error);
     return NextResponse.json(

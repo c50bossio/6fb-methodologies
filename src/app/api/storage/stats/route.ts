@@ -7,7 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getStorageService } from '@/lib/storage';
-import { getStorageStatistics, getDatabaseService } from '@/lib/storage-database';
+import {
+  getStorageStatistics,
+  getDatabaseService,
+} from '@/lib/storage-database';
 import { verifyToken } from '@/lib/workbook-auth';
 import { sql } from '@vercel/postgres';
 
@@ -77,7 +80,9 @@ interface StatsResponse {
  * GET /api/storage/stats
  * Get comprehensive storage statistics
  */
-export async function GET(request: NextRequest): Promise<NextResponse<StatsResponse>> {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<StatsResponse>> {
   try {
     // Authentication check
     const authResult = await verifyToken(request);
@@ -108,8 +113,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<StatsRespo
         totalSizePretty: formatBytes(basicStats.totalSize),
         filesThisMonth: 0,
         sizeThisMonth: 0,
-        averageFileSize: basicStats.totalFiles > 0 ? Math.round(basicStats.totalSize / basicStats.totalFiles) : 0,
-        averageFileSizePretty: basicStats.totalFiles > 0 ? formatBytes(Math.round(basicStats.totalSize / basicStats.totalFiles)) : '0 B',
+        averageFileSize:
+          basicStats.totalFiles > 0
+            ? Math.round(basicStats.totalSize / basicStats.totalFiles)
+            : 0,
+        averageFileSizePretty:
+          basicStats.totalFiles > 0
+            ? formatBytes(
+                Math.round(basicStats.totalSize / basicStats.totalFiles)
+              )
+            : '0 B',
       },
       breakdown: {
         filesByType: basicStats.filesByType,
@@ -142,10 +155,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<StatsRespo
 
     const thisMonthStats = basicStats.uploadsByDay
       .filter(day => new Date(day.date) >= thisMonth)
-      .reduce((acc, day) => ({
-        count: acc.count + day.count,
-        size: acc.size + day.size,
-      }), { count: 0, size: 0 });
+      .reduce(
+        (acc, day) => ({
+          count: acc.count + day.count,
+          size: acc.size + day.size,
+        }),
+        { count: 0, size: 0 }
+      );
 
     responseData.overview.filesThisMonth = thisMonthStats.count;
     responseData.overview.sizeThisMonth = thisMonthStats.size;
@@ -166,7 +182,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<StatsRespo
       success: true,
       data: responseData,
     });
-
   } catch (error) {
     console.error('Storage stats endpoint error:', error);
     return NextResponse.json(
@@ -182,7 +197,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<StatsRespo
 /**
  * Add admin-level statistics
  */
-async function addAdminStatistics(data: StatsResponse['data'], days: number): Promise<void> {
+async function addAdminStatistics(
+  data: StatsResponse['data'],
+  days: number
+): Promise<void> {
   try {
     // Get utilization by user
     const userUtilizationResult = await sql`
@@ -198,14 +216,18 @@ async function addAdminStatistics(data: StatsResponse['data'], days: number): Pr
       LIMIT 20
     `;
 
-    const totalSize = userUtilizationResult.rows.reduce((sum, row) => sum + parseInt(row.total_size), 0);
+    const totalSize = userUtilizationResult.rows.reduce(
+      (sum, row) => sum + parseInt(row.total_size),
+      0
+    );
 
     data!.storage.utilizationByUser = userUtilizationResult.rows.map(row => ({
       userId: row.user_id,
       email: row.email,
       fileCount: parseInt(row.file_count),
       totalSize: parseInt(row.total_size),
-      percentage: totalSize > 0 ? (parseInt(row.total_size) / totalSize) * 100 : 0,
+      percentage:
+        totalSize > 0 ? (parseInt(row.total_size) / totalSize) * 100 : 0,
     }));
 
     // Get breakdown by module
@@ -304,7 +326,6 @@ async function addAdminStatistics(data: StatsResponse['data'], days: number): Pr
       sizePretty: formatBytes(parseInt(row.file_size_bytes)),
       uploadedAt: row.created_at,
     }));
-
   } catch (error) {
     console.error('Failed to get admin statistics:', error);
   }
@@ -313,7 +334,11 @@ async function addAdminStatistics(data: StatsResponse['data'], days: number): Pr
 /**
  * Add user-level statistics
  */
-async function addUserStatistics(data: StatsResponse['data'], userId: string, days: number): Promise<void> {
+async function addUserStatistics(
+  data: StatsResponse['data'],
+  userId: string,
+  days: number
+): Promise<void> {
   try {
     // Get user's breakdown by module
     const moduleBreakdownResult = await sql`
@@ -367,7 +392,6 @@ async function addUserStatistics(data: StatsResponse['data'], userId: string, da
       sizePretty: formatBytes(parseInt(row.file_size_bytes)),
       uploadedAt: row.created_at,
     }));
-
   } catch (error) {
     console.error('Failed to get user statistics:', error);
   }
@@ -385,7 +409,9 @@ async function addHealthStatistics(data: StatsResponse['data']): Promise<void> {
       WHERE status IN ('pending', 'running')
     `;
 
-    data!.health.processingQueue = parseInt(queueResult.rows[0]?.queue_size || '0');
+    data!.health.processingQueue = parseInt(
+      queueResult.rows[0]?.queue_size || '0'
+    );
 
     // Get failed uploads count (last 24 hours)
     const failedUploadsResult = await sql`
@@ -396,13 +422,14 @@ async function addHealthStatistics(data: StatsResponse['data']): Promise<void> {
         AND created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'
     `;
 
-    data!.health.failedUploads = parseInt(failedUploadsResult.rows[0]?.failed_count || '0');
+    data!.health.failedUploads = parseInt(
+      failedUploadsResult.rows[0]?.failed_count || '0'
+    );
 
     // In a full implementation, you would also check for:
     // - Orphaned files (files in S3 but not in database)
     // - Dangling records (database records without S3 files)
     // This would require comparing S3 file listings with database records
-
   } catch (error) {
     console.error('Failed to get health statistics:', error);
   }

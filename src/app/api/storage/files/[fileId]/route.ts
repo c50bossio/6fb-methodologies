@@ -124,7 +124,6 @@ export async function GET(
       success: true,
       data: transformedFile,
     });
-
   } catch (error) {
     console.error('Get file endpoint error:', error);
     return NextResponse.json(
@@ -201,14 +200,14 @@ export async function PATCH(
     if (updateData.moduleId !== undefined) {
       // In a full implementation, you'd validate that the module exists and user has access
       updates.metadata = {
-        ...updates.metadata || fileRecord.metadata,
+        ...(updates.metadata || fileRecord.metadata),
         moduleId: updateData.moduleId,
       };
     }
 
     if (updateData.lessonId !== undefined) {
       updates.metadata = {
-        ...updates.metadata || fileRecord.metadata,
+        ...(updates.metadata || fileRecord.metadata),
         lessonId: updateData.lessonId,
       };
     }
@@ -265,7 +264,6 @@ export async function PATCH(
       success: true,
       data: transformedFile,
     });
-
   } catch (error) {
     console.error('Update file endpoint error:', error);
     return NextResponse.json(
@@ -301,19 +299,13 @@ export async function DELETE(
     const { fileId } = params;
 
     if (!fileId) {
-      return NextResponse.json(
-        { error: 'File ID required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'File ID required' }, { status: 400 });
     }
 
     // Get file from database
     const fileRecord = await getFileFromDatabase(fileId);
     if (!fileRecord) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
     // Check access permissions
@@ -325,10 +317,7 @@ export async function DELETE(
         fileOwnerId: fileRecord.user_id,
       });
 
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Extract S3 key from URL
@@ -340,10 +329,7 @@ export async function DELETE(
         fileUrl: fileRecord.file_url,
       });
 
-      return NextResponse.json(
-        { error: 'Invalid file URL' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Invalid file URL' }, { status: 500 });
     }
 
     // Delete from S3
@@ -361,14 +347,17 @@ export async function DELETE(
       return NextResponse.json(
         {
           error: 'Failed to delete file from storage',
-          details: 'S3 deletion failed'
+          details: 'S3 deletion failed',
         },
         { status: 500 }
       );
     }
 
     // Delete from database
-    const dbDeleteSuccess = await deleteFileFromDatabase(fileId, authResult.userId);
+    const dbDeleteSuccess = await deleteFileFromDatabase(
+      fileId,
+      authResult.userId
+    );
 
     if (!dbDeleteSuccess) {
       await logFileAccess('delete', fileRecord.file_name, authResult.userId, {
@@ -381,7 +370,8 @@ export async function DELETE(
       return NextResponse.json(
         {
           error: 'Failed to delete file record',
-          details: 'Database deletion failed - file removed from storage but record remains'
+          details:
+            'Database deletion failed - file removed from storage but record remains',
         },
         { status: 500 }
       );
@@ -404,7 +394,6 @@ export async function DELETE(
         fileName: fileRecord.file_name,
       },
     });
-
   } catch (error) {
     console.error('Delete file endpoint error:', error);
 
@@ -416,7 +405,8 @@ export async function DELETE(
           await logFileAccess('delete', params.fileId, authResult.userId, {
             fileId: params.fileId,
             error: 'Endpoint error',
-            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            errorMessage:
+              error instanceof Error ? error.message : 'Unknown error',
             processingTime: Date.now() - startTime,
           });
         }
@@ -428,9 +418,12 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: 'File deletion failed',
-        details: process.env.NODE_ENV === 'development' ?
-          (error instanceof Error ? error.message : 'Unknown error') :
-          'An unexpected error occurred'
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : 'Unknown error'
+            : 'An unexpected error occurred',
       },
       { status: 500 }
     );

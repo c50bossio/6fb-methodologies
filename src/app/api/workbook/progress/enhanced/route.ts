@@ -209,21 +209,23 @@ async function getDetailedProgress(userId: string): Promise<UserProgress[]> {
   );
 
   // Validate each progress record
-  const validatedProgress: UserProgress[] = progressRecords.map((record: any) => {
-    return UserProgressSchema.parse({
-      id: record.id,
-      userId: record.user_id,
-      moduleId: record.module_id,
-      lessonId: record.lesson_id,
-      progressPercent: record.progress_percent || 0,
-      status: record.status || 'not_started',
-      timeSpentMinutes: record.time_spent_minutes || 0,
-      lastAccessedAt: record.last_accessed_at,
-      completedAt: record.completed_at,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at,
-    });
-  });
+  const validatedProgress: UserProgress[] = progressRecords.map(
+    (record: any) => {
+      return UserProgressSchema.parse({
+        id: record.id,
+        userId: record.user_id,
+        moduleId: record.module_id,
+        lessonId: record.lesson_id,
+        progressPercent: record.progress_percent || 0,
+        status: record.status || 'not_started',
+        timeSpentMinutes: record.time_spent_minutes || 0,
+        lastAccessedAt: record.last_accessed_at,
+        completedAt: record.completed_at,
+        createdAt: record.created_at,
+        updatedAt: record.updated_at,
+      });
+    }
+  );
 
   return validatedProgress;
 }
@@ -339,7 +341,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -447,7 +449,9 @@ export async function GET(request: NextRequest) {
         );
       } else {
         // Get all detailed progress
-        responseData.detailedProgress = await getDetailedProgress(workbookUser.id);
+        responseData.detailedProgress = await getDetailedProgress(
+          workbookUser.id
+        );
       }
     }
 
@@ -471,7 +475,6 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Enhanced progress GET error:', error);
 
@@ -526,7 +529,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: auth.error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
         { status: auth.status }
       );
@@ -620,7 +623,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update progress using transaction
-    const updatedProgress = await db.transaction(async (client) => {
+    const updatedProgress = await db.transaction(async client => {
       const now = new Date();
 
       // Check if progress record exists
@@ -725,11 +728,12 @@ export async function POST(request: NextRequest) {
     // Add performance metrics in development
     if (process.env.NODE_ENV === 'development') {
       const responseTime = Date.now() - startTime;
-      console.log(`Enhanced progress update API response time: ${responseTime}ms`);
+      console.log(
+        `Enhanced progress update API response time: ${responseTime}ms`
+      );
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Enhanced progress POST error:', error);
 

@@ -24,7 +24,7 @@ export const UserRole = {
   MODERATOR: 'moderator',
 } as const;
 
-export type UserRoleType = typeof UserRole[keyof typeof UserRole];
+export type UserRoleType = (typeof UserRole)[keyof typeof UserRole];
 
 export const SubscriptionTier = {
   FREE: 'free',
@@ -33,7 +33,8 @@ export const SubscriptionTier = {
   ENTERPRISE: 'enterprise',
 } as const;
 
-export type SubscriptionTierType = typeof SubscriptionTier[keyof typeof SubscriptionTier];
+export type SubscriptionTierType =
+  (typeof SubscriptionTier)[keyof typeof SubscriptionTier];
 
 export const SubscriptionStatus = {
   ACTIVE: 'active',
@@ -44,7 +45,8 @@ export const SubscriptionStatus = {
   TRIALING: 'trialing',
 } as const;
 
-export type SubscriptionStatusType = typeof SubscriptionStatus[keyof typeof SubscriptionStatus];
+export type SubscriptionStatusType =
+  (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
 
 // =============================================================================
 // User Preferences and Settings
@@ -335,9 +337,26 @@ export interface UserUsageMetrics {
 // Base validation schemas
 export const UUIDSchema = z.string().uuid();
 export const TimestampSchema = z.string().datetime();
-export const UserRoleSchema = z.enum(['student', 'instructor', 'admin', 'moderator']);
-export const SubscriptionTierSchema = z.enum(['free', 'basic', 'premium', 'enterprise']);
-export const SubscriptionStatusSchema = z.enum(['active', 'inactive', 'expired', 'cancelled', 'past_due', 'trialing']);
+export const UserRoleSchema = z.enum([
+  'student',
+  'instructor',
+  'admin',
+  'moderator',
+]);
+export const SubscriptionTierSchema = z.enum([
+  'free',
+  'basic',
+  'premium',
+  'enterprise',
+]);
+export const SubscriptionStatusSchema = z.enum([
+  'active',
+  'inactive',
+  'expired',
+  'cancelled',
+  'past_due',
+  'trialing',
+]);
 
 // Preferences validation
 export const NotificationSettingsSchema = z.object({
@@ -627,7 +646,11 @@ export function userCanAccessFeature(
 /**
  * Validate user data
  */
-export function validateUser(data: unknown): { valid: boolean; errors?: string[]; data?: WorkbookUser } {
+export function validateUser(data: unknown): {
+  valid: boolean;
+  errors?: string[];
+  data?: WorkbookUser;
+} {
   try {
     const validData = WorkbookUserSchema.parse(data);
     return { valid: true, data: validData };
@@ -635,7 +658,9 @@ export function validateUser(data: unknown): { valid: boolean; errors?: string[]
     if (error instanceof z.ZodError) {
       return {
         valid: false,
-        errors: error.errors.map(err => `${err.path.join('.')}: ${err.message}`),
+        errors: error.errors.map(
+          err => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return { valid: false, errors: ['Invalid data format'] };
@@ -658,14 +683,15 @@ export function getUserDisplayName(user: WorkbookUser): string {
 export function isSubscriptionActive(subscription?: UserSubscription): boolean {
   if (!subscription) return false;
 
-  return subscription.status === 'active' ||
-         subscription.status === 'trialing';
+  return subscription.status === 'active' || subscription.status === 'trialing';
 }
 
 /**
  * Get subscription tier display name
  */
-export function getSubscriptionTierDisplayName(tier: SubscriptionTierType): string {
+export function getSubscriptionTierDisplayName(
+  tier: SubscriptionTierType
+): string {
   const displayNames: Record<SubscriptionTierType, string> = {
     free: 'Free',
     basic: 'Basic',
@@ -681,18 +707,22 @@ export function getSubscriptionTierDisplayName(tier: SubscriptionTierType): stri
 // =============================================================================
 
 export function isWorkbookUser(obj: any): obj is WorkbookUser {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.id === 'string' &&
-         typeof obj.email === 'string' &&
-         typeof obj.role === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.email === 'string' &&
+    typeof obj.role === 'string'
+  );
 }
 
 export function isAuthSession(obj: any): obj is AuthSession {
-  return typeof obj === 'object' &&
-         obj !== null &&
-         typeof obj.token === 'string' &&
-         typeof obj.userId === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.token === 'string' &&
+    typeof obj.userId === 'string'
+  );
 }
 
 // =============================================================================

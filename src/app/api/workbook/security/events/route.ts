@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const url = new URL(request.url);
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 500);
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '50'),
+      500
+    );
     const type = url.searchParams.get('type');
     const since = url.searchParams.get('since');
 
@@ -64,19 +67,27 @@ export async function GET(request: NextRequest) {
     const summary = {
       totalEvents: events.length,
       timeRange: {
-        from: events.length > 0 ? Math.min(...events.map(e => e.timestamp)) : null,
-        to: events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : null,
+        from:
+          events.length > 0 ? Math.min(...events.map(e => e.timestamp)) : null,
+        to:
+          events.length > 0 ? Math.max(...events.map(e => e.timestamp)) : null,
       },
-      eventTypes: events.reduce((acc, event) => {
-        acc[event.type] = (acc[event.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      topIPs: events
-        .reduce((acc, event) => {
+      eventTypes: events.reduce(
+        (acc, event) => {
+          acc[event.type] = (acc[event.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+      topIPs: events.reduce(
+        (acc, event) => {
           acc[event.ip] = (acc[event.ip] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>),
-      suspiciousActivity: events.filter(e => e.type === 'suspicious_activity').length,
+        },
+        {} as Record<string, number>
+      ),
+      suspiciousActivity: events.filter(e => e.type === 'suspicious_activity')
+        .length,
       failedAttempts: events.filter(e => e.type === 'auth_failure').length,
       successfulLogins: events.filter(e => e.type === 'auth_success').length,
     };
