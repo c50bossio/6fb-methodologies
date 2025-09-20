@@ -255,7 +255,7 @@ export async function createCheckoutSession({
 
   if (useCityPricing && cityPriceId && pricing.discountAmount === 0) {
     // Use city-specific price ID for full-price tickets
-    console.log(`💳 Using city price ID: ${cityPriceId}`);
+    console.log(`💳 Using city price ID: ${cityPriceId} for ${city.city}`);
     lineItems = [
       {
         price: cityPriceId,
@@ -263,9 +263,13 @@ export async function createCheckoutSession({
       },
     ];
   } else {
-    // Use price_data for discounted tickets or fallback to generic pricing
+    // Use city-specific price_data for discounted tickets or fallback to generic pricing
+    const citySpecificName = city
+      ? `${city.city} Workshop - ${ticketType} Ticket`
+      : `6FB Methodologies Workshop - ${ticketType} Ticket`;
+
     console.log(
-      `💳 Using price_data for live mode compatibility: $${pricing.finalAmount / quantity / 100}`
+      `💳 Using city-specific price_data for ${city ? city.city : 'generic'}: $${pricing.finalAmount / quantity / 100}`
     );
     lineItems = [
       {
@@ -278,7 +282,14 @@ export async function createCheckoutSession({
             metadata: {
               ticketType,
               workshopEvent: '6FB Methodologies Workshop',
-              ...(city && { cityId, cityName: city.city }),
+              // Always include city information when available
+              ...(city && {
+                cityId,
+                cityName: city.city,
+                cityState: city.state,
+                workshopDates: city.dates.join(', '),
+                workshopMonth: city.month
+              }),
               ...(pricing.discountAmount > 0 && {
                 originalPrice: (
                   pricing.originalAmount /
@@ -334,13 +345,15 @@ export async function createCheckoutSession({
         (pricing.originalAmount - pricing.finalAmount) /
         100
       ).toString(),
+      // Always include city information for tracking
+      cityId: city?.id || '',
       cityName: city?.city || '',
+      cityState: city?.state || '',
       workshopMonth: city?.month || '',
-      workshopDates: city?.dates.join(', ') || '',
+      workshopDates: city?.dates?.join(', ') || '',
       workshopLocation: city?.location || '',
       ticketType,
       quantity: quantity.toString(),
-      cityId: cityId || '',
       ...metadata,
     },
   });

@@ -262,13 +262,8 @@ export function middleware(request: NextRequest) {
 
     // Log workbook specific activities
     if (pathname.startsWith('/api/workbook/')) {
-      recordSecurityEvent({
-        type: pathname.includes('/auth/') ? 'auth_attempt' : 'suspicious_activity',
-        ip: clientIP,
-        userAgent,
-        timestamp: Date.now(),
-        details: { method: request.method, path: pathname }
-      });
+      // Security event recording disabled to avoid crypto dependencies
+      console.log(`Workbook API access: ${request.method} ${pathname} from ${clientIP}`);
     }
   }
 
