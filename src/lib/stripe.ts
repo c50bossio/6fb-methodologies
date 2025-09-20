@@ -90,7 +90,7 @@ export async function calculateStripePriceInCents(
     }
   }
 
-  // Apply 6FB member discount - GA gets 20%, VIP gets 10%, only ONE ticket gets member discount
+  // Apply 6FB member discount - GA gets 20%, VIP gets 10%
   if (isSixFBMember && discountEligible) {
     if (quantity === 1) {
       // Single ticket: member gets discount (20% GA, 10% VIP)
@@ -99,24 +99,42 @@ export async function calculateStripePriceInCents(
       const discountPercent = Math.round(memberDiscount * 100);
       discountReason = `6FB Member Discount (One-time use)`;
     } else {
-      // Multiple tickets: 1 member ticket (discount based on type) + bulk pricing on remaining
+      // Multiple tickets: Compare member+bulk vs pure bulk and apply the better discount
       const memberDiscount = getSixFBDiscount(ticketType);
+      const bulkDiscount = calculateBulkDiscount(quantity);
+
+      // Option 1: Member discount on 1 ticket + bulk discount on remaining
       const memberTicketPrice = Math.round(basePrice * (1 - memberDiscount));
       const remainingQuantity = quantity - 1;
-      const bulkDiscount = calculateBulkDiscount(quantity); // Based on total quantity
       const bulkTicketPrice = Math.round(basePrice * (1 - bulkDiscount));
+      const memberPlusBulkTotal = memberTicketPrice + bulkTicketPrice * remainingQuantity;
 
-      finalAmount = memberTicketPrice + bulkTicketPrice * remainingQuantity;
-      const memberPercentage = Math.round(memberDiscount * 100);
-      const bulkPercentage = Math.round(bulkDiscount * 100);
-      discountReason = `1 Member ticket (${memberPercentage}% off - one-time) + ${remainingQuantity} Bulk tickets (${bulkPercentage}% off)`;
+      // Option 2: Pure bulk discount on all tickets (if applicable for GA)
+      const pureBulkTotal = ticketType === 'GA' && quantity > 1
+        ? Math.round(originalAmount * (1 - bulkDiscount))
+        : originalAmount; // VIP doesn't get bulk discount normally
+
+      // Choose the better option for the customer (lower price)
+      if (memberPlusBulkTotal <= pureBulkTotal) {
+        // Member + bulk combination is better or equal
+        finalAmount = memberPlusBulkTotal;
+        const memberPercentage = Math.round(memberDiscount * 100);
+        const bulkPercentage = Math.round(bulkDiscount * 100);
+        discountReason = `1 Member ticket (${memberPercentage}% off) + ${remainingQuantity} Bulk tickets (${bulkPercentage}% off)`;
+      } else {
+        // Pure bulk is better (rare case, but possible with high bulk discounts)
+        finalAmount = pureBulkTotal;
+        const bulkPercentage = Math.round(bulkDiscount * 100);
+        discountReason = `Bulk Discount (${quantity} tickets, ${bulkPercentage}% off) - Better than member combo`;
+      }
     }
   }
   // Apply bulk discount for GA only (if no member discount)
   else if (ticketType === 'GA' && quantity > 1) {
     const bulkDiscount = calculateBulkDiscount(quantity);
     finalAmount = Math.round(originalAmount * (1 - bulkDiscount));
-    discountReason = `Bulk Discount (${quantity} tickets)`;
+    const bulkPercentage = Math.round(bulkDiscount * 100);
+    discountReason = `Bulk Discount (${quantity} tickets, ${bulkPercentage}% off)`;
   }
 
   const discountAmount = originalAmount - finalAmount;
@@ -204,6 +222,12 @@ export async function createCheckoutSession({
   cityId?: string;
   metadata?: Record<string, string>;
 }) {
+  // Environment detection for Stripe pricing
+  const isProduction = process.env.NODE_ENV === 'production' &&
+                      process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
+  const isDevelopment = process.env.NODE_ENV === 'development' ||
+                       process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_');
+
   // Look up city-specific information if cityId is provided
   let city = null;
   let cityPriceId = null;
@@ -217,11 +241,18 @@ export async function createCheckoutSession({
         city: city.city,
         gaPriceId: city.stripe.gaPriceId,
         vipPriceId: city.stripe.vipPriceId,
+        environment: isProduction ? 'production' : 'development'
       });
 
       cityPriceId =
         ticketType === 'GA' ? city.stripe.gaPriceId : city.stripe.vipPriceId;
-      useCityPricing = true;
+
+      // Only use hardcoded price IDs in production environment
+      useCityPricing = isProduction;
+
+      if (!isProduction) {
+        console.log(`⚠️ Development mode detected - using price_data instead of price IDs for ${city.city}`);
+      }
     } else {
       console.warn(
         `⚠️ City not found for ID: ${cityId}, falling back to generic pricing`
@@ -320,43 +351,125 @@ export async function createCheckoutSession({
     hasDiscount: pricing.discountAmount > 0,
   });
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    currency: 'usd',
-    payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'affirm'],
-    billing_address_collection: 'required',
-    allow_promotion_codes: false,
-    automatic_tax: { enabled: false },
-    customer_creation: 'always',
-    submit_type: 'pay',
-    line_items: lineItems,
-    customer_email: customerEmail,
-    success_url: `https://6fbmethodologies.com/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `https://6fbmethodologies.com/register?cancelled=true`,
-    metadata: {
-      workshopEvent: '6FB Methodologies Workshop',
-      registrationSource: 'website',
-      createdAt: new Date().toISOString(),
-      originalPrice: (pricing.originalAmount / 100).toString(),
-      finalPrice: (pricing.finalAmount / 100).toString(),
-      discountAmount: (pricing.discountAmount / 100).toString(),
-      discountReason: pricing.discountReason || '',
-      savings: (
-        (pricing.originalAmount - pricing.finalAmount) /
-        100
-      ).toString(),
-      // Always include city information for tracking
-      cityId: city?.id || '',
-      cityName: city?.city || '',
-      cityState: city?.state || '',
-      workshopMonth: city?.month || '',
-      workshopDates: city?.dates?.join(', ') || '',
-      workshopLocation: city?.location || '',
-      ticketType,
-      quantity: quantity.toString(),
-      ...metadata,
-    },
-  });
+  // Try to create session, with graceful fallback for invalid price IDs
+  let session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      currency: 'usd',
+      payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'affirm'],
+      billing_address_collection: 'required',
+      allow_promotion_codes: false,
+      automatic_tax: { enabled: false },
+      customer_creation: 'always',
+      submit_type: 'pay',
+      line_items: lineItems,
+      customer_email: customerEmail,
+      success_url: `https://6fbmethodologies.com/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://6fbmethodologies.com/register?cancelled=true`,
+      metadata: {
+        workshopEvent: '6FB Methodologies Workshop',
+        registrationSource: 'website',
+        createdAt: new Date().toISOString(),
+        originalPrice: (pricing.originalAmount / 100).toString(),
+        finalPrice: (pricing.finalAmount / 100).toString(),
+        discountAmount: (pricing.discountAmount / 100).toString(),
+        discountReason: pricing.discountReason || '',
+        savings: (
+          (pricing.originalAmount - pricing.finalAmount) /
+          100
+        ).toString(),
+        // Always include city information for tracking
+        cityId: city?.id || '',
+        cityName: city?.city || '',
+        cityState: city?.state || '',
+        workshopMonth: city?.month || '',
+        workshopDates: city?.dates?.join(', ') || '',
+        workshopLocation: city?.location || '',
+        ticketType,
+        quantity: quantity.toString(),
+        ...metadata,
+      },
+    });
+  } catch (error: any) {
+    // Handle Stripe price ID errors gracefully
+    if (error?.code === 'resource_missing' && useCityPricing && cityPriceId) {
+      console.warn(`⚠️ Price ID ${cityPriceId} not found, falling back to price_data for ${city?.city}`);
+
+      // Recreate line items with price_data fallback
+      const fallbackLineItems = [
+        {
+          price_data: {
+            currency: STRIPE_CONFIG.currency,
+            product_data: {
+              name: productName,
+              description: productDescription,
+              images: [],
+              metadata: {
+                ticketType,
+                workshopEvent: '6FB Methodologies Workshop',
+                // Always include city information when available
+                ...(city && {
+                  cityId,
+                  cityName: city.city,
+                  cityState: city.state,
+                  workshopDates: city.dates.join(', '),
+                  workshopMonth: city.month
+                }),
+              },
+            },
+            unit_amount: pricing.finalAmount / quantity, // Per-ticket price
+          },
+          quantity,
+        },
+      ];
+
+      // Retry with fallback pricing
+      session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        currency: 'usd',
+        payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'affirm'],
+        billing_address_collection: 'required',
+        allow_promotion_codes: false,
+        automatic_tax: { enabled: false },
+        customer_creation: 'always',
+        submit_type: 'pay',
+        line_items: fallbackLineItems,
+        customer_email: customerEmail,
+        success_url: `https://6fbmethodologies.com/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `https://6fbmethodologies.com/register?cancelled=true`,
+        metadata: {
+          workshopEvent: '6FB Methodologies Workshop',
+          registrationSource: 'website',
+          createdAt: new Date().toISOString(),
+          originalPrice: (pricing.originalAmount / 100).toString(),
+          finalPrice: (pricing.finalAmount / 100).toString(),
+          discountAmount: (pricing.discountAmount / 100).toString(),
+          discountReason: pricing.discountReason || '',
+          savings: (
+            (pricing.originalAmount - pricing.finalAmount) /
+            100
+          ).toString(),
+          // Always include city information for tracking
+          cityId: city?.id || '',
+          cityName: city?.city || '',
+          cityState: city?.state || '',
+          workshopMonth: city?.month || '',
+          workshopDates: city?.dates?.join(', ') || '',
+          workshopLocation: city?.location || '',
+          ticketType,
+          quantity: quantity.toString(),
+          fallbackReason: 'price_id_not_found',
+          ...metadata,
+        },
+      });
+
+      console.log(`✅ Fallback session created successfully for ${city?.city}`);
+    } else {
+      // Re-throw other errors
+      throw error;
+    }
+  }
 
   return {
     sessionId: session.id,
