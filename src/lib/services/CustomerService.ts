@@ -1,12 +1,8 @@
-import { Pool } from 'pg';
 import db from '../database';
 import type {
   Customer,
   Payment,
   Ticket,
-  CustomerInsert,
-  PaymentInsert,
-  TicketInsert,
 } from '@/types';
 
 export interface CustomerRegistrationData {
@@ -90,6 +86,7 @@ export class CustomerService {
       return { customer, payment, tickets };
     } catch (error) {
       await client.query('ROLLBACK');
+      // eslint-disable-next-line no-console
       console.error('CustomerService upsert error:', error);
       throw error;
     } finally {
@@ -197,7 +194,7 @@ export class CustomerService {
 
     try {
       let whereClause = '';
-      const params: any[] = [limit, offset];
+      const params: unknown[] = [limit, offset];
       let paramIndex = 3;
 
       const conditions: string[] = [];
@@ -255,7 +252,7 @@ export class CustomerService {
    */
   private async createCustomer(
     data: CustomerRegistrationData,
-    client: any
+    client: unknown
   ): Promise<Customer> {
     const result = await client.query(
       `
@@ -284,7 +281,7 @@ export class CustomerService {
   private async updateCustomer(
     customerId: string,
     data: CustomerRegistrationData,
-    client: any
+    client: unknown
   ): Promise<Customer> {
     const result = await client.query(
       `
@@ -317,7 +314,7 @@ export class CustomerService {
   private async createPayment(
     customerId: string,
     data: CustomerRegistrationData,
-    client: any
+    client: unknown
   ): Promise<Payment> {
     const result = await client.query(
       `
@@ -349,7 +346,7 @@ export class CustomerService {
     customerId: string,
     paymentId: string,
     data: CustomerRegistrationData,
-    client: any
+    client: unknown
   ): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
 
@@ -403,7 +400,7 @@ export class CustomerService {
     try {
       const { startDate, endDate, cityId } = options;
       let whereClause = '';
-      const params: any[] = [];
+      const params: unknown[] = [];
       let paramIndex = 1;
 
       const conditions: string[] = [];
@@ -476,7 +473,7 @@ export class CustomerService {
       );
 
       const ticketsSold = { ga: 0, vip: 0 };
-      ticketsResult.rows.forEach((row: any) => {
+      ticketsResult.rows.forEach((row: { tier: 'ga' | 'vip'; count: string }) => {
         ticketsSold[row.tier as 'ga' | 'vip'] = parseInt(row.count);
       });
 
@@ -484,11 +481,178 @@ export class CustomerService {
         totalCustomers: parseInt(totalsResult.rows[0].total_customers),
         totalRevenue: parseFloat(totalsResult.rows[0].total_revenue),
         ticketsSold,
-        topCities: citiesResult.rows.map((row: any) => ({
+        topCities: citiesResult.rows.map((row: { city_id: string; customer_count: string; revenue: string }) => ({
           cityId: row.city_id,
           customerCount: parseInt(row.customer_count),
           revenue: parseFloat(row.revenue),
         })),
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get recent ticket purchases with full details
+   */
+  async getRecentPurchases(
+    options: {
+      limit?: number;
+      offset?: number;
+      cityId?: string;
+      startDate?: Date;
+      endDate?: Date;
+    } = {}
+  ): Promise<{
+    purchases: Array<{
+      // Customer info
+      customerId: string;
+      customerEmail: string;
+      customerName: string;
+      customerPhone: string;
+      isSixFBMember: boolean;
+
+      // Payment info
+      paymentId: string;
+      stripeSessionId: string;
+      stripePaymentIntentId: string;
+      amountCents: number;
+      discountAmountCents: number;
+      discountReason: string;
+      paymentStatus: string;
+
+      // Workshop info
+      cityId: string;
+      cityName: string;
+      workshopDate: string;
+
+      // Tickets
+      tickets: Array<{
+        ticketId: string;
+        ticketNumber: string;
+        tier: 'ga' | 'vip';
+      }>;
+
+      // Timestamps
+      purchaseDate: string;
+    }>;
+    total: number;
+  }> {
+    const { limit = 50, offset = 0, cityId, startDate, endDate } = options;
+    const client = await db.getClient();
+
+    try {
+      let whereClause = '';
+      const params: unknown[] = [limit, offset];
+      let paramIndex = 3;
+
+      const conditions: string[] = ['p.status = \'succeeded\''];
+
+      if (cityId) {
+        conditions.push(`c.id = $${paramIndex}`);
+        params.push(cityId);
+        paramIndex++;
+      }
+
+      if (startDate) {
+        conditions.push(`p.created_at >= $${paramIndex}`);
+        params.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        conditions.push(`p.created_at <= $${paramIndex}`);
+        params.push(endDate);
+        paramIndex++;
+      }
+
+      if (conditions.length > 0) {
+        whereClause = `WHERE ${conditions.join(' AND ')}`;
+      }
+
+      // Get purchases with full details
+      const purchasesResult = await client.query(
+        `
+        SELECT
+          cu.id as customer_id,
+          cu.email as customer_email,
+          cu.first_name || ' ' || cu.last_name as customer_name,
+          cu.phone as customer_phone,
+          cu.is_sixfb_member,
+
+          p.id as payment_id,
+          p.stripe_session_id,
+          p.stripe_payment_intent_id,
+          p.amount_cents,
+          p.discount_amount_cents,
+          p.discount_reason,
+          p.status as payment_status,
+          p.created_at as purchase_date,
+
+          c.id as city_id,
+          c.name as city_name,
+          c.workshop_date,
+
+          ARRAY_AGG(
+            JSON_BUILD_OBJECT(
+              'ticketId', t.id,
+              'ticketNumber', t.ticket_number,
+              'tier', t.tier
+            ) ORDER BY t.created_at
+          ) as tickets
+
+        FROM payments p
+        JOIN customers cu ON p.customer_id = cu.id
+        JOIN tickets t ON p.id = t.payment_id
+        JOIN cities c ON t.city_id = c.id
+        ${whereClause}
+        GROUP BY cu.id, p.id, c.id
+        ORDER BY p.created_at DESC
+        LIMIT $1 OFFSET $2
+      `,
+        params
+      );
+
+      // Get total count
+      const countResult = await client.query(
+        `
+        SELECT COUNT(DISTINCT p.id) as count
+        FROM payments p
+        JOIN customers cu ON p.customer_id = cu.id
+        JOIN tickets t ON p.id = t.payment_id
+        JOIN cities c ON t.city_id = c.id
+        ${whereClause}
+      `,
+        params.slice(2)
+      );
+
+      const purchases = purchasesResult.rows.map((row: Record<string, unknown>) => ({
+        customerId: row.customer_id,
+        customerEmail: row.customer_email,
+        customerName: row.customer_name,
+        customerPhone: row.customer_phone,
+        isSixFBMember: row.is_sixfb_member,
+
+        paymentId: row.payment_id,
+        stripeSessionId: row.stripe_session_id,
+        stripePaymentIntentId: row.stripe_payment_intent_id,
+        amountCents: row.amount_cents,
+        discountAmountCents: row.discount_amount_cents || 0,
+        discountReason: row.discount_reason || '',
+        paymentStatus: row.payment_status,
+
+        cityId: row.city_id,
+        cityName: row.city_name,
+        workshopDate: row.workshop_date,
+
+        tickets: row.tickets,
+
+        purchaseDate: row.purchase_date,
+      }));
+
+      return {
+        purchases,
+        total: parseInt(countResult.rows[0].count),
       };
     } finally {
       client.release();
