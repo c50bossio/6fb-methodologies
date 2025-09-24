@@ -1,4 +1,5 @@
 import { Twilio } from 'twilio';
+import { getWorkshopDateString } from './workshop-dates';
 
 export interface TicketSaleData {
   city: string;
@@ -207,8 +208,8 @@ class SMSService {
       remainingText = `\nRemaining: ${data.gaTicketsRemaining} GA, ${data.vipTicketsRemaining} VIP`;
     }
 
-    // Get workshop dates for the city
-    const workshopDate = this.getWorkshopDateForCity(data.city);
+    // Get workshop dates for the city using centralized utility
+    const workshopDate = getWorkshopDateString(data.city);
     const dateText = workshopDate ? `\n📅 ${workshopDate}` : '';
 
     return `🎫 6FB TICKET SALE
@@ -217,22 +218,6 @@ ${totalText}
 Customer: ${data.customerEmail}${remainingText}`;
   }
 
-  /**
-   * Get workshop dates for a specific city
-   */
-  private getWorkshopDateForCity(city: string): string {
-    const workshopSchedule: Record<string, string> = {
-      Dallas: 'January 25-26, 2026',
-      Atlanta: 'February 22-23, 2026',
-      'Las Vegas': 'March 1-2, 2026',
-      NYC: 'April 26-27, 2026',
-      'New York': 'April 26-27, 2026', // Alternative name for NYC
-      Chicago: 'May 31-June 1, 2026',
-      'San Francisco': 'June 14-15, 2026',
-    };
-
-    return workshopSchedule[city] || '';
-  }
 
   /**
    * Send test SMS to verify configuration

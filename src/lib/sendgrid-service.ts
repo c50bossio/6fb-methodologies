@@ -1,5 +1,6 @@
 // SendGrid Service Implementation using MCP Best Practices
 import sgMail from '@sendgrid/mail';
+import { getWorkshopDateString } from './workshop-dates';
 
 // Initialize SendGrid
 if (process.env.SENDGRID_API_KEY) {
@@ -244,10 +245,39 @@ class SendGridService {
     sessionId: string;
     workshopDate: string;
   }) {
+    const templateId = process.env.SENDGRID_TEMPLATE_CONFIRMATION;
+
+    // If no template is configured, send a basic HTML email
+    if (!templateId) {
+      return this.sendTransactionalEmail({
+        to: data.email,
+        from: this.defaultFrom,
+        subject: '✅ Payment Confirmed - 6FB Workshop Registration',
+        html: `
+          <h1>Payment Confirmed!</h1>
+          <p>Hi ${data.firstName},</p>
+          <p>Thank you for your payment! Your registration for the 6FB Methodologies Workshop is confirmed.</p>
+          <div style="background: #28a745; color: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3>📋 Registration Details</h3>
+            <p><strong>Ticket Type:</strong> ${data.ticketType}</p>
+            <p><strong>Quantity:</strong> ${data.quantity}</p>
+            <p><strong>Amount Paid:</strong> $${(data.totalAmount / 100).toFixed(2)}</p>
+            <p><strong>Workshop Date:</strong> ${data.workshopDate}</p>
+            <p><strong>Session ID:</strong> ${data.sessionId}</p>
+          </div>
+          <p>You'll receive additional details and workshop materials closer to the event date.</p>
+          <p>Best,<br>The 6FB Team</p>
+        `,
+        text: `Payment Confirmed! Hi ${data.firstName}, Thank you for your payment! Your registration for the 6FB Methodologies Workshop is confirmed. Ticket Type: ${data.ticketType}, Quantity: ${data.quantity}, Amount Paid: $${(data.totalAmount / 100).toFixed(2)}, Workshop Date: ${data.workshopDate}, Session ID: ${data.sessionId}. You'll receive additional details closer to the event date.`,
+      });
+    }
+
+    // Use template if configured
     return this.sendTransactionalEmail({
       to: data.email,
       from: this.defaultFrom,
-      templateId: process.env.SENDGRID_TEMPLATE_CONFIRMATION,
+      subject: '✅ Payment Confirmed - 6FB Workshop Registration',
+      templateId: templateId,
       dynamicTemplateData: {
         firstName: data.firstName,
         ticketType: data.ticketType,
@@ -255,7 +285,6 @@ class SendGridService {
         totalAmount: (data.totalAmount / 100).toFixed(2),
         sessionId: data.sessionId,
         workshopDate: data.workshopDate,
-        subject: '✅ Payment Confirmed - 6FB Workshop Registration',
       },
     });
   }
@@ -492,25 +521,12 @@ export async function sendPaymentConfirmationViaSendGrid(data: {
 }) {
   const [firstName] = data.customerName.split(' ');
 
-  // Get workshop date based on city or use provided date
-  const getWorkshopDateForCity = (city: string): string => {
-    const workshopSchedule: Record<string, string> = {
-      Dallas: 'January 25-26, 2026',
-      Atlanta: 'February 22-23, 2026',
-      'Las Vegas': 'March 1-2, 2026',
-      NYC: 'April 26-27, 2026',
-      'New York': 'April 26-27, 2026',
-      Chicago: 'May 31-June 1, 2026',
-      'San Francisco': 'June 14-15, 2026',
-    };
-    return workshopSchedule[city] || 'January 25-26, 2026';
-  };
-
+  // Get workshop date using centralized utility (prioritize centralized dates over env vars)
   const workshopDate =
     data.workshopDate ||
-    (data.city ? getWorkshopDateForCity(data.city) : null) ||
-    process.env.WORKSHOP_DATE_1 ||
-    'TBA';
+    (data.city ? getWorkshopDateString(data.city) : null) ||
+    getWorkshopDateString('Dallas') || // Fallback to centralized Dallas date
+    process.env.WORKSHOP_DATE_1; // Legacy fallback only as last resort
 
   return await sendGridService.sendPaymentConfirmation({
     email: data.customerEmail,

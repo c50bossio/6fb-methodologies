@@ -11,6 +11,11 @@ import { analyticsService } from '@/lib/analytics-service';
 import { sendGridService } from '@/lib/sendgrid-service';
 import { smsService } from '@/lib/sms-service';
 import {
+  getWorkshopDateString,
+  getWorkshopStartDate,
+  getWorkshopEndDate
+} from '@/lib/workshop-dates';
+import {
   decrementInventory,
   validateInventoryForCheckout,
   checkInventoryStatus,
@@ -130,9 +135,25 @@ class StripeWebhookProcessor {
         await this.createWorkbookAccess(session);
       }
 
-      // Send SMS notification for ticket sale
+      // Send SMS notification for ticket sale (non-blocking)
       if (session.payment_status === 'paid') {
-        await this.sendTicketSaleNotification(session);
+        try {
+          await this.sendTicketSaleNotification(session);
+        } catch (smsError) {
+          console.error('SMS notification failed, but continuing webhook processing:', {
+            error: smsError instanceof Error ? smsError.message : 'Unknown SMS error',
+            sessionId: session.id,
+            customerEmail: session.customer_details?.email,
+            stack: smsError instanceof Error ? smsError.stack : undefined,
+          });
+          // Log for monitoring but don't fail the webhook
+          console.log('sms_notification_failure', {
+            sessionId: session.id,
+            customerEmail: session.customer_details?.email,
+            errorType: smsError instanceof Error ? smsError.constructor.name : 'Unknown',
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
 
       // Record member discount usage for successful payments
@@ -140,8 +161,11 @@ class StripeWebhookProcessor {
         await this.recordMemberDiscountUsage(session);
       }
 
+      // Recover cityId early to ensure database save uses the correct value
+      const recoveredCityId = await this.recoverCityId(session);
+
       // Update CRM/Database
-      await this.updateCustomerDatabase(session);
+      await this.updateCustomerDatabase(session, recoveredCityId);
 
       // Trigger Zapier workflows
       await this.triggerZapierWorkflows(session);
@@ -185,7 +209,7 @@ class StripeWebhookProcessor {
             }
           : undefined,
         discountApplied: session.metadata?.discountReason || undefined,
-        workshopDate: this.getWorkshopDateString(
+        workshopDate: getWorkshopDateString(
           session.metadata?.city || 'Dallas'
         ),
       };
@@ -202,17 +226,13 @@ class StripeWebhookProcessor {
         customerPhone: notificationData.customerPhone,
       });
 
-      // Send payment confirmation via SendGrid (disabled for deployment)
+      // Send payment confirmation via SendGrid (re-enabled with accurate dates)
       const firstName =
         notificationData.registrationData?.firstName ||
         notificationData.customerName.split(' ')[0] ||
         'Workshop Attendee';
 
-      const sendGridResult = {
-        success: true,
-        messageId: 'disabled-for-deployment',
-      };
-      console.log('Would send payment confirmation via SendGrid:', {
+      const sendGridResult = await sendGridService.sendPaymentConfirmation({
         email: notificationData.customerEmail,
         firstName,
         ticketType: notificationData.ticketType,
@@ -222,12 +242,32 @@ class StripeWebhookProcessor {
         workshopDate: notificationData.workshopDate,
       });
 
-      // Send welcome email (disabled for deployment)
-      const welcomeResult = {
-        success: true,
-        messageId: 'disabled-for-deployment',
-      };
-      console.log('Would send welcome email via SendGrid:', {
+      console.log('Payment confirmation via SendGrid:', {
+        success: sendGridResult.success,
+        messageId: sendGridResult.messageId,
+        email: notificationData.customerEmail,
+        firstName,
+        ticketType: notificationData.ticketType,
+        quantity: notificationData.quantity,
+        totalAmount: notificationData.totalAmount,
+        sessionId: session.id,
+        workshopDate: notificationData.workshopDate,
+      });
+
+      // Send welcome email (re-enabled with accurate dates)
+      const welcomeResult = await sendGridService.sendWelcomeEmail({
+        email: notificationData.customerEmail,
+        firstName,
+        ticketType: notificationData.ticketType,
+        amountPaid: (notificationData.totalAmount / 100).toFixed(2),
+        workshopDate: notificationData.workshopDate,
+        workshopLocation:
+          process.env.WORKSHOP_LOCATION || 'Virtual Live Training',
+      });
+
+      console.log('Welcome email via SendGrid:', {
+        success: welcomeResult.success,
+        messageId: welcomeResult.messageId,
         email: notificationData.customerEmail,
         firstName,
         ticketType: notificationData.ticketType,
@@ -240,7 +280,7 @@ class StripeWebhookProcessor {
       // Legacy notification system (if still needed)
       // const legacyResult = await sendPaymentConfirmation(notificationData)
       console.log(
-        'Would send payment confirmation for:',
+        'Payment confirmation emails sent for:',
         notificationData.customerEmail
       );
 
@@ -249,7 +289,7 @@ class StripeWebhookProcessor {
           confirmation: sendGridResult.success,
           welcome: welcomeResult.success,
         },
-        legacy: true, // Legacy system disabled
+        legacy: false, // Legacy system disabled
         analytics: true, // Analytics tracking completed above
       };
 
@@ -330,8 +370,8 @@ class StripeWebhookProcessor {
         },
         calendarInvite: {
           title: '6FB Methodologies Workshop',
-          start: this.getWorkshopStartDate(session.metadata?.city || 'Dallas'),
-          end: this.getWorkshopEndDate(session.metadata?.city || 'Dallas'),
+          start: getWorkshopStartDate(session.metadata?.city || 'Dallas'),
+          end: getWorkshopEndDate(session.metadata?.city || 'Dallas'),
           location: 'Workshop Venue',
           description: 'Your spot is secured! See you at the workshop.',
         },
@@ -420,12 +460,20 @@ class StripeWebhookProcessor {
       console.error('Error in sendTicketSaleNotification:', error);
 
       // Send system alert about critical error
-      await smsService.sendSystemAlert(
-        `Critical error in SMS notification system: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'high'
-      );
+      try {
+        await smsService.sendSystemAlert(
+          `Critical error in SMS notification system: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'high'
+        );
+      } catch (alertError) {
+        console.error('Failed to send SMS system alert:', alertError);
+      }
 
-      throw error;
+      // Return error result instead of throwing
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown SMS error',
+      };
     }
   }
 
@@ -454,56 +502,6 @@ class StripeWebhookProcessor {
     return session.metadata?.workshopLocation || 'Dallas';
   }
 
-  /**
-   * Get workshop start date for a specific city
-   */
-  private getWorkshopStartDate(city: string): string {
-    const workshopSchedule: Record<string, string> = {
-      Dallas: '2026-01-25T14:00:00Z',
-      Atlanta: '2026-02-22T14:00:00Z',
-      'Las Vegas': '2026-03-01T15:00:00Z', // PST adjustment
-      NYC: '2026-04-26T13:00:00Z', // EST adjustment
-      'New York': '2026-04-26T13:00:00Z',
-      Chicago: '2026-05-31T14:00:00Z', // CST adjustment
-      'San Francisco': '2026-06-14T15:00:00Z', // PST adjustment
-    };
-
-    return workshopSchedule[city] || '2026-01-25T14:00:00Z'; // Default to Dallas
-  }
-
-  /**
-   * Get workshop end date for a specific city
-   */
-  private getWorkshopEndDate(city: string): string {
-    const workshopSchedule: Record<string, string> = {
-      Dallas: '2026-01-26T22:00:00Z',
-      Atlanta: '2026-02-23T22:00:00Z',
-      'Las Vegas': '2026-03-02T23:00:00Z', // PST adjustment
-      NYC: '2026-04-27T21:00:00Z', // EST adjustment
-      'New York': '2026-04-27T21:00:00Z',
-      Chicago: '2026-06-01T22:00:00Z', // CST adjustment
-      'San Francisco': '2026-06-15T23:00:00Z', // PST adjustment
-    };
-
-    return workshopSchedule[city] || '2026-01-26T22:00:00Z'; // Default to Dallas
-  }
-
-  /**
-   * Get workshop date string for a specific city
-   */
-  private getWorkshopDateString(city: string): string {
-    const workshopSchedule: Record<string, string> = {
-      Dallas: 'January 25-26, 2026',
-      Atlanta: 'February 22-23, 2026',
-      'Las Vegas': 'March 1-2, 2026',
-      NYC: 'April 26-27, 2026',
-      'New York': 'April 26-27, 2026', // Alternative name for NYC
-      Chicago: 'May 31-June 1, 2026',
-      'San Francisco': 'June 14-15, 2026',
-    };
-
-    return workshopSchedule[city] || 'January 25-26, 2026'; // Default to Dallas
-  }
 
   private async getRemainingTicketCounts(
     cityId?: string
@@ -536,20 +534,109 @@ class StripeWebhookProcessor {
 
   private async processInventoryUpdate(session: Stripe.Checkout.Session) {
     try {
-      const cityId = session.metadata?.cityId;
-      const ticketType = session.metadata?.ticketType?.toLowerCase() as
+      let cityId = session.metadata?.cityId;
+      let ticketType = session.metadata?.ticketType?.toLowerCase() as
         | 'ga'
         | 'vip';
       const quantity = parseInt(session.metadata?.quantity || '1');
 
+      // Attempt to recover missing data with fallback logic
       if (!cityId || !ticketType) {
-        console.warn('Missing inventory data in session metadata:', {
+        console.warn('🔍 INVENTORY METADATA MISSING - Starting recovery process:', {
           sessionId: session.id,
-          cityId,
-          ticketType,
+          originalCityId: cityId,
+          originalTicketType: ticketType,
           quantity,
+          allMetadata: session.metadata,
+          customerEmail: session.customer_details?.email,
+          amountTotal: session.amount_total,
         });
-        return;
+
+        // Try to recover cityId from cityName
+        if (!cityId && session.metadata?.cityName) {
+          const { getCityByName } = await import('@/lib/cities');
+          console.log(`🔍 Attempting cityId recovery from cityName: "${session.metadata.cityName}"`);
+
+          const city = getCityByName(session.metadata.cityName);
+          if (city) {
+            cityId = city.id;
+            console.log(`✅ Successfully recovered cityId: ${session.metadata.cityName} -> ${cityId}`);
+          } else {
+            console.error(`❌ Failed to find city for name: "${session.metadata.cityName}"`);
+          }
+        }
+
+        // Try to infer ticketType from product name or amount
+        if (!ticketType) {
+          console.log(`🔍 Attempting ticketType recovery from session data`);
+
+          // Check if we can infer from amount (VIP is typically higher)
+          const amount = session.amount_total || 0;
+          if (amount > 5000) { // $50+, likely VIP
+            ticketType = 'vip';
+            console.log(`💡 Inferred ticketType 'vip' from amount: $${amount / 100}`);
+          } else {
+            ticketType = 'ga';
+            console.log(`💡 Using default ticketType 'ga' for amount: $${amount / 100}`);
+          }
+
+          // Send alert about missing ticket type
+          try {
+            await smsService.sendSystemAlert(
+              `Missing ticketType in webhook session ${session.id}. Using inferred '${ticketType}'. Amount: $${amount / 100}`,
+              'medium'
+            );
+          } catch (alertError) {
+            console.error('Failed to send system alert:', alertError);
+          }
+        }
+
+        // If we still can't recover cityId, use first available city as ultimate fallback
+        if (!cityId) {
+          console.error(`🚨 No cityId recovered, attempting ultimate fallback`);
+
+          const { getSupportedCities } = await import('@/lib/workshop-dates');
+          const cities = getSupportedCities();
+          if (cities.length > 0) {
+            const firstCity = cities[0];
+            // Get the city object to get the ID
+            const { getCityById } = await import('@/lib/cities');
+            const cityObj = getCityById(firstCity);
+
+            if (cityObj) {
+              cityId = cityObj.id;
+              console.error(`🚨 CRITICAL: Using fallback city '${cityObj.city}' (${cityId}) for session ${session.id}`);
+            } else {
+              cityId = 'dallas-jan-2026'; // Hard fallback
+              console.error(`🚨 CRITICAL: Using hard-coded fallback 'dallas-jan-2026' for session ${session.id}`);
+            }
+
+            // Send critical alert
+            try {
+              await smsService.sendSystemAlert(
+                `CRITICAL: No cityId found for session ${session.id}. Using fallback '${cityId}'. Customer: ${session.customer_details?.email}`,
+                'high'
+              );
+            } catch (alertError) {
+              console.error('Failed to send critical alert:', alertError);
+            }
+          } else {
+            // Absolute last resort - use hard-coded fallback
+            cityId = 'dallas-jan-2026';
+            console.error(`🚨 FATAL: No cities available, using hard-coded fallback 'dallas-jan-2026' for session ${session.id}`);
+
+            try {
+              await smsService.sendSystemAlert(
+                `FATAL: No cities available for session ${session.id}. Using hard-coded fallback. Customer: ${session.customer_details?.email}`,
+                'high'
+              );
+            } catch (alertError) {
+              console.error('Failed to send fatal alert:', alertError);
+            }
+          }
+        }
+
+        console.log(`🎯 FINAL RECOVERY RESULT: cityId="${cityId}", ticketType="${ticketType}" for session ${session.id}`);
       }
 
       // Validate inventory before decrementing (double-check)
@@ -590,20 +677,41 @@ class StripeWebhookProcessor {
         return;
       }
 
-      // Decrement inventory
+      // Decrement inventory with comprehensive logging
+      console.log(`🎯 ATTEMPTING INVENTORY DECREMENT:`, {
+        sessionId: session.id,
+        cityId,
+        ticketType,
+        quantity,
+        customerEmail: session.customer_details?.email,
+        amountTotal: session.amount_total,
+      });
+
       const result = await decrementInventory(cityId, ticketType, quantity, {
         sessionId: session.id,
         paymentIntentId: session.payment_intent as string,
       });
 
       if (result.success) {
-        console.log('Inventory decremented successfully:', {
+        console.log('✅ INVENTORY DECREMENTED SUCCESSFULLY:', {
           sessionId: session.id,
           cityId,
           ticketType,
           quantity,
+          previousAvailable: result.availableBefore,
           remainingSpots: result.availableAfter,
+          customerEmail: session.customer_details?.email,
         });
+
+        // Send confirmation alert
+        try {
+          await smsService.sendSystemAlert(
+            `✅ Inventory decremented: ${quantity}x ${ticketType.toUpperCase()} ticket${quantity > 1 ? 's' : ''} for ${cityId}. Remaining: ${result.availableAfter}`,
+            'low'
+          );
+        } catch (alertError) {
+          console.error('Failed to send inventory success alert:', alertError);
+        }
 
         // Log inventory milestone alerts
         if (result.availableAfter !== undefined) {
@@ -614,7 +722,7 @@ class StripeWebhookProcessor {
           );
         }
       } else {
-        console.error('Failed to decrement inventory:', {
+        console.error('❌ FAILED TO DECREMENT INVENTORY:', {
           sessionId: session.id,
           cityId,
           ticketType,
@@ -776,7 +884,7 @@ class StripeWebhookProcessor {
     }
   }
 
-  private async updateCustomerDatabase(session: Stripe.Checkout.Session) {
+  private async updateCustomerDatabase(session: Stripe.Checkout.Session, recoveredCityId?: string) {
     try {
       // Extract customer information from session
       const customerEmail = session.customer_details?.email;
@@ -804,7 +912,7 @@ class StripeWebhookProcessor {
         zipCode: session.metadata?.zipCode || '',
 
         // Registration details
-        cityId: session.metadata?.cityId || 'unknown',
+        cityId: recoveredCityId || session.metadata?.cityId || 'unknown',
         ticketType:
           (session.metadata?.ticketType?.toLowerCase() as 'ga' | 'vip') || 'ga',
         quantity: parseInt(session.metadata?.quantity || '1'),
@@ -876,6 +984,71 @@ class StripeWebhookProcessor {
     if (hasBulk) return 'bulk';
 
     return undefined;
+  }
+
+  /**
+   * Recover cityId from session metadata with fallback logic
+   */
+  private async recoverCityId(session: Stripe.Checkout.Session): Promise<string> {
+    let cityId = session.metadata?.cityId;
+
+    // If we already have a valid cityId, return it
+    if (cityId && cityId !== 'unknown') {
+      return cityId;
+    }
+
+    console.warn('🔍 CITYID RECOVERY - Starting recovery process:', {
+      sessionId: session.id,
+      originalCityId: cityId,
+      allMetadata: session.metadata,
+      customerEmail: session.customer_details?.email,
+      amountTotal: session.amount_total,
+    });
+
+    // Try to recover cityId from cityName
+    if (!cityId && session.metadata?.cityName) {
+      try {
+        const { getCityByName } = await import('@/lib/cities');
+        console.log(`🔍 Attempting cityId recovery from cityName: "${session.metadata.cityName}"`);
+
+        const city = getCityByName(session.metadata.cityName);
+        if (city) {
+          cityId = city.id;
+          console.log(`✅ Successfully recovered cityId: ${session.metadata.cityName} -> ${cityId}`);
+        } else {
+          console.error(`❌ Failed to find city for name: "${session.metadata.cityName}"`);
+        }
+      } catch (error) {
+        console.error('Error importing cities module during recovery:', error);
+      }
+    }
+
+    // Ultimate fallback logic
+    if (!cityId || cityId === 'unknown') {
+      console.warn('🚨 No cityId recovered, attempting ultimate fallback');
+
+      try {
+        const { getSupportedCities } = await import('@/lib/workshop-dates');
+        const supportedCities = getSupportedCities();
+
+        if (supportedCities.length > 0) {
+          // Use the first supported city as fallback
+          cityId = 'dallas-jan-2026'; // Hard fallback to a known working cityId
+          console.error(`🚨 CRITICAL: Using hard-coded fallback 'dallas-jan-2026' for session ${session.id}`);
+        } else {
+          // Absolute last resort
+          cityId = 'dallas-jan-2026';
+          console.error(`🚨 FATAL: No cities available, using hard-coded fallback 'dallas-jan-2026' for session ${session.id}`);
+        }
+      } catch (error) {
+        console.error('Error importing workshop-dates module during recovery:', error);
+        cityId = 'dallas-jan-2026';
+        console.error(`🚨 FATAL: Module import failed, using hard-coded fallback 'dallas-jan-2026' for session ${session.id}`);
+      }
+    }
+
+    console.log(`🎯 CITYID RECOVERY RESULT: cityId="${cityId}" for session ${session.id}`);
+    return cityId;
   }
 
   private async updateMembershipStatus(paymentIntent: Stripe.PaymentIntent) {
@@ -1193,7 +1366,7 @@ class StripeWebhookProcessor {
         firstName: customerName,
         workbookPassword,
         ticketType: session.metadata?.ticketType || 'GA',
-        workshopDate: this.getWorkshopDateString(
+        workshopDate: getWorkshopDateString(
           session.metadata?.city || 'Dallas'
         ),
       });
