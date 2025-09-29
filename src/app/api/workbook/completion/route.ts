@@ -13,13 +13,9 @@ import {
 } from '@/lib/workbook-auth';
 import db, { DatabaseError, ValidationError } from '@/lib/database';
 import {
-  validateModuleIdParam,
   validateCompleteModuleBody,
   validateModuleAccess,
   validatePrerequisites,
-  PaginatedResponseSchema,
-  SuccessResponseSchema,
-  WorkbookErrorResponseSchema,
   ModuleCompletionSchema,
   CompletionHistoryItemSchema,
   type CompleteModuleRequest,
@@ -347,8 +343,8 @@ async function checkModuleCompletionEligibility(
 async function generateCertificateUrl(
   userId: string,
   moduleId: string,
-  userName: string,
-  moduleName: string
+  _userName: string,
+  _moduleName: string
 ): Promise<string | null> {
   try {
     // In a real implementation, this would:
@@ -358,7 +354,7 @@ async function generateCertificateUrl(
 
     // For now, return a placeholder URL
     const certificateId = uuidv4();
-    const certificateUrl = `https://certificates.6fbmethodologies.com/${certificateId}.pdf`;
+    const certificateUrl = `https://6fbmethodologies.com/certificates/${certificateId}.pdf`;
 
     // Store certificate record
     await db.query(

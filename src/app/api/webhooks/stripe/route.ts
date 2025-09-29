@@ -364,9 +364,9 @@ class StripeWebhookProcessor {
         ticketType: session.metadata?.ticketType || 'GA',
         quantity: session.metadata?.quantity || '1',
         materialsLinks: {
-          handbook: 'https://materials.6fbmethodologies.com/handbook.pdf',
-          videos: 'https://materials.6fbmethodologies.com/videos',
-          resources: 'https://materials.6fbmethodologies.com/resources',
+          handbook: 'https://6fbmethodologies.com/materials/handbook.pdf',
+          videos: 'https://6fbmethodologies.com/materials/videos',
+          resources: 'https://6fbmethodologies.com/materials/resources',
         },
         calendarInvite: {
           title: '6FB Methodologies Workshop',

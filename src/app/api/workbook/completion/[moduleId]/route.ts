@@ -350,7 +350,7 @@ async function generateCertificate(
 
     // For now, return a placeholder URL
     const certificateId = uuidv4();
-    const certificateUrl = `https://certificates.6fbmethodologies.com/modules/${moduleId}/users/${userId}/${certificateId}.pdf`;
+    const certificateUrl = `https://6fbmethodologies.com/certificates/modules/${moduleId}/users/${userId}/${certificateId}.pdf`;
 
     // Store certificate record
     await db.query(
