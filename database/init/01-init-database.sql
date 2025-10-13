@@ -391,7 +391,7 @@ $$ language 'plpgsql';
 INSERT INTO cities (id, name, state, workshop_date, timezone, venue_capacity_ga, venue_capacity_vip) VALUES
 ('dallas-jan-2026', 'Dallas', 'TX', '2026-01-15', 'America/Chicago', 35, 15),
 ('atlanta-feb-2026', 'Atlanta', 'GA', '2026-02-15', 'America/New_York', 35, 15),
-('vegas-mar-2026', 'Las Vegas', 'NV', '2026-03-15', 'America/Los_Angeles', 35, 15),
+('vegas-mar-2026', 'Las Vegas', 'NV', '2026-03-08', 'America/Los_Angeles', 35, 15),
 ('sf-jun-2026', 'San Francisco', 'CA', '2026-06-14', 'America/Los_Angeles', 35, 15),
 ('chicago-may-2026', 'Chicago', 'IL', '2026-05-15', 'America/Chicago', 35, 15),
 ('nyc-apr-2026', 'New York City', 'NY', '2026-04-15', 'America/New_York', 35, 15);

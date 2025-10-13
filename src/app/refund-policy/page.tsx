@@ -156,10 +156,10 @@ export default function RefundPolicy() {
 
                 <div className='bg-background-primary/20 p-3 rounded'>
                   <p className='font-semibold mb-1'>Scenario C: Your Example</p>
-                  <p>• Workshop: March 1-2, 2026</p>
-                  <p>• Purchase Date: Feb 5, 2026 (24 days before)</p>
+                  <p>• Workshop: March 8-9, 2026</p>
+                  <p>• Purchase Date: Feb 12, 2026 (24 days before)</p>
                   <p>
-                    • Refund Deadline: <strong>Feb 22, 2026</strong> (7 days
+                    • Refund Deadline: <strong>March 1, 2026</strong> (7 days
                     before workshop)
                   </p>
                   <p className='text-xs text-blue-300 mt-1'>

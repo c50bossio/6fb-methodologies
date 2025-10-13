@@ -1,7 +1,6 @@
 import type { CityWorkshop } from '@/types';
 import {
   getPublicAvailableSpots,
-  getActualAvailableSpots,
   checkInventoryStatus,
 } from './inventory';
 
@@ -59,7 +58,7 @@ export const CITY_WORKSHOPS: CityWorkshop[] = [
     state: 'NV',
     month: 'March 2026',
     year: 2026,
-    dates: ['March 1-2'],
+    dates: ['March 8-9'],
     location: 'Location TBA',
     climateAppeal: 'Perfect Vegas spring - sunny 65-80°F desert weather',
     status: 'upcoming',
