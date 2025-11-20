@@ -24,7 +24,7 @@ export interface WorkshopSEOData {
 export const WORKSHOP_SEO_DATA: WorkshopSEOData = {
   title: '6FB Methodologies Workshop - Transform Your Barber Business',
   description:
-    'Join Dre, Nate, and Bossio for an intensive 2-day workshop designed to take your barbering business to the next level. Learn proven systems, marketing strategies, and wealth-building techniques used by the most successful barbers in the industry.',
+    'Join our team of 6 expert coaches for an intensive 2-day workshop in Tampa, FL designed to take your barbering business to the next level. Learn proven systems, marketing strategies, and wealth-building techniques used by the most successful barbers in the industry.',
   keywords: [
     'barbering workshop',
     'barber business growth',
@@ -42,12 +42,12 @@ export const WORKSHOP_SEO_DATA: WorkshopSEOData = {
     'barbershop management',
     'barber success strategies',
   ],
-  location: 'Professional Conference Center, Atlanta, GA',
-  date: '2026-01-26',
+  location: 'Location TBA, Tampa, FL',
+  date: '2025-07-19',
   instructors: ['Dre Baldwin', 'Nate Green', 'Bossio Martinez'],
   price: {
     currency: 'USD',
-    amount: 1000,
+    amount: 300,
     priceSuffix: ' (Starting Price)',
   },
   images: [
@@ -89,8 +89,8 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
           name: data.location,
           address: {
             '@type': 'PostalAddress',
-            addressLocality: 'Atlanta',
-            addressRegion: 'GA',
+            addressLocality: 'Tampa',
+            addressRegion: 'FL',
             addressCountry: 'US',
           },
         },
@@ -109,7 +109,7 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
           {
             '@type': 'Offer',
             name: 'General Admission',
-            price: data.price.amount,
+            price: 300,
             priceCurrency: data.price.currency,
             availability: 'https://schema.org/InStock',
             url: `${baseUrl}/register?type=GA`,
@@ -118,10 +118,19 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
           {
             '@type': 'Offer',
             name: 'VIP Experience',
-            price: data.price.amount * 1.5,
+            price: 500,
             priceCurrency: data.price.currency,
             availability: 'https://schema.org/InStock',
             url: `${baseUrl}/register?type=VIP`,
+            validFrom: new Date().toISOString(),
+          },
+          {
+            '@type': 'Offer',
+            name: 'VIP Elite Experience',
+            price: 750,
+            priceCurrency: data.price.currency,
+            availability: 'https://schema.org/InStock',
+            url: `${baseUrl}/register?type=VIP_ELITE`,
             validFrom: new Date().toISOString(),
           },
         ],
@@ -177,7 +186,7 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
           '@type': 'Organization',
           '@id': `${baseUrl}#organization`,
         },
-        courseCode: '6FB-METH-2026',
+        courseCode: '6FB-METH-2025',
         educationalCredentialAwarded: 'Certificate of Completion',
         timeRequired: 'P2D',
         coursePrerequisites: 'Active barber license or barbershop ownership',
@@ -217,10 +226,10 @@ export function generateWorkshopStructuredData(data: WorkshopSEOData) {
           },
           {
             '@type': 'Question',
-            name: 'What is the difference between GA and VIP tickets?',
+            name: 'What is the difference between GA, VIP, and VIP Elite tickets?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'VIP tickets include everything in General Admission plus a private dinner with coaches, priority seating, extended Q&A access, and exclusive networking opportunities.',
+              text: 'General Admission ($300) includes access to both workshop days. VIP ($500) adds best seating and a gift bag. VIP Elite ($750) includes everything in VIP plus an exclusive dinner with Bossio.',
             },
           },
         ],
@@ -333,16 +342,16 @@ export function generateLocalBusinessStructuredData() {
     telephone: '+1-555-6FB-METH',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: '123 Conference Center Dr',
-      addressLocality: 'Atlanta',
-      addressRegion: 'GA',
-      postalCode: '30309',
+      streetAddress: 'Location TBA',
+      addressLocality: 'Tampa',
+      addressRegion: 'FL',
+      postalCode: '33602',
       addressCountry: 'US',
     },
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: 33.749,
-      longitude: -84.388,
+      latitude: 27.9506,
+      longitude: -82.4572,
     },
     openingHoursSpecification: [
       {
@@ -363,11 +372,11 @@ export function generateLocalBusinessStructuredData() {
 // SEO-optimized meta tags for different pages
 export const PAGE_METADATA = {
   home: {
-    title: '6FB Methodologies Workshop 2026 | Transform Your Barber Business',
+    title: '6FB Methodologies Workshop Tampa 2025 | Transform Your Barber Business',
     description:
-      'Join 200+ successful barbers at the premier business growth workshop. Learn systems, marketing, and wealth-building strategies. Multiple cities - 2026 tour dates available.',
+      'Join successful barbers at the premier business growth workshop in Tampa, FL on July 19-20, 2025. Learn systems, marketing, and wealth-building strategies from 6 expert coaches.',
     keywords:
-      'barbering workshop 2026, barber business training, barbershop growth, 6 figure barber, business coaching barbers',
+      'barbering workshop 2025, barber business training tampa, barbershop growth, 6 figure barber, business coaching barbers',
   },
 
   register: {

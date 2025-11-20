@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -10,18 +10,15 @@ import {
   MapPin,
   Calendar,
   Thermometer,
-  Users,
   CheckCircle,
   Clock,
   ChevronDown,
   ChevronUp,
+  Info,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { CityWorkshop } from '@/types';
-import {
-  getTotalAvailableSpotsSync,
-  getRegisteredCountFromInventory,
-} from '@/lib/cities';
+import { getTotalAvailableSpotsSync } from '@/lib/cities';
 
 interface CityCardProps {
   city: CityWorkshop;
@@ -32,49 +29,21 @@ interface CityCardProps {
 export function CityCard({ city, index, className }: CityCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [registeredCount, setRegisteredCount] = useState({ ga: 0, vip: 0 });
-  const [isLoadingRegistered, setIsLoadingRegistered] = useState(true);
+  const [hoveredTier, setHoveredTier] = useState<string | null>(null);
   const router = useRouter();
 
   // Performance optimization: Reduce re-renders
   const expandedId = `city-details-${city.id}`;
 
-  // Fetch real registered count from inventory system
-  useEffect(() => {
-    const fetchRegisteredCount = async () => {
-      try {
-        setIsLoadingRegistered(true);
-        const realRegisteredCount = await getRegisteredCountFromInventory(
-          city.id
-        );
-        setRegisteredCount(realRegisteredCount);
-      } catch (error) {
-        console.error(
-          'Error fetching registered count for city:',
-          city.id,
-          error
-        );
-        // Fallback to static data
-        setRegisteredCount({
-          ga: city.registeredCount.ga,
-          vip: city.registeredCount.vip,
-        });
-      } finally {
-        setIsLoadingRegistered(false);
-      }
-    };
-
-    fetchRegisteredCount();
-  }, [city.id, city.registeredCount]);
-
   // Memoize expensive calculations using sync version for UI performance
   const availability = useMemo(() => {
     const ga = getTotalAvailableSpotsSync(city.id, 'ga');
     const vip = getTotalAvailableSpotsSync(city.id, 'vip');
-    const total = ga + vip;
-    const isBooked = ga === 0 && vip === 0;
+    const vipElite = getTotalAvailableSpotsSync(city.id, 'vipElite');
+    const total = ga + vip + vipElite;
+    const isBooked = ga === 0 && vip === 0 && vipElite === 0;
 
-    return { ga, vip, total, isBooked };
+    return { ga, vip, vipElite, total, isBooked };
   }, [city.id]);
 
   const statusBadge = useMemo(() => {
@@ -109,16 +78,19 @@ export function CityCard({ city, index, className }: CityCardProps) {
     }
   }, [availability.isBooked, isLoading, router, city.id]);
 
-  const toggleExpanded = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsExpanded(prev => !prev);
-  }, []);
+  const toggleExpanded = useCallback(
+    (e: React.MouseEvent | React.KeyboardEvent) => {
+      e.stopPropagation();
+      setIsExpanded(prev => !prev);
+    },
+    []
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        toggleExpanded(e as any);
+        toggleExpanded(e);
       }
     },
     [toggleExpanded]
@@ -180,8 +152,7 @@ export function CityCard({ city, index, className }: CityCardProps) {
 
           {/* Quick Summary */}
           <div className='text-sm text-text-secondary'>
-            Starting at {formatCurrency(1000)} • {availability.total} spots
-            available
+            Starting at {formatCurrency(300)}
           </div>
         </CardHeader>
 
@@ -230,23 +201,118 @@ export function CityCard({ city, index, className }: CityCardProps) {
                     <div className='text-sm text-text-muted'>
                       Pricing Options
                     </div>
-                    <div className='space-y-1'>
-                      <div className='flex justify-between items-center'>
-                        <span className='text-sm'>General Admission:</span>
-                        <span className='font-semibold text-tomb45-green'>
-                          {formatCurrency(1000)}
-                        </span>
+                    <div className='space-y-2'>
+                      {/* General Admission */}
+                      <div className='relative'>
+                        <div className='flex justify-between items-center'>
+                          <div className='flex items-center gap-1'>
+                            <span className='text-sm'>General Admission:</span>
+                            <button
+                              type='button'
+                              className='p-1 hover:bg-background-secondary rounded-full transition-colors'
+                              onMouseEnter={() => setHoveredTier('ga')}
+                              onMouseLeave={() => setHoveredTier(null)}
+                              onClick={e => {
+                                e.stopPropagation();
+                                setHoveredTier(
+                                  hoveredTier === 'ga' ? null : 'ga'
+                                );
+                              }}
+                            >
+                              <Info className='w-3 h-3 text-text-muted' />
+                            </button>
+                          </div>
+                          <span className='font-semibold text-tomb45-green'>
+                            {formatCurrency(300)}
+                          </span>
+                        </div>
+                        {hoveredTier === 'ga' && (
+                          <div className='absolute left-0 right-0 top-full mt-1 p-2 bg-background-secondary border border-border-primary rounded-lg shadow-lg z-10 text-xs text-left'>
+                            <ul className='space-y-1 text-text-secondary'>
+                              <li>• Access to both workshop days</li>
+                              <li>• All workshop materials</li>
+                            </ul>
+                          </div>
+                        )}
                       </div>
-                      <div className='flex justify-between items-center'>
-                        <span className='text-sm'>VIP Experience:</span>
-                        <span className='font-semibold text-tomb45-green'>
-                          {formatCurrency(1500)}
-                        </span>
+
+                      {/* VIP Experience */}
+                      <div className='relative'>
+                        <div className='flex justify-between items-center'>
+                          <div className='flex items-center gap-1'>
+                            <span className='text-sm'>VIP Experience:</span>
+                            <button
+                              type='button'
+                              className='p-1 hover:bg-background-secondary rounded-full transition-colors'
+                              onMouseEnter={() => setHoveredTier('vip')}
+                              onMouseLeave={() => setHoveredTier(null)}
+                              onClick={e => {
+                                e.stopPropagation();
+                                setHoveredTier(
+                                  hoveredTier === 'vip' ? null : 'vip'
+                                );
+                              }}
+                            >
+                              <Info className='w-3 h-3 text-text-muted' />
+                            </button>
+                          </div>
+                          <span className='font-semibold text-tomb45-green'>
+                            {formatCurrency(500)}
+                          </span>
+                        </div>
+                        {hoveredTier === 'vip' && (
+                          <div className='absolute left-0 right-0 top-full mt-1 p-2 bg-background-secondary border border-border-primary rounded-lg shadow-lg z-10 text-xs text-left'>
+                            <ul className='space-y-1 text-text-secondary'>
+                              <li>• Everything in General Admission</li>
+                              <li>• Best seating at the event</li>
+                              <li>• Gift bag with products</li>
+                              <li>• Workbooks included</li>
+                              <li>• After-party admission</li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* VIP Elite */}
+                      <div className='relative'>
+                        <div className='flex justify-between items-center'>
+                          <div className='flex items-center gap-1'>
+                            <span className='text-sm'>VIP Elite:</span>
+                            <button
+                              type='button'
+                              className='p-1 hover:bg-background-secondary rounded-full transition-colors'
+                              onMouseEnter={() => setHoveredTier('elite')}
+                              onMouseLeave={() => setHoveredTier(null)}
+                              onClick={e => {
+                                e.stopPropagation();
+                                setHoveredTier(
+                                  hoveredTier === 'elite' ? null : 'elite'
+                                );
+                              }}
+                            >
+                              <Info className='w-3 h-3 text-text-muted' />
+                            </button>
+                          </div>
+                          <span className='font-semibold text-tomb45-green'>
+                            {formatCurrency(750)}
+                          </span>
+                        </div>
+                        {hoveredTier === 'elite' && (
+                          <div className='absolute left-0 right-0 top-full mt-1 p-2 bg-background-secondary border border-border-primary rounded-lg shadow-lg z-10 text-xs text-left'>
+                            <ul className='space-y-1 text-text-secondary'>
+                              <li>• Everything in VIP</li>
+                              <li>• After-party admission</li>
+                              <li>• Exclusive dinner with Bossio</li>
+                              <li>• Premium networking opportunity</li>
+                              <li>• Direct mentorship access</li>
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Availability Details */}
+                  {/* Availability Status */}
                   <div className='space-y-2 mb-4'>
                     <div className='text-sm font-medium text-center text-text-primary'>
                       Availability
@@ -258,9 +324,7 @@ export function CityCard({ city, index, className }: CityCardProps) {
                       <span
                         className={`font-medium ${availability.ga > 0 ? 'text-tomb45-green' : 'text-red-500'}`}
                       >
-                        {availability.ga > 0
-                          ? `${availability.ga} spots`
-                          : 'Sold Out'}
+                        {availability.ga > 0 ? 'Available' : 'Sold Out'}
                       </span>
                     </div>
                     <div className='flex items-center justify-between text-sm'>
@@ -270,26 +334,17 @@ export function CityCard({ city, index, className }: CityCardProps) {
                       <span
                         className={`font-medium ${availability.vip > 0 ? 'text-tomb45-green' : 'text-red-500'}`}
                       >
-                        {availability.vip > 0
-                          ? `${availability.vip} spots`
-                          : 'Sold Out'}
+                        {availability.vip > 0 ? 'Available' : 'Sold Out'}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Registration Count */}
-                  <div className='flex items-center justify-center gap-2 text-sm text-text-muted mb-4'>
-                    <Users className='w-4 h-4' />
-                    <span>
-                      {isLoadingRegistered ? (
-                        <>
-                          <span className='inline-block w-6 h-4 bg-gray-200 animate-pulse rounded'></span>{' '}
-                          barbers already registered
-                        </>
-                      ) : (
-                        `${registeredCount.ga + registeredCount.vip} barbers already registered`
-                      )}
-                    </span>
+                    <div className='flex items-center justify-between text-sm'>
+                      <span className='text-text-secondary'>VIP Elite:</span>
+                      <span
+                        className={`font-medium ${availability.vipElite > 0 ? 'text-tomb45-green' : 'text-red-500'}`}
+                      >
+                        {availability.vipElite > 0 ? 'Available' : 'Sold Out'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* CTA Button */}

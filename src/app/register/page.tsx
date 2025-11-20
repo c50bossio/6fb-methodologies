@@ -42,6 +42,19 @@ const FORM_STEPS: FormStep[] = [
   },
 ];
 
+// Helper function to get user-friendly ticket type names
+const getTicketTypeName = (ticketType: string): string => {
+  switch (ticketType) {
+    case 'VIP':
+      return 'VIP Experience';
+    case 'VIP_ELITE':
+      return 'VIP Elite';
+    case 'GA':
+    default:
+      return 'General Admission';
+  }
+};
+
 function RegisterPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -53,7 +66,7 @@ function RegisterPageContent() {
   );
 
   // CSRF hook for secure API requests (disabled for payment endpoint)
-  const { } = useCSRF();
+  const {} = useCSRF();
   const [formData, setFormData] = useState<RegistrationData>({
     firstName: '',
     lastName: '',
@@ -110,40 +123,60 @@ function RegisterPageContent() {
           console.log('✅ Loaded city from sessionStorage:', citySelectionData);
         }
       } catch (error) {
-        console.error('Error loading city selection from sessionStorage:', error);
+        console.error(
+          'Error loading city selection from sessionStorage:',
+          error
+        );
       }
 
       // Fallback: If no sessionStorage city data but we have cityId from URL, try to resolve it
       if (!citySelectionData && cityIdFromUrl) {
-        console.log('🔍 No sessionStorage city data, attempting to resolve from URL cityId:', cityIdFromUrl);
+        console.log(
+          '🔍 No sessionStorage city data, attempting to resolve from URL cityId:',
+          cityIdFromUrl
+        );
 
         // Import cities dynamically to resolve cityId
-        import('@/lib/cities').then(({ getCityById }) => {
-          const cityFromId = getCityById(cityIdFromUrl);
-          if (cityFromId) {
-            const resolvedCityData = {
-              cityId: cityFromId.id,
-              cityName: cityFromId.city,
-              month: cityFromId.month,
-              dates: cityFromId.dates,
-              location: cityFromId.location,
-            };
+        import('@/lib/cities')
+          .then(({ getCityById }) => {
+            const cityFromId = getCityById(cityIdFromUrl);
+            if (cityFromId) {
+              const resolvedCityData = {
+                cityId: cityFromId.id,
+                cityName: cityFromId.city,
+                month: cityFromId.month,
+                dates: cityFromId.dates,
+                location: cityFromId.location,
+              };
 
-            console.log('✅ Resolved city from URL cityId:', resolvedCityData);
-            setSelectedCity(resolvedCityData);
+              console.log(
+                '✅ Resolved city from URL cityId:',
+                resolvedCityData
+              );
+              setSelectedCity(resolvedCityData);
 
-            // Save to sessionStorage for persistence
-            try {
-              sessionStorage.setItem('6fb-city-selection', JSON.stringify(resolvedCityData));
-            } catch (error) {
-              console.error('Failed to save resolved city to sessionStorage:', error);
+              // Save to sessionStorage for persistence
+              try {
+                sessionStorage.setItem(
+                  '6fb-city-selection',
+                  JSON.stringify(resolvedCityData)
+                );
+              } catch (error) {
+                console.error(
+                  'Failed to save resolved city to sessionStorage:',
+                  error
+                );
+              }
+            } else {
+              console.warn(
+                '❌ Could not resolve cityId from URL:',
+                cityIdFromUrl
+              );
             }
-          } else {
-            console.warn('❌ Could not resolve cityId from URL:', cityIdFromUrl);
-          }
-        }).catch(error => {
-          console.error('Failed to import cities for URL fallback:', error);
-        });
+          })
+          .catch(error => {
+            console.error('Failed to import cities for URL fallback:', error);
+          });
       } else if (citySelectionData) {
         setSelectedCity(citySelectionData);
       }
@@ -157,13 +190,17 @@ function RegisterPageContent() {
         console.log('Parsed registration data:', registrationData);
 
         // Use stored pricing data
+        const getDefaultPrice = (ticketType: TicketType) => {
+          if (ticketType === 'VIP') return 500;
+          if (ticketType === 'VIP_ELITE') return 750;
+          return 300; // GA
+        };
+
         setPricingData({
           originalPrice:
-            registrationData.pricing?.originalPrice ||
-            (type === 'VIP' ? 1500 : 1000),
+            registrationData.pricing?.originalPrice || getDefaultPrice(type),
           finalPrice:
-            registrationData.pricing?.finalPrice ||
-            (type === 'VIP' ? 1500 : 1000),
+            registrationData.pricing?.finalPrice || getDefaultPrice(type),
           discount: registrationData.pricing?.discount || 0,
           discountReason: registrationData.pricing?.discountReason || '',
           ticketType: type,
@@ -188,7 +225,8 @@ function RegisterPageContent() {
       } else {
         // Fallback if no sessionStorage data - preserve member status from URL if available
         console.log('No registration data found, using defaults');
-        const defaultPrice = type === 'VIP' ? 1500 : 1000;
+        const defaultPrice =
+          type === 'VIP' ? 500 : type === 'VIP_ELITE' ? 750 : 300;
 
         // Check if member status is passed via URL parameters
         const memberStatus =
@@ -453,7 +491,8 @@ function RegisterPageContent() {
             pricing: {
               originalPrice: pricingData.originalPrice,
               finalPrice: pricingData.finalPrice,
-              discountAmount: pricingData.originalPrice - pricingData.finalPrice,
+              discountAmount:
+                pricingData.originalPrice - pricingData.finalPrice,
               discountReason: pricingData.discountReason,
               savings: pricingData.originalPrice - pricingData.finalPrice,
             },
@@ -651,7 +690,8 @@ function RegisterPageContent() {
               <CardContent className='space-y-4'>
                 <div className='flex justify-between items-center'>
                   <span>
-                    {pricingData.ticketType} Ticket × {pricingData.quantity}
+                    {getTicketTypeName(pricingData.ticketType)} ×{' '}
+                    {pricingData.quantity}
                   </span>
                   <span>{formatCurrency(pricingData.originalPrice)}</span>
                 </div>
@@ -815,9 +855,9 @@ function RegisterPageContent() {
         >
           <h1 className='heading-lg mb-4'>Complete Your Registration</h1>
           {selectedCity ? (
-            <div className='mb-4'>
+            <div className='mb-4 flex flex-col items-center gap-2'>
               <div
-                className='inline-flex items-center gap-2 bg-tomb45-green/10 border border-tomb45-green/20 rounded-full px-4 py-2 mb-2 cursor-pointer hover:bg-tomb45-green/15 transition-colors group'
+                className='inline-flex items-center gap-2 bg-tomb45-green/10 border border-tomb45-green/20 rounded-full px-4 py-2 cursor-pointer hover:bg-tomb45-green/15 transition-colors group'
                 onClick={handleNavigateToCitiesSection}
               >
                 <span className='text-sm font-medium text-tomb45-green'>
@@ -827,6 +867,10 @@ function RegisterPageContent() {
                   Change
                 </span>
               </div>
+              <Badge variant='secondary' className='text-sm'>
+                {getTicketTypeName(pricingData.ticketType)} •{' '}
+                {formatCurrency(pricingData.finalPrice)}
+              </Badge>
               <p className='body-md text-text-secondary'>
                 Secure your spot at the {selectedCity.cityName} 6FB
                 Methodologies Workshop

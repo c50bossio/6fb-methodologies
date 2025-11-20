@@ -1,147 +1,32 @@
 import type { CityWorkshop } from '@/types';
-import {
-  getPublicAvailableSpots,
-  checkInventoryStatus,
-} from './inventory';
+import { getPublicAvailableSpots, checkInventoryStatus } from './inventory';
 
-// 6FB Methodologies Multi-City Tour Data - Chronological Order
+// 6FB Methodologies Tampa Workshop
 export const CITY_WORKSHOPS: CityWorkshop[] = [
   {
-    id: 'dallas-jan-2026',
-    city: 'Dallas',
-    state: 'TX',
-    month: 'January 2026',
-    year: 2026,
-    dates: ['January 25-26'],
+    id: 'tampa-jul-2025',
+    city: 'Tampa',
+    state: 'FL',
+    month: 'July 2025',
+    year: 2025,
+    dates: ['July 19-20'],
     location: 'Location TBA',
-    climateAppeal: 'Mild Texas winter - comfortable 45-65°F range',
+    climateAppeal: 'Summer workshop in sunny Tampa',
     status: 'upcoming',
     availableSpots: {
-      ga: 35,
-      vip: 15,
+      ga: 999, // No capacity limits - manual control
+      vip: 999,
+      vipElite: 999,
     },
     registeredCount: {
       ga: 0,
       vip: 0,
+      vipElite: 0,
     },
     stripe: {
-      gaPriceId: 'price_1S8SZWEzoIvSRPoDXIhMYWrV',
-      vipPriceId: 'price_1S8SpKEzoIvSRPoD57u9Diyr',
-    },
-  },
-  {
-    id: 'atlanta-feb-2026',
-    city: 'Atlanta',
-    state: 'GA',
-    month: 'February 2026',
-    year: 2026,
-    dates: ['February 22-23'],
-    location: 'Location TBA',
-    climateAppeal: 'Early spring warmth - pleasant 50-70°F days',
-    status: 'upcoming',
-    availableSpots: {
-      ga: 35,
-      vip: 15,
-    },
-    registeredCount: {
-      ga: 0,
-      vip: 0,
-    },
-    stripe: {
-      gaPriceId: 'price_1S8Sb4EzoIvSRPoDXNmY1PZq',
-      vipPriceId: 'price_1S8SbHEzoIvSRPoDRp1OaBIk',
-    },
-  },
-  {
-    id: 'vegas-mar-2026',
-    city: 'Las Vegas',
-    state: 'NV',
-    month: 'March 2026',
-    year: 2026,
-    dates: ['March 8-9'],
-    location: 'Location TBA',
-    climateAppeal: 'Perfect Vegas spring - sunny 65-80°F desert weather',
-    status: 'upcoming',
-    availableSpots: {
-      ga: 35,
-      vip: 15,
-    },
-    registeredCount: {
-      ga: 0,
-      vip: 0,
-    },
-    stripe: {
-      gaPriceId: 'price_1S8SbTEzoIvSPoD4tvEuw5G',
-      vipPriceId: 'price_1S8SbfEzoIvSPoD8sPuB9zb',
-    },
-  },
-  {
-    id: 'nyc-apr-2026',
-    city: 'New York City',
-    state: 'NY',
-    month: 'April 2026',
-    year: 2026,
-    dates: ['April 26-27'],
-    location: 'Location TBA',
-    climateAppeal: 'Beautiful NYC spring - mild 55-70°F with blooms',
-    status: 'upcoming',
-    availableSpots: {
-      ga: 35,
-      vip: 15,
-    },
-    registeredCount: {
-      ga: 0,
-      vip: 0,
-    },
-    stripe: {
-      gaPriceId: 'price_1S8ScUEzoIvSRPoDuWFvWWba',
-      vipPriceId: 'price_1S8ScZEzoIvSRPoDhV6sRleF',
-    },
-  },
-  {
-    id: 'chicago-may-2026',
-    city: 'Chicago',
-    state: 'IL',
-    month: 'May 2026',
-    year: 2026,
-    dates: ['May 31-June 1'],
-    location: 'Location TBA',
-    climateAppeal: 'Late spring perfection - warm 60-75°F lakefront',
-    status: 'upcoming',
-    availableSpots: {
-      ga: 35,
-      vip: 15,
-    },
-    registeredCount: {
-      ga: 0,
-      vip: 0,
-    },
-    stripe: {
-      gaPriceId: 'price_1S8ScDEzoIvSPoD6d2IEFov',
-      vipPriceId: 'price_1S8ScIEzoIvSRPoDcSAEWOGt',
-    },
-  },
-  {
-    id: 'sf-jun-2026',
-    city: 'San Francisco',
-    state: 'CA',
-    month: 'June 2026',
-    year: 2026,
-    dates: ['June 14-15'],
-    location: 'Location TBA',
-    climateAppeal: 'Early summer charm - crisp 60-70°F bay weather',
-    status: 'upcoming',
-    availableSpots: {
-      ga: 35,
-      vip: 15,
-    },
-    registeredCount: {
-      ga: 0,
-      vip: 0,
-    },
-    stripe: {
-      gaPriceId: 'price_1S8SbuEzoIvSRPoDkH4q9yEx',
-      vipPriceId: 'price_1S8Sc0EzoIvSRPoDEfGUMMSn',
+      gaPriceId: 'TBD_TAMPA_GA', // Set this after creating Stripe price
+      vipPriceId: 'TBD_TAMPA_VIP', // Set this after creating Stripe price
+      vipElitePriceId: 'TBD_TAMPA_VIP_ELITE', // Set this after creating Stripe price
     },
   },
 ];
@@ -178,7 +63,6 @@ export const getAvailableCitiesAsync = async (): Promise<CityWorkshop[]> => {
 };
 
 export const getNextAvailableCity = (): CityWorkshop | undefined => {
-  const now = new Date();
   return CITY_WORKSHOPS.filter(city => city.status !== 'sold-out').sort(
     (a, b) => a.year - b.year
   )[0]; // Return earliest available
@@ -186,7 +70,7 @@ export const getNextAvailableCity = (): CityWorkshop | undefined => {
 
 export const getTotalAvailableSpots = async (
   cityId: string,
-  ticketType: 'ga' | 'vip'
+  ticketType: 'ga' | 'vip' | 'vipElite'
 ): Promise<number> => {
   // Use new inventory system for real-time availability
   return await getPublicAvailableSpots(cityId, ticketType);
@@ -195,7 +79,7 @@ export const getTotalAvailableSpots = async (
 // Legacy synchronous version for backward compatibility
 export const getTotalAvailableSpotsSync = (
   cityId: string,
-  ticketType: 'ga' | 'vip'
+  ticketType: 'ga' | 'vip' | 'vipElite'
 ): number => {
   const city = getCityById(cityId);
   if (!city) return 0;
@@ -208,8 +92,10 @@ export const isCityAvailable = async (cityId: string): Promise<boolean> => {
 
   const gaAvailable = (await getPublicAvailableSpots(cityId, 'ga')) > 0;
   const vipAvailable = (await getPublicAvailableSpots(cityId, 'vip')) > 0;
+  const vipEliteAvailable =
+    (await getPublicAvailableSpots(cityId, 'vipElite')) > 0;
 
-  return gaAvailable || vipAvailable;
+  return gaAvailable || vipAvailable || vipEliteAvailable;
 };
 
 // Legacy synchronous version for backward compatibility
@@ -219,8 +105,9 @@ export const isCityAvailableSync = (cityId: string): boolean => {
 
   const gaAvailable = getTotalAvailableSpotsSync(cityId, 'ga') > 0;
   const vipAvailable = getTotalAvailableSpotsSync(cityId, 'vip') > 0;
+  const vipEliteAvailable = getTotalAvailableSpotsSync(cityId, 'vipElite') > 0;
 
-  return gaAvailable || vipAvailable;
+  return gaAvailable || vipAvailable || vipEliteAvailable;
 };
 
 /**
@@ -229,21 +116,22 @@ export const isCityAvailableSync = (cityId: string): boolean => {
  */
 export const getRegisteredCountFromInventory = async (
   cityId: string
-): Promise<{ ga: number; vip: number }> => {
+): Promise<{ ga: number; vip: number; vipElite: number }> => {
   try {
     const status = await checkInventoryStatus(cityId);
     if (!status) {
       console.warn(`Could not get inventory status for city: ${cityId}`);
-      return { ga: 0, vip: 0 };
+      return { ga: 0, vip: 0, vipElite: 0 };
     }
 
     return {
       ga: status.sold.ga,
       vip: status.sold.vip,
+      vipElite: status.sold.vipElite,
     };
   } catch (error) {
     console.error(`Error getting registered count for ${cityId}:`, error);
-    return { ga: 0, vip: 0 };
+    return { ga: 0, vip: 0, vipElite: 0 };
   }
 };
 
@@ -253,13 +141,13 @@ export const getRegisteredCountFromInventory = async (
  */
 export const getRegisteredCountFromInventorySync = (
   cityId: string
-): { ga: number; vip: number } => {
+): { ga: number; vip: number; vipElite: number } => {
   try {
     // Access the inventory store directly for sync operation
     // This is a simplified version that works with the current in-memory store
     const city = getCityById(cityId);
     if (!city) {
-      return { ga: 0, vip: 0 };
+      return { ga: 0, vip: 0, vipElite: 0 };
     }
 
     // For now, we'll use the static data but this will be replaced
@@ -267,10 +155,11 @@ export const getRegisteredCountFromInventorySync = (
     return {
       ga: city.registeredCount.ga,
       vip: city.registeredCount.vip,
+      vipElite: city.registeredCount.vipElite,
     };
   } catch (error) {
     console.error(`Error getting registered count sync for ${cityId}:`, error);
-    return { ga: 0, vip: 0 };
+    return { ga: 0, vip: 0, vipElite: 0 };
   }
 };
 
@@ -284,7 +173,7 @@ export const getTotalRegisteredCountFromInventory =
 
       for (const city of CITY_WORKSHOPS) {
         const registered = await getRegisteredCountFromInventory(city.id);
-        total += registered.ga + registered.vip;
+        total += registered.ga + registered.vip + registered.vipElite;
       }
 
       return total;

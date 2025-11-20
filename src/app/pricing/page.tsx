@@ -31,7 +31,7 @@ import { getCityById } from '@/lib/cities';
 import type { CityWorkshop } from '@/types';
 
 interface PricingTier {
-  id: 'ga' | 'vip';
+  id: 'ga' | 'vip' | 'vip_elite';
   name: string;
   originalPrice: number;
   description: string;
@@ -50,15 +50,11 @@ function PricingPageContent() {
     isVerified: boolean;
     memberName?: string;
   } | null>(null);
-  const [quantities, setQuantities] = useState({ ga: 1, vip: 1 });
-  const [promoCodes, setPromoCodes] = useState({ ga: '', vip: '' });
-  const [promoValidation, setPromoValidation] = useState<{
-    ga: boolean | null;
-    vip: boolean | null;
-  }>({ ga: null, vip: null });
-  const [pricing, setPricing] = useState<{ ga: any; vip: any }>({
+  const [quantities, setQuantities] = useState({ ga: 1, vip: 1, vip_elite: 1 });
+  const [pricing, setPricing] = useState<{ ga: any; vip: any; vip_elite: any }>({
     ga: null,
     vip: null,
+    vip_elite: null,
   });
   const [isCalculatingPrices, setIsCalculatingPrices] = useState(false);
 
@@ -66,35 +62,43 @@ function PricingPageContent() {
     {
       id: 'ga',
       name: 'General Admission',
-      originalPrice: 1000,
-      description:
-        'Complete workshop access with all core content and materials',
+      originalPrice: 300,
+      description: 'Access to both workshop days',
       icon: Users,
       features: [
-        'Day 1: Complete methodology training',
-        'Day 2: Roundtables & action planning',
-        'Workbook & materials',
-        'Certificate of completion',
-        'Networking opportunities',
-        'Follow-up resources',
+        'Access to Day 1 workshop',
+        'Access to Day 2 workshop',
       ],
     },
     {
       id: 'vip',
-      name: 'VIP Experience',
-      originalPrice: 1500,
-      description:
-        'Everything in GA plus exclusive VIP perks and intimate access',
+      name: 'VIP',
+      originalPrice: 500,
+      description: 'Best seating and exclusive gift bag',
       icon: Star,
       popular: true,
       features: [
         'Everything in General Admission',
-        'VIP private dinner with coaches (end of day one)',
-        'Priority seating',
-        'Extended Q&A access',
-        'Exclusive VIP networking',
-        'Premium welcome package',
-        'Direct coach contact opportunity',
+        'Best seating at the event',
+        'Gift bag with products',
+        'Workbooks included',
+        'After-party admission',
+        'Sponsor surprises',
+      ],
+    },
+    {
+      id: 'vip_elite',
+      name: 'VIP Elite',
+      originalPrice: 750,
+      description: 'Ultimate experience with exclusive dinner with Bossio',
+      icon: Award,
+      popular: false,
+      features: [
+        'Everything in VIP',
+        'After-party admission',
+        'Exclusive dinner with Bossio',
+        'Premium networking opportunity',
+        'Direct mentorship access',
       ],
     },
   ];
@@ -146,26 +150,6 @@ function PricingPageContent() {
     }
   };
 
-  const validatePromoCode = async (code: string, tierId: 'ga' | 'vip') => {
-    if (!code.trim()) {
-      setPromoValidation(prev => ({ ...prev, [tierId]: null }));
-      return;
-    }
-
-    try {
-      const validCodes: Record<'ga' | 'vip', string[]> = {
-        ga: ['EARLYBIRD', 'SAVE50', 'WELCOME'],
-        vip: [],
-      };
-
-      const isValid = validCodes[tierId]?.includes(code.toUpperCase()) || false;
-      setPromoValidation(prev => ({ ...prev, [tierId]: isValid }));
-    } catch (error) {
-      console.error('Promo validation error:', error);
-      setPromoValidation(prev => ({ ...prev, [tierId]: false }));
-    }
-  };
-
   // Calculate prices with proper async handling
   useEffect(() => {
     const calculatePrices = async () => {
@@ -177,36 +161,47 @@ function PricingPageContent() {
           'GA',
           quantities.ga,
           verificationResult?.isVerified || false,
-          verificationResult?.isVerified ? email : undefined,
-          promoCodes.ga || '',
-          promoValidation.ga === true
+          verificationResult?.isVerified ? email : undefined
         );
 
         const vipResult = await calculatePricing(
           'VIP',
           quantities.vip,
           verificationResult?.isVerified || false,
-          verificationResult?.isVerified ? email : undefined,
-          promoCodes.vip || '',
-          promoValidation.vip === true
+          verificationResult?.isVerified ? email : undefined
         );
 
-        setPricing({ ga: gaResult, vip: vipResult });
+        const vipEliteResult = await calculatePricing(
+          'VIP_ELITE',
+          quantities.vip_elite,
+          verificationResult?.isVerified || false,
+          verificationResult?.isVerified ? email : undefined
+        );
+
+        setPricing({ ga: gaResult, vip: vipResult, vip_elite: vipEliteResult });
       } catch (error) {
         console.error('Pricing calculation error:', error);
         // Fallback to default prices
         setPricing({
           ga: {
-            originalPrice: 1000,
-            finalPrice: 1000,
+            originalPrice: 300,
+            finalPrice: 300,
             discount: 0,
             discountReason: '',
             savings: 0,
             discountEligible: true,
           },
           vip: {
-            originalPrice: 1500,
-            finalPrice: 1500,
+            originalPrice: 500,
+            finalPrice: 500,
+            discount: 0,
+            discountReason: '',
+            savings: 0,
+            discountEligible: true,
+          },
+          vip_elite: {
+            originalPrice: 750,
+            finalPrice: 750,
             discount: 0,
             discountReason: '',
             savings: 0,
@@ -223,16 +218,20 @@ function PricingPageContent() {
     selectedCity,
     quantities,
     verificationResult,
-    promoCodes,
-    promoValidation,
     email,
   ]);
 
-  const getPricing = (tierId: 'ga' | 'vip') => {
+  const getPricing = (tierId: 'ga' | 'vip' | 'vip_elite') => {
+    const defaultPrices = {
+      ga: 300,
+      vip: 500,
+      vip_elite: 750,
+    };
+
     return (
       pricing[tierId] || {
-        originalPrice: tierId === 'ga' ? 1000 : 1500,
-        finalPrice: tierId === 'ga' ? 1000 : 1500,
+        originalPrice: defaultPrices[tierId],
+        finalPrice: defaultPrices[tierId],
         discount: 0,
         discountReason: '',
         savings: 0,
@@ -267,7 +266,7 @@ function PricingPageContent() {
     attemptScroll();
   };
 
-  const handleRegister = (tierId: 'ga' | 'vip') => {
+  const handleRegister = (tierId: 'ga' | 'vip' | 'vip_elite') => {
     const tier = tiers.find(t => t.id === tierId)!;
     const quantity = quantities[tierId];
     const currentPricing = getPricing(tierId);
@@ -289,10 +288,6 @@ function PricingPageContent() {
       userInfo: {
         isVerified: verificationResult?.isVerified || false,
         memberName: verificationResult?.memberName || '',
-      },
-      promoInfo: {
-        code: promoCodes[tierId] || '',
-        isValid: promoValidation[tierId] === true,
       },
     };
 
@@ -401,7 +396,7 @@ function PricingPageContent() {
             <CardContent className='p-0'>
               <div className='text-center mb-4'>
                 <Badge variant='success' className='mb-2'>
-                  6FB Members Save 20%
+                  6FB Members Save 10%
                 </Badge>
                 <p className='text-sm text-text-secondary'>
                   Verify your 6FB membership for exclusive discount
@@ -445,7 +440,7 @@ function PricingPageContent() {
                     Welcome back, {verificationResult.memberName}
                   </p>
                   <Badge variant='success' className='text-xs'>
-                    20% Discount Applied
+                    10% Discount Applied
                   </Badge>
                 </div>
               ) : (
@@ -593,38 +588,6 @@ function PricingPageContent() {
                             )}
                           </div>
                         )}
-                      </div>
-                    )}
-
-                    {/* Promo Code Input for GA */}
-                    {tier.id === 'ga' && !verificationResult?.isVerified && (
-                      <div className='border border-border-primary rounded-xl p-4'>
-                        <label className='block text-sm font-medium text-text-primary mb-2'>
-                          Promo Code (Optional)
-                        </label>
-                        <div className='space-y-2'>
-                          <Input
-                            placeholder='Enter promo code'
-                            value={promoCodes.ga}
-                            onChange={value => {
-                              setPromoCodes(prev => ({ ...prev, ga: value }));
-                              validatePromoCode(value, 'ga');
-                            }}
-                          />
-                          {promoValidation.ga === true && (
-                            <div className='flex items-center gap-2 text-tomb45-green text-sm'>
-                              <Check className='w-4 h-4' />
-                              <span>
-                                Valid promo code! 10% discount applied
-                              </span>
-                            </div>
-                          )}
-                          {promoValidation.ga === false && (
-                            <div className='text-red-500 text-sm'>
-                              Invalid promo code
-                            </div>
-                          )}
-                        </div>
                       </div>
                     )}
 

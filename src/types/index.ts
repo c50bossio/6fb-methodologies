@@ -2,6 +2,7 @@
 export interface WorkshopConfig {
   gaPrice: number;
   vipPrice: number;
+  vipElitePrice: number;
   sixFBDiscount: number;
   bulkDiscounts: {
     quantity2: number;
@@ -10,7 +11,7 @@ export interface WorkshopConfig {
   };
 }
 
-export type TicketType = 'GA' | 'VIP';
+export type TicketType = 'GA' | 'VIP' | 'VIP_ELITE';
 
 export interface TicketInfo {
   type: TicketType;
@@ -239,14 +240,17 @@ export interface CityWorkshop {
   availableSpots: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   registeredCount: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   stripe: {
     gaPriceId: string;
     vipPriceId: string;
+    vipElitePriceId: string;
   };
 }
 
@@ -269,22 +273,27 @@ export interface InventoryStatus {
   publicLimits: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   actualLimits: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   sold: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   publicAvailable: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   actualAvailable: {
     ga: number;
     vip: number;
+    vipElite: number;
   };
   isPublicSoldOut: boolean;
   isActualSoldOut: boolean;
@@ -294,7 +303,7 @@ export interface InventoryStatus {
 export interface InventoryTransaction {
   id: string;
   cityId: string;
-  tier: 'ga' | 'vip';
+  tier: 'ga' | 'vip' | 'vip_elite';
   quantity: number;
   operation: 'decrement' | 'expand' | 'reset';
   timestamp: Date;
@@ -308,7 +317,7 @@ export interface InventoryTransaction {
 
 export interface InventoryExpansion {
   cityId: string;
-  tier: 'ga' | 'vip';
+  tier: 'ga' | 'vip' | 'vip_elite';
   additionalSpots: number;
   reason: string;
   authorizedBy: string;
@@ -322,11 +331,11 @@ export interface CheckoutValidationResult {
   inventory: {
     requested: number;
     available: number;
-    tier: 'ga' | 'vip';
+    tier: 'ga' | 'vip' | 'vip_elite';
     cityId: string;
   };
   suggestions?: {
-    alternativeTiers?: { tier: 'ga' | 'vip'; available: number }[];
+    alternativeTiers?: { tier: 'ga' | 'vip' | 'vip_elite'; available: number }[];
     alternativeCities?: { cityId: string; available: number }[];
   };
 }
@@ -334,7 +343,7 @@ export interface CheckoutValidationResult {
 export interface InventoryReservation {
   id: string;
   cityId: string;
-  tier: 'ga' | 'vip';
+  tier: 'ga' | 'vip' | 'vip_elite';
   quantity: number;
   reservedAt: Date;
   expiresAt: Date;

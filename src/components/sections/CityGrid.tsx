@@ -3,11 +3,8 @@
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/Badge';
 import { CityCard } from '@/components/ui/CityCard';
-import { Clock, MapPin, Users } from 'lucide-react';
-import {
-  CITY_WORKSHOPS,
-  getTotalRegisteredCountFromInventory,
-} from '@/lib/cities';
+import { Clock, MapPin } from 'lucide-react';
+import { CITY_WORKSHOPS } from '@/lib/cities';
 import { useState, useEffect } from 'react';
 
 interface CityGridProps {
@@ -15,31 +12,56 @@ interface CityGridProps {
 }
 
 export function CityGrid({ className }: CityGridProps) {
-  const [totalRegistered, setTotalRegistered] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const fetchTotalRegistered = async () => {
-      try {
-        setIsLoading(true);
-        const total = await getTotalRegisteredCountFromInventory();
-        setTotalRegistered(total);
-      } catch (error) {
-        console.error('Error fetching total registered count:', error);
-        // Fallback to static calculation
-        const fallbackTotal = CITY_WORKSHOPS.reduce(
-          (total, city) =>
-            total + city.registeredCount.ga + city.registeredCount.vip,
-          0
-        );
-        setTotalRegistered(fallbackTotal);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTotalRegistered();
+    setIsMounted(true);
   }, []);
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!isMounted) {
+    return (
+      <section
+        id='cities'
+        className={`section-padding bg-background-primary ${className}`}
+      >
+        <div className='container-custom'>
+          <div className='text-center mb-16'>
+            <div>
+              <Badge variant='success' className='mb-4'>
+                Tampa Workshop • July 19-20, 2025
+              </Badge>
+              <h2 className='heading-lg mb-6'>Register for Tampa Workshop</h2>
+              <p className='body-lg max-w-3xl mx-auto text-text-secondary mb-8'>
+                Experience the complete 6FB Methodologies with our team of 6 expert coaches.
+                Comprehensive training with market insights and networking opportunities.
+              </p>
+              <div className='flex flex-wrap justify-center gap-6 text-sm text-text-muted mb-8'>
+                <div className='flex items-center gap-2'>
+                  <Clock className='w-4 h-4' />
+                  <span>2 Full Days</span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <MapPin className='w-4 h-4' />
+                  <span>Tampa, Florida</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto'>
+            {CITY_WORKSHOPS.map((city, index) => (
+              <CityCard
+                key={city.id}
+                city={city}
+                index={index}
+                className='relative'
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -56,50 +78,36 @@ export function CityGrid({ className }: CityGridProps) {
             viewport={{ once: true }}
           >
             <Badge variant='success' className='mb-4'>
-              6-City National Tour • 2026
+              Tampa Workshop • July 19-20, 2025
             </Badge>
-            <h2 className='heading-lg mb-6'>Choose Your Workshop City</h2>
+            <h2 className='heading-lg mb-6'>Register for Tampa Workshop</h2>
             <p className='body-lg max-w-3xl mx-auto text-text-secondary mb-8'>
-              Experience the complete 6FB Methodologies in your region. Each
-              workshop delivers the same comprehensive training with local
-              market insights and networking opportunities.
+              Experience the complete 6FB Methodologies with our team of 6 expert coaches.
+              Comprehensive training with market insights and networking opportunities.
             </p>
 
             {/* Tour Stats */}
             <div className='flex flex-wrap justify-center gap-6 text-sm text-text-muted mb-8'>
               <div className='flex items-center gap-2'>
                 <Clock className='w-4 h-4' />
-                <span>2 Full Days per City</span>
+                <span>2 Full Days</span>
               </div>
               <div className='flex items-center gap-2'>
                 <MapPin className='w-4 h-4' />
-                <span>Premium Venues</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <Users className='w-4 h-4' />
-                <span>
-                  {isLoading ? (
-                    <>
-                      <span className='inline-block w-8 h-4 bg-gray-200 animate-pulse rounded'></span>{' '}
-                      Barbers Already Registered
-                    </>
-                  ) : (
-                    `${totalRegistered} Barbers Already Registered`
-                  )}
-                </span>
+                <span>Tampa, Florida</span>
               </div>
             </div>
           </motion.div>
         </div>
 
         {/* City Grid */}
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto'>
+        <div className='flex justify-center max-w-7xl mx-auto'>
           {CITY_WORKSHOPS.map((city, index) => (
             <CityCard
               key={city.id}
               city={city}
               index={index}
-              className='relative'
+              className='relative w-full max-w-md'
             />
           ))}
         </div>
@@ -115,19 +123,19 @@ export function CityGrid({ className }: CityGridProps) {
           {/* Benefits */}
           <div className='bg-background-secondary border border-border-primary rounded-xl p-8 max-w-4xl mx-auto'>
             <h3 className='text-xl font-semibold text-text-primary mb-4'>
-              Every City Workshop Includes
+              Tampa Workshop Includes
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-text-secondary'>
               <div className='flex items-start gap-3'>
                 <div className='w-2 h-2 bg-tomb45-green rounded-full mt-2 flex-shrink-0'></div>
                 <span>
-                  Complete 6FB methodology training with Dre, Nate, and Bossio
+                  Complete 6FB methodology training with our team of 6 expert coaches
                 </span>
               </div>
               <div className='flex items-start gap-3'>
                 <div className='w-2 h-2 bg-tomb45-green rounded-full mt-2 flex-shrink-0'></div>
                 <span>
-                  Local market insights and networking with regional barbers
+                  Tampa market insights and networking with local barbers
                 </span>
               </div>
               <div className='flex items-start gap-3'>
@@ -143,18 +151,6 @@ export function CityGrid({ className }: CityGridProps) {
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Scheduling Information */}
-          <div className='bg-tomb45-green/10 border border-tomb45-green/20 rounded-xl p-6 max-w-2xl mx-auto'>
-            <h4 className='font-semibold text-text-primary mb-2'>
-              Strategic Scheduling
-            </h4>
-            <p className='text-sm text-text-secondary'>
-              We've planned warmer cities during winter months (Dallas, Atlanta,
-              Las Vegas) and cooler cities during summer (San Francisco,
-              Chicago, NYC) for your comfort and convenience.
-            </p>
           </div>
 
           {/* Security & Refund */}

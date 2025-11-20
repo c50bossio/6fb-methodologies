@@ -40,7 +40,7 @@ export function HeroSection() {
           >
             <Calendar className='w-4 h-4 text-tomb45-green' />
             <span className='text-sm font-semibold text-tomb45-green'>
-              6-City National Tour • 2026
+              Tampa Workshop • July 19-20, 2025
             </span>
           </motion.div>
 
@@ -64,10 +64,10 @@ export function HeroSection() {
             transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
             className='body-lg max-w-3xl mx-auto mb-8 text-balance text-white/90 drop-shadow-md'
           >
-            Join Dre, Nate, and Bossio in your region for an intensive 2-day
-            workshop where you'll master the systems, marketing strategies, and
-            wealth-building techniques that have helped thousands of barbers
-            build six-figure businesses. Choose from 6 cities nationwide.
+            Join our team of 6 expert coaches in Tampa for an intensive 2-day
+            workshop where you&apos;ll master the systems, marketing strategies,
+            and wealth-building techniques that have helped thousands of barbers
+            build six-figure businesses.
           </motion.p>
 
           {/* Key Stats */}
@@ -86,7 +86,7 @@ export function HeroSection() {
             <div className='flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-4 py-2'>
               <MapPin className='w-5 h-5 text-tomb45-green' />
               <span className='text-white/90 font-medium'>
-                3 Expert Coaches
+                6 Expert Coaches
               </span>
             </div>
             <div className='flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-4 py-2'>
@@ -107,7 +107,7 @@ export function HeroSection() {
               onClick={scrollToCities}
               className='group shadow-green-glow animate-pulse-green'
             >
-              Choose Your City
+              Register for Tampa Workshop
               <ArrowRight className='ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform' />
             </Button>
             <Button
@@ -132,7 +132,7 @@ export function HeroSection() {
             className='bg-black/30 backdrop-blur-sm border border-white/20 rounded-2xl p-6 max-w-2xl mx-auto'
           >
             <h3 className='text-lg font-semibold text-white mb-3'>
-              What You'll Leave With:
+              What You&apos;ll Leave With:
             </h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-white/90'>
               <div className='flex items-center gap-2'>

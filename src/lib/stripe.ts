@@ -27,14 +27,14 @@ export const STRIPE_CONFIG = {
 
 // Workshop pricing constants
 export const WORKSHOP_PRICES = {
-  GA: 100000, // $1000.00 in cents
-  VIP: 150000, // $1500.00 in cents
+  GA: 30000, // $300.00 in cents
+  VIP: 50000, // $500.00 in cents
+  VIP_ELITE: 75000, // $750.00 in cents
 } as const;
 
 // Discount constants
 export const DISCOUNTS = {
-  SIXFB_MEMBER_GA: 0.2, // 20% for GA
-  SIXFB_MEMBER_VIP: 0.1, // 10% for VIP
+  SIXFB_MEMBER: 0.1, // 10% for all ticket types
   BULK_2: 0.05, // 5%
   BULK_3: 0.1, // 10%
   BULK_4: 0.15, // 15%
@@ -48,15 +48,13 @@ export function calculateBulkDiscount(quantity: number): number {
   return 0; // No discount for 1
 }
 
-export function getSixFBDiscount(ticketType: 'GA' | 'VIP' = 'GA'): number {
-  return ticketType === 'VIP'
-    ? DISCOUNTS.SIXFB_MEMBER_VIP
-    : DISCOUNTS.SIXFB_MEMBER_GA;
+export function getSixFBDiscount(): number {
+  return DISCOUNTS.SIXFB_MEMBER; // 10% for all ticket types
 }
 
 // Helper function to calculate discounted price in cents
 export async function calculateStripePriceInCents(
-  ticketType: 'GA' | 'VIP',
+  ticketType: 'GA' | 'VIP' | 'VIP_ELITE',
   quantity: number,
   isSixFBMember: boolean,
   memberEmail?: string
@@ -90,44 +88,37 @@ export async function calculateStripePriceInCents(
     }
   }
 
-  // Apply 6FB member discount - GA gets 20%, VIP gets 10%
+  // Apply 6FB member discount - 10% for all ticket types
   if (isSixFBMember && discountEligible) {
     if (quantity === 1) {
-      // Single ticket: member gets discount (20% GA, 10% VIP)
+      // Single ticket: member gets 10% discount
       const memberDiscount = getSixFBDiscount(ticketType);
       finalAmount = Math.round(basePrice * (1 - memberDiscount));
       // const discountPercent = Math.round(memberDiscount * 100);
       discountReason = `6FB Member Discount (One-time use)`;
     } else {
-      // Multiple tickets: Compare member+bulk vs pure bulk and apply the better discount
+      // Multiple tickets: Apply 10% member discount to all tickets
+      // Only GA gets additional bulk discount consideration
       const memberDiscount = getSixFBDiscount(ticketType);
-      const bulkDiscount = calculateBulkDiscount(quantity);
 
-      // Option 1: Member discount on 1 ticket + bulk discount on remaining
-      const memberTicketPrice = Math.round(basePrice * (1 - memberDiscount));
-      const remainingQuantity = quantity - 1;
-      const bulkTicketPrice = Math.round(basePrice * (1 - bulkDiscount));
-      const memberPlusBulkTotal =
-        memberTicketPrice + bulkTicketPrice * remainingQuantity;
+      if (ticketType === 'GA') {
+        // For GA: Compare member discount vs bulk discount (choose better)
+        const bulkDiscount = calculateBulkDiscount(quantity);
 
-      // Option 2: Pure bulk discount on all tickets (if applicable for GA)
-      const pureBulkTotal =
-        ticketType === 'GA' && quantity > 1
-          ? Math.round(originalAmount * (1 - bulkDiscount))
-          : originalAmount; // VIP doesn't get bulk discount normally
-
-      // Choose the better option for the customer (lower price)
-      if (memberPlusBulkTotal <= pureBulkTotal) {
-        // Member + bulk combination is better or equal
-        finalAmount = memberPlusBulkTotal;
-        const memberPercentage = Math.round(memberDiscount * 100);
-        const bulkPercentage = Math.round(bulkDiscount * 100);
-        discountReason = `1 Member ticket (${memberPercentage}% off) + ${remainingQuantity} Bulk tickets (${bulkPercentage}% off)`;
+        if (memberDiscount >= bulkDiscount) {
+          // Member discount is better or equal - apply to all tickets
+          finalAmount = Math.round(originalAmount * (1 - memberDiscount));
+          discountReason = `6FB Member Discount (10% off - One-time use)`;
+        } else {
+          // Bulk discount is better - apply to all tickets
+          finalAmount = Math.round(originalAmount * (1 - bulkDiscount));
+          const bulkPercentage = Math.round(bulkDiscount * 100);
+          discountReason = `Bulk Discount (${quantity} tickets, ${bulkPercentage}% off)`;
+        }
       } else {
-        // Pure bulk is better (rare case, but possible with high bulk discounts)
-        finalAmount = pureBulkTotal;
-        const bulkPercentage = Math.round(bulkDiscount * 100);
-        discountReason = `Bulk Discount (${quantity} tickets, ${bulkPercentage}% off) - Better than member combo`;
+        // For VIP and VIP_ELITE: Only member discount applies (no bulk)
+        finalAmount = Math.round(originalAmount * (1 - memberDiscount));
+        discountReason = `6FB Member Discount (10% off - One-time use)`;
       }
     }
   }
@@ -158,12 +149,10 @@ export async function calculateStripePriceInCents(
 
 // Frontend-friendly version that returns prices in dollars instead of cents
 export async function calculatePricing(
-  ticketType: 'GA' | 'VIP',
+  ticketType: 'GA' | 'VIP' | 'VIP_ELITE',
   quantity: number,
   isSixFBMember: boolean,
-  memberEmail?: string,
-  promoCode: string = '',
-  isPromoValid: boolean = false
+  memberEmail?: string
 ): Promise<{
   originalPrice: number;
   finalPrice: number;
@@ -181,18 +170,8 @@ export async function calculatePricing(
     memberEmail
   );
 
-  // Handle promo codes (if valid and no member discount was applied)
-  let finalPrice = stripePricing.finalAmount / 100;
-  let discountReason = stripePricing.discountReason;
-
-  if (isPromoValid && promoCode && !stripePricing.discountReason) {
-    const promoDiscount = 0.1; // 10% promo code discount
-    const originalPrice = stripePricing.originalAmount / 100;
-    finalPrice = originalPrice * (1 - promoDiscount);
-    discountReason = `Promo Code: ${promoCode.toUpperCase()}`;
-  }
-
   const originalPrice = stripePricing.originalAmount / 100;
+  const finalPrice = stripePricing.finalAmount / 100;
   const savings = originalPrice - finalPrice;
   const discount =
     originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : 0;
@@ -201,7 +180,7 @@ export async function calculatePricing(
     originalPrice,
     finalPrice,
     discount,
-    discountReason,
+    discountReason: stripePricing.discountReason,
     savings,
     discountEligible: stripePricing.discountEligible,
     discountBlocked: stripePricing.discountBlocked,
@@ -217,7 +196,7 @@ export async function createCheckoutSession({
   cityId,
   metadata = {},
 }: {
-  ticketType: 'GA' | 'VIP';
+  ticketType: 'GA' | 'VIP' | 'VIP_ELITE';
   quantity: number;
   isSixFBMember: boolean;
   customerEmail?: string;
@@ -257,7 +236,9 @@ export async function createCheckoutSession({
 
       // Try fallback resolution from metadata if available
       if (metadata.cityName) {
-        console.log(`🔍 Attempting fallback city resolution from metadata cityName: ${metadata.cityName}`);
+        console.log(
+          `🔍 Attempting fallback city resolution from metadata cityName: ${metadata.cityName}`
+        );
         city = getCityByName(metadata.cityName);
         if (city) {
           console.log(`✅ Fallback resolution successful:`, {
@@ -267,7 +248,9 @@ export async function createCheckoutSession({
           // Update cityId for consistency
           cityId = city.id;
         } else {
-          console.warn(`❌ Fallback city resolution failed for cityName: ${metadata.cityName}`);
+          console.warn(
+            `❌ Fallback city resolution failed for cityName: ${metadata.cityName}`
+          );
         }
       }
     }
@@ -276,7 +259,9 @@ export async function createCheckoutSession({
 
     // Try to extract city from metadata as last resort
     if (metadata.cityName) {
-      console.log(`🔍 No cityId provided, attempting to resolve from metadata cityName: ${metadata.cityName}`);
+      console.log(
+        `🔍 No cityId provided, attempting to resolve from metadata cityName: ${metadata.cityName}`
+      );
       city = getCityByName(metadata.cityName);
       if (city) {
         console.log(`✅ Successfully resolved city from metadata:`, {
@@ -298,7 +283,11 @@ export async function createCheckoutSession({
     });
 
     cityPriceId =
-      ticketType === 'GA' ? city.stripe.gaPriceId : city.stripe.vipPriceId;
+      ticketType === 'GA'
+        ? city.stripe.gaPriceId
+        : ticketType === 'VIP'
+          ? city.stripe.vipPriceId
+          : city.stripe.vipElitePriceId;
 
     // For development, always use price_data to avoid price ID conflicts
     // For production, only use price IDs if they exist
@@ -331,9 +320,11 @@ export async function createCheckoutSession({
       : baseProductName;
 
   const productDescription =
-    ticketType === 'VIP'
-      ? 'Complete workshop access plus VIP dinner (end of day one) and exclusive perks'
-      : 'Complete workshop access with all core content and materials';
+    ticketType === 'VIP_ELITE'
+      ? 'Best seating, gift bag with products and workbooks, sponsor surprises, plus exclusive dinner with Bossio'
+      : ticketType === 'VIP'
+        ? 'Best seating and gift bag with products, workbooks, and sponsor surprises'
+        : 'Access to both workshop days';
 
   let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
 

@@ -30,8 +30,8 @@ export default function RefundPolicy() {
             <p className='mb-4 leading-relaxed'>
               This Refund Policy governs the terms and conditions for refunds,
               cancellations, and transfers related to the 6FB Methodologies
-              Workshop offered by Bossio Solution Inc. ("6FB," "we," "our," or
-              "us").
+              Workshop offered by Bossio Solution Inc. (&quot;6FB,&quot;
+              &quot;we,&quot; &quot;our,&quot; or &quot;us&quot;).
             </p>
             <p className='leading-relaxed'>
               By registering for our Workshop and making payment, you
@@ -127,10 +127,10 @@ export default function RefundPolicy() {
                   <p className='font-semibold mb-1'>
                     Scenario A: Early Purchase
                   </p>
-                  <p>• Workshop: Atlanta (Feb 23-24, 2026)</p>
-                  <p>• Purchase Date: Oct 15, 2025</p>
+                  <p>• Workshop: Tampa (July 19-20, 2025)</p>
+                  <p>• Purchase Date: May 10, 2025</p>
                   <p>
-                    • Refund Deadline: <strong>Nov 14, 2025</strong> (30 days
+                    • Refund Deadline: <strong>June 9, 2025</strong> (30 days
                     after purchase)
                   </p>
                   <p className='text-xs text-blue-300 mt-1'>
@@ -142,10 +142,10 @@ export default function RefundPolicy() {
                   <p className='font-semibold mb-1'>
                     Scenario B: Late Purchase
                   </p>
-                  <p>• Workshop: Dallas (Jan 25-26, 2026)</p>
-                  <p>• Purchase Date: Jan 10, 2026</p>
+                  <p>• Workshop: Tampa (July 19-20, 2025)</p>
+                  <p>• Purchase Date: July 5, 2025</p>
                   <p>
-                    • Refund Deadline: <strong>Jan 18, 2026</strong> (7 days
+                    • Refund Deadline: <strong>July 12, 2025</strong> (7 days
                     before workshop)
                   </p>
                   <p className='text-xs text-blue-300 mt-1'>
@@ -156,10 +156,10 @@ export default function RefundPolicy() {
 
                 <div className='bg-background-primary/20 p-3 rounded'>
                   <p className='font-semibold mb-1'>Scenario C: Your Example</p>
-                  <p>• Workshop: March 8-9, 2026</p>
-                  <p>• Purchase Date: Feb 12, 2026 (24 days before)</p>
+                  <p>• Workshop: Tampa (July 19-20, 2025)</p>
+                  <p>• Purchase Date: June 25, 2025 (24 days before)</p>
                   <p>
-                    • Refund Deadline: <strong>March 1, 2026</strong> (7 days
+                    • Refund Deadline: <strong>July 12, 2025</strong> (7 days
                     before workshop)
                   </p>
                   <p className='text-xs text-blue-300 mt-1'>
@@ -198,7 +198,7 @@ export default function RefundPolicy() {
                 </ul>
               </li>
               <li>
-                <strong>Confirmation:</strong> You'll receive confirmation
+                <strong>Confirmation:</strong> You&apos;ll receive confirmation
                 within 24 hours
               </li>
               <li>
@@ -252,8 +252,8 @@ export default function RefundPolicy() {
                 workshops
               </li>
               <li>
-                <strong>Price Difference:</strong> You're responsible for any
-                price increases
+                <strong>Price Difference:</strong> You&apos;re responsible for
+                any price increases
               </li>
               <li>
                 <strong>Credit Validity:</strong> Transfer credits valid for 12
@@ -409,7 +409,7 @@ export default function RefundPolicy() {
               <p className='text-sm leading-relaxed'>
                 <strong>Important:</strong> If you have an outstanding BNPL
                 payment plan, you must continue making payments until the refund
-                is fully processed, even if you've received partial refund
+                is fully processed, even if you&apos;ve received partial refund
                 confirmation from us.
               </p>
             </div>

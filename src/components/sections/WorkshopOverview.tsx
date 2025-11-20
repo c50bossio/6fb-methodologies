@@ -21,9 +21,9 @@ export function WorkshopOverview() {
     },
     {
       icon: CheckCircle,
-      title: 'Exposure to All Three Coaches',
+      title: 'Exposure to All Six Coaches',
       description:
-        'Learn directly from Dre, Nate, and Bossio - each bringing unique expertise',
+        'Learn directly from our team of 6 expert coaches - each bringing unique expertise',
     },
     {
       icon: DollarSign,
@@ -57,10 +57,10 @@ export function WorkshopOverview() {
             </Badge>
             <h2 className='heading-lg mb-6'>Why 6FB Methodologies Workshop?</h2>
             <p className='body-lg max-w-3xl mx-auto text-text-secondary'>
-              This isn't just another business workshop. It's a complete
-              transformation system that's helped thousands of barbers break
-              through their income ceiling and build sustainable, profitable
-              businesses.
+              This isn&apos;t just another business workshop. It&apos;s a
+              complete transformation system that&apos;s helped thousands of
+              barbers break through their income ceiling and build sustainable,
+              profitable businesses.
             </p>
           </motion.div>
         </div>
@@ -106,7 +106,7 @@ export function WorkshopOverview() {
         >
           <div className='text-center mb-8'>
             <h3 className='heading-md mb-4'>
-              What You'll Achieve in Just 2 Days
+              What You&apos;ll Achieve in Just 2 Days
             </h3>
             <p className='body-md text-text-secondary max-w-2xl mx-auto'>
               Every attendee leaves with concrete, actionable strategies they

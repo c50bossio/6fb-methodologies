@@ -29,7 +29,7 @@ export function SpeakerProfiles() {
         'Staff Accountability',
         'Client Retention',
       ],
-      bio: "Nate is the master of barber-level systems and grassroots marketing. He's helped thousands of barbers build consistent client flow through proven systems and marketing strategies that work at every level.",
+      bio: 'Nate is the master of barber-level systems and grassroots marketing. He&apos;s helped thousands of barbers build consistent client flow through proven systems and marketing strategies that work at every level.',
       image: '/images/nate-profile.jpg',
       accent: 'green',
     },
@@ -74,7 +74,7 @@ export function SpeakerProfiles() {
               Learn from the Best in the Business
             </h2>
             <p className='body-lg max-w-3xl mx-auto text-text-secondary'>
-              Our three expert coaches bring decades of combined experience and
+              Our six expert coaches bring decades of combined experience and
               have helped thousands of barbers transform their businesses and
               build lasting wealth.
             </p>
