@@ -79,8 +79,8 @@ export function TestimonialsSection() {
             </Badge>
             <h2 className='heading-lg mb-6'>Real Stories from Real Barbers</h2>
             <p className='body-lg max-w-3xl mx-auto text-text-secondary'>
-              Don't just take our word for it. Here's what barbers are saying
-              about the 6FB Methodologies Workshop and the results they've
+              Don&apos;t just take our word for it. Here&apos;s what barbers are saying
+              about the EWP: 6FB Methodologies Workshop and the results they&apos;ve
               achieved.
             </p>
           </motion.div>
@@ -94,7 +94,7 @@ export function TestimonialsSection() {
           viewport={{ once: true }}
           className='grid grid-cols-2 md:grid-cols-4 gap-8 mb-16'
         >
-          {stats.map((stat, index) => (
+          {stats.map((stat) => (
             <div key={stat.label} className='text-center'>
               <div className='text-3xl md:text-4xl font-bold text-tomb45-green mb-2'>
                 {stat.number}
@@ -131,7 +131,7 @@ export function TestimonialsSection() {
 
                   {/* Testimonial Content */}
                   <p className='text-text-secondary text-sm leading-relaxed mb-4'>
-                    "{testimonial.content}"
+                    &ldquo;{testimonial.content}&rdquo;
                   </p>
 
                   {/* Before/After Result */}
@@ -181,8 +181,8 @@ export function TestimonialsSection() {
                 and built lasting wealth with proven 6FB methodologies.
               </p>
               <div className='text-sm text-text-muted'>
-                "The best investment I ever made was in myself and my business
-                education."
+                &ldquo;The best investment I ever made was in myself and my business
+                education.&rdquo;
                 <span className='block mt-1 text-tomb45-green'>
                   - Every successful workshop graduate
                 </span>

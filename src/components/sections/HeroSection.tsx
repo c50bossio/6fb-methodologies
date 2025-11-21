@@ -40,7 +40,7 @@ export function HeroSection() {
           >
             <Calendar className='w-4 h-4 text-tomb45-green' />
             <span className='text-sm font-semibold text-tomb45-green'>
-              Tampa Workshop • July 19-20, 2025
+              An EWP Event • Tampa • July 19-20, 2025
             </span>
           </motion.div>
 
@@ -51,10 +51,10 @@ export function HeroSection() {
             transition={{ duration: 0.4, delay: 0.05, ease: 'easeOut' }}
             className='heading-xl mb-6 text-balance text-white drop-shadow-lg'
           >
-            Transform Your Barbering Business with
-            <span className='text-tomb45-green block mt-2'>
-              Proven <Logo size='inline' variant='inline' /> Methodologies
+            <span className='text-tomb45-green block mb-2'>
+              EWP: <Logo size='inline' variant='inline' /> Methodologies
             </span>
+            Transform Your Barbering Business with Proven Systems
           </motion.h1>
 
           {/* Subheadline */}

@@ -55,7 +55,7 @@ export function WorkshopOverview() {
             <Badge variant='success' className='mb-4'>
               Proven Methodologies
             </Badge>
-            <h2 className='heading-lg mb-6'>Why 6FB Methodologies Workshop?</h2>
+            <h2 className='heading-lg mb-6'>Why EWP: 6FB Methodologies Workshop?</h2>
             <p className='body-lg max-w-3xl mx-auto text-text-secondary'>
               This isn&apos;t just another business workshop. It&apos;s a
               complete transformation system that&apos;s helped thousands of

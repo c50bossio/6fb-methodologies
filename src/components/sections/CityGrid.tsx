@@ -33,7 +33,7 @@ export function CityGrid({ className }: CityGridProps) {
               </Badge>
               <h2 className='heading-lg mb-6'>Register for Tampa Workshop</h2>
               <p className='body-lg max-w-3xl mx-auto text-text-secondary mb-8'>
-                Experience the complete 6FB Methodologies with our team of 6 expert coaches.
+                Experience the complete EWP: 6FB Methodologies with our team of 6 expert coaches.
                 Comprehensive training with market insights and networking opportunities.
               </p>
               <div className='flex flex-wrap justify-center gap-6 text-sm text-text-muted mb-8'>
@@ -82,7 +82,7 @@ export function CityGrid({ className }: CityGridProps) {
             </Badge>
             <h2 className='heading-lg mb-6'>Register for Tampa Workshop</h2>
             <p className='body-lg max-w-3xl mx-auto text-text-secondary mb-8'>
-              Experience the complete 6FB Methodologies with our team of 6 expert coaches.
+              Experience the complete EWP: 6FB Methodologies with our team of 6 expert coaches.
               Comprehensive training with market insights and networking opportunities.
             </p>
 

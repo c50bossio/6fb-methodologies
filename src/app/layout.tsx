@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import ClientWrapper from '@/components/ClientWrapper';
+import { Toaster } from '@/components/ui/Toaster';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -13,23 +14,23 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: '6FB Methodologies Workshop - Transform Your Barber Business',
+  title: 'EWP: 6FB Methodologies Workshop - Transform Your Barber Business',
   description:
-    'Join Dre, Nate, and Bossio for an intensive 2-day workshop designed to take your barbering business to the next level. Learn proven systems, marketing strategies, and wealth-building techniques.',
+    'An Executive Workshop Program event. Join Dre, Nate, and Bossio for an intensive 2-day workshop designed to take your barbering business to the next level. Learn proven systems, marketing strategies, and wealth-building techniques.',
   keywords:
-    'barbering workshop, business growth, marketing, investing, 6 figure barber',
-  authors: [{ name: '6 Figure Barber' }],
+    'EWP, executive workshop program, barbering workshop, business growth, marketing, investing, 6 figure barber',
+  authors: [{ name: 'EWP - Executive Workshop Program' }],
   openGraph: {
-    title: '6FB Methodologies Workshop - Transform Your Barber Business',
+    title: 'EWP: 6FB Methodologies Workshop - Transform Your Barber Business',
     description:
-      'Intensive 2-day workshop with proven systems for barbering business growth',
+      'An Executive Workshop Program event - Intensive 2-day workshop with proven systems for barbering business growth',
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: '6FB Methodologies Workshop',
-    description: 'Transform your barbering business with proven methodologies',
+    title: 'EWP: 6FB Methodologies Workshop',
+    description: 'An Executive Workshop Program event - Transform your barbering business with proven methodologies',
   },
   robots: {
     index: true,
@@ -68,6 +69,7 @@ export default function RootLayout({
         <ClientWrapper>
           <div className='min-h-screen'>{children}</div>
         </ClientWrapper>
+        <Toaster />
       </body>
     </html>
   );
