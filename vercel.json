@@ -1,0 +1,105 @@
+{
+  "version": 2,
+  "alias": ["6fbmethodologies.com", "www.6fbmethodologies.com", "app.6fbmethodologies.com"],
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/webhooks/**/*.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/workbook/**/*.ts": {
+      "maxDuration": 180
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/workbook(.*)",
+      "headers": [
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(self), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://6fbmethodologies.com"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization, X-Stripe-Signature"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/socket.io/(.*)",
+      "destination": "/api/socket"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/www.6fbmethodologies.com/(.*)",
+      "destination": "https://6fbmethodologies.com/$1",
+      "permanent": true
+    }
+  ],
+  "regions": ["iad1"],
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/backup",
+      "schedule": "0 3 * * 0"
+    }
+  ]
+}

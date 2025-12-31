@@ -77,8 +77,23 @@ function validateCSRFToken(token: string, sessionId: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const response = NextResponse.next();
+  const hostname = request.headers.get('host') || '';
   const clientIP = getClientIP(request);
+
+  // Handle app subdomain routing (app.6fbmethodologies.com → /app/*)
+  const isAppSubdomain = hostname.startsWith('app.') || hostname === 'app.6fbmethodologies.com';
+
+  if (isAppSubdomain) {
+    // Rewrite to /app/* routes for the app subdomain
+    // Skip if already on /app path or if it's an API/static route
+    if (!pathname.startsWith('/app') && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/app${pathname === '/' ? '' : pathname}`;
+      return NextResponse.rewrite(url);
+    }
+  }
+
+  const response = NextResponse.next();
 
   // Block suspicious paths immediately
   if (isBlockedPath(pathname)) {
@@ -162,9 +177,15 @@ export function middleware(request: NextRequest) {
 
     // Permissions Policy (formerly Feature Policy) - Updated to remove deprecated features
     'Permissions-Policy':
-      'camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.stripe.com"), ' +
-      'accelerometer=(), autoplay=(), encrypted-media=(), fullscreen=(), gyroscope=(), ' +
-      'magnetometer=(), midi=(), sync-xhr=(), usb=(), web-share=()',
+      pathname.startsWith('/workbook') || pathname.startsWith('/api/workbook')
+        ? // Allow microphone for workbook functionality
+          'camera=(), microphone=(self), geolocation=(), payment=(self "https://checkout.stripe.com"), ' +
+          'accelerometer=(), autoplay=(), encrypted-media=(), fullscreen=(), gyroscope=(), ' +
+          'magnetometer=(), midi=(), sync-xhr=(), usb=(), web-share=()'
+        : // Block microphone for all other routes
+          'camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.stripe.com"), ' +
+          'accelerometer=(), autoplay=(), encrypted-media=(), fullscreen=(), gyroscope=(), ' +
+          'magnetometer=(), midi=(), sync-xhr=(), usb=(), web-share=()',
 
     // Cross-Origin policies (relaxed for workbook API)
     'Cross-Origin-Opener-Policy': pathname.startsWith('/api/workbook')
@@ -196,12 +217,13 @@ export function middleware(request: NextRequest) {
       const csrfToken = request.headers.get('x-csrf-token');
       const sessionId = request.headers.get('x-session-id') || clientIP;
 
-      // Skip CSRF for webhooks, payment endpoints, and test endpoints (they use signature verification or are for testing)
+      // Skip CSRF for webhooks, payment endpoints, workbook APIs, and test endpoints (they use signature verification or are for testing)
       const skipCSRF =
         pathname.includes('/webhooks/') ||
         pathname.includes('/test-email') ||
         pathname.includes('/verify-member') ||
         pathname.includes('/create-checkout-session') ||
+        pathname.includes('/api/workbook/') ||
         (process.env.NODE_ENV === 'development' && pathname.includes('/api/'));
 
       if (!skipCSRF) {
