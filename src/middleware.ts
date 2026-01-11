@@ -77,21 +77,7 @@ function validateCSRFToken(token: string, sessionId: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hostname = request.headers.get('host') || '';
   const clientIP = getClientIP(request);
-
-  // Handle app subdomain routing (app.6fbmethodologies.com → /app/*)
-  const isAppSubdomain = hostname.startsWith('app.') || hostname === 'app.6fbmethodologies.com';
-
-  if (isAppSubdomain) {
-    // Rewrite to /app/* routes for the app subdomain
-    // Skip if already on /app path or if it's an API/static route
-    if (!pathname.startsWith('/app') && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/app${pathname === '/' ? '' : pathname}`;
-      return NextResponse.rewrite(url);
-    }
-  }
 
   const response = NextResponse.next();
 
