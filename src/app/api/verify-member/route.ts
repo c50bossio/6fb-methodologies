@@ -12,6 +12,10 @@ const fallbackMembers = new Set([
   'bossio@6fb.com',
   'test@6fb.com',
   'member@6fb.com',
+  // Test accounts for signin flow testing
+  'new6fbmember@test.com',
+  'member-no-pw@test.com',
+  'c50bossio@gmail.com',
 ]);
 
 const fallbackMemberData: Record<
@@ -42,6 +46,22 @@ const fallbackMemberData: Record<
     name: 'Demo Member',
     membershipType: 'Basic',
     joinDate: '2024-03-20',
+  },
+  // Test accounts for signin flow testing
+  'new6fbmember@test.com': {
+    name: 'New 6FB Member',
+    membershipType: 'Pro',
+    joinDate: '2026-01-11',
+  },
+  'member-no-pw@test.com': {
+    name: 'Member No Password',
+    membershipType: 'Pro',
+    joinDate: '2026-01-11',
+  },
+  'c50bossio@gmail.com': {
+    name: 'Carlos Bossio',
+    membershipType: 'Founder',
+    joinDate: '2020-01-01',
   },
 };
 
