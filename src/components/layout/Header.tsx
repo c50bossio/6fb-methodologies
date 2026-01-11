@@ -22,14 +22,10 @@ export function Header() {
   };
 
   const navItems = [
-    { label: 'Home', action: scrollToTop },
     { label: 'Bossio Standard', action: () => scrollToSection('bossio-standard') },
-    { label: 'The Book', action: () => scrollToSection('book') },
-    { label: 'Mentorship', action: () => scrollToSection('mentorship') },
-    { label: 'Skool', action: () => scrollToSection('skool') },
-    { label: 'Free School', action: () => scrollToSection('free-school') },
     { label: 'Apps', action: () => scrollToSection('apps') },
     { label: 'Pricing', action: () => scrollToSection('pricing') },
+    { label: 'Community', action: () => scrollToSection('community') },
   ];
 
   return (
