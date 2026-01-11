@@ -11,7 +11,7 @@ export function CommunityCards() {
       title: 'The Book',
       description:
         "Discover the complete framework for building a six-figure barbershop business in Chris Bossio's comprehensive guide. The blueprint that started it all.",
-      href: '#mentorship',
+      href: 'https://www.amazon.com/Bossio-Standard-Structure-Before-Scale-ebook/dp/B0G4KM4X85/ref=sr_1_1?crid=3H0NZ6UIV3CKK&dib=eyJ2IjoiMSJ9.Rn86EAZ-MQGL1LJoHLNFqA.aLY3yR-Hy_mK7mFs1NN1PUSA5Q_e4wj-CK70eqiPIYM&dib_tag=se&keywords=the+bossio+standard&qid=1768136785&sprefix=the+bossio+%2Caps%2C167&sr=8-1',
       ctaText: 'Get the Book',
     },
     {
@@ -19,7 +19,7 @@ export function CommunityCards() {
       title: 'Skool Community',
       description:
         'Connect with thousands of barbers in our private Skool community. Share wins, get support, ask questions, and grow together.',
-      href: '#skool',
+      href: 'https://www.skool.com/tomb45',
       ctaText: 'Join Community',
     },
     {
@@ -27,7 +27,7 @@ export function CommunityCards() {
       title: 'The Free School',
       description:
         'Access free educational resources, tutorials, and training to start your journey to six figures. No credit card required.',
-      href: '#free-school',
+      href: 'https://www.skool.com/tomb45',
       ctaText: 'Access Free Resources',
     },
   ];

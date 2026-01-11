@@ -81,6 +81,8 @@ export function OfferingCard({
         <Link
           href={href}
           className='inline-flex items-center gap-2 text-green-500 hover:text-green-400 font-medium transition-colors'
+          target={href.startsWith('http') ? '_blank' : undefined}
+          rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
         >
           {ctaText}
           <ArrowRight className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
