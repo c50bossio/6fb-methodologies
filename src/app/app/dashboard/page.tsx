@@ -52,9 +52,15 @@ export default function DashboardPage() {
 
   const checkAuth = async () => {
     try {
+      // Get JWT token from sessionStorage
+      const token = sessionStorage.getItem('auth_token');
+
       // Get user info from backend (includes access flags)
       const response = await fetch('https://app.6fbmentorship.com/api/auth/me', {
         credentials: 'include',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
       });
 
       if (!response.ok) {
