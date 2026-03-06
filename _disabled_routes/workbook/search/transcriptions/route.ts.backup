@@ -1,0 +1,261 @@
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  extractToken,
+  verifyToken,
+  validateSession,
+  hasPermission,
+  WORKBOOK_PERMISSIONS,
+  WORKBOOK_SECURITY_HEADERS,
+} from '@/lib/workbook-auth';
+import db, { ValidationError } from '@/lib/database';
+
+/**
+ * Advanced transcription search API with full-text search and vector indexing
+ * Supports semantic search, keyword matching, and content filtering
+ */
+
+interface SearchFilters {
+  userId?: string;
+  sessionId?: string;
+  recordingId?: string;
+  language?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  minDuration?: number;
+  maxDuration?: number;
+  keyTopics?: string[];
+  provider?: string;
+  minConfidence?: number;
+  status?: string;
+}
+
+interface SearchResult {
+  id: string;
+  text: string;
+  summary: string;
+  confidence_score: number;
+  language: string;
+  key_topics: string[];
+  word_count: number;
+  duration: number;
+  cost_cents: number;
+  created_at: string;
+  session_id?: string;
+  recording_id?: string;
+  relevance_score: number;
+  highlight_snippets: string[];
+  metadata: any;
+}
+
+// GET /api/workbook/search/transcriptions - Search transcriptions
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await authenticateRequest(request);
+    if ('error' in auth) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: auth.status, headers: WORKBOOK_SECURITY_HEADERS }
+      );
+    }
+
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') || '';
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
+    const offset = (page - 1) * limit;
+
+    // Parse filters
+    const filters: SearchFilters = {
+      userId: auth.session.userId, // Always filter by user unless admin
+      sessionId: url.searchParams.get('session_id') || undefined,
+      recordingId: url.searchParams.get('recording_id') || undefined,
+      language: url.searchParams.get('language') || undefined,
+      provider: url.searchParams.get('provider') || undefined,
+      status: url.searchParams.get('status') || 'completed',
+      minConfidence: url.searchParams.get('min_confidence')
+        ? parseFloat(url.searchParams.get('min_confidence')!)
+        : undefined,
+      minDuration: url.searchParams.get('min_duration')
+        ? parseInt(url.searchParams.get('min_duration')!)
+        : undefined,
+      maxDuration: url.searchParams.get('max_duration')
+        ? parseInt(url.searchParams.get('max_duration')!)
+        : undefined,
+    };
+
+    if (url.searchParams.get('start_date') && url.searchParams.get('end_date')) {
+      filters.dateRange = {
+        start: url.searchParams.get('start_date')!,
+        end: url.searchParams.get('end_date')!,
+      };
+    }
+
+    if (url.searchParams.get('topics')) {
+      filters.keyTopics = url.searchParams.get('topics')!.split(',');
+    }
+
+    // Admin can search across all users
+    if (hasPermission(auth.session, WORKBOOK_PERMISSIONS.ADMIN_ACCESS)) {
+      filters.userId = url.searchParams.get('user_id') || filters.userId;
+    }
+
+    const searchResults = await searchTranscriptions(query, filters, limit, offset);
+
+    return NextResponse.json(
+      {
+        results: searchResults.results,
+        pagination: {
+          page,
+          limit,
+          total: searchResults.total,
+          pages: Math.ceil(searchResults.total / limit),
+        },
+        search_metadata: {
+          query,
+          filters,
+          execution_time_ms: searchResults.executionTime,
+          result_count: searchResults.results.length,
+        },
+      },
+      { headers: WORKBOOK_SECURITY_HEADERS }
+    );
+  } catch (error) {
+    console.error('Transcription search API error:', error);
+
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400, headers: WORKBOOK_SECURITY_HEADERS }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Search service temporarily unavailable' },
+      { status: 500, headers: WORKBOOK_SECURITY_HEADERS }
+    );
+  }
+}
+
+// POST /api/workbook/search/transcriptions - Advanced search with semantic matching
+export async function POST(request: NextRequest) {
+  try {
+    const auth = await authenticateRequest(request);
+    if ('error' in auth) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: auth.status, headers: WORKBOOK_SECURITY_HEADERS }
+      );
+    }
+
+    const {
+      query,
+      semantic_search = false,
+      filters = {},
+      aggregations = [],
+      sort_by = 'relevance',
+      sort_order = 'desc',
+      page = 1,
+      limit = 20,
+    } = await request.json();
+
+    if (!query && Object.keys(filters).length === 0) {
+      throw new ValidationError('Query or filters are required');
+    }
+
+    const searchFilters: SearchFilters = {
+      ...filters,
+      userId: auth.session.userId, // Always enforce user filtering
+    };
+
+    // Admin can search across all users
+    if (hasPermission(auth.session, WORKBOOK_PERMISSIONS.ADMIN_ACCESS)) {
+      searchFilters.userId = filters.userId || searchFilters.userId;
+    }
+
+    const offset = (page - 1) * Math.min(limit, 100);
+
+    let searchResults;
+    if (semantic_search) {
+      searchResults = await semanticSearchTranscriptions(
+        query,
+        searchFilters,
+        limit,
+        offset,
+        sort_by,
+        sort_order
+      );
+    } else {
+      searchResults = await searchTranscriptions(
+        query,
+        searchFilters,
+        limit,
+        offset,
+        sort_by,
+        sort_order
+      );
+    }
+
+    let aggregationResults = {};
+    if (aggregations.length > 0) {
+      aggregationResults = await getSearchAggregations(
+        query,
+        searchFilters,
+        aggregations
+      );
+    }
+
+    return NextResponse.json(
+      {
+        results: searchResults.results,
+        aggregations: aggregationResults,
+        pagination: {
+          page,
+          limit,
+          total: searchResults.total,
+          pages: Math.ceil(searchResults.total / limit),
+        },
+        search_metadata: {
+          query,
+          semantic_search,
+          filters: searchFilters,
+          sort_by,
+          sort_order,
+          execution_time_ms: searchResults.executionTime,
+          result_count: searchResults.results.length,
+        },
+      },
+      { headers: WORKBOOK_SECURITY_HEADERS }
+    );
+  } catch (error) {
+    console.error('Advanced transcription search API error:', error);
+
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400, headers: WORKBOOK_SECURITY_HEADERS }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Advanced search service temporarily unavailable' },
+      { status: 500, headers: WORKBOOK_SECURITY_HEADERS }
+    );
+  }
+}
+
+/**
+ * Full-text search with PostgreSQL tsvector
+ */
+async function searchTranscriptions(
+  query: string,
+  filters: SearchFilters,
+  limit: number,
+  offset: number,
+  sortBy: string = 'relevance',
+  sortOrder: string = 'desc'
+): Promise<{ results: SearchResult[]; total: number; executionTime: number }> {
+  const startTime = performance.now();
+
+  let whereConditions = ['status = $1'];\n  let queryParams: any[] = [filters.status || 'completed'];\n  let paramIndex = 2;\n\n  // User filtering\n  if (filters.userId) {\n    whereConditions.push(`user_id = $${paramIndex}`);\n    queryParams.push(filters.userId);\n    paramIndex++;\n  }\n\n  // Text search\n  if (query) {\n    whereConditions.push(`search_vector @@ plainto_tsquery('english', $${paramIndex})`);\n    queryParams.push(query);\n    paramIndex++;\n  }\n\n  // Session filtering\n  if (filters.sessionId) {\n    whereConditions.push(`session_id = $${paramIndex}`);\n    queryParams.push(filters.sessionId);\n    paramIndex++;\n  }\n\n  // Recording filtering\n  if (filters.recordingId) {\n    whereConditions.push(`recording_id = $${paramIndex}`);\n    queryParams.push(filters.recordingId);\n    paramIndex++;\n  }\n\n  // Language filtering\n  if (filters.language) {\n    whereConditions.push(`language = $${paramIndex}`);\n    queryParams.push(filters.language);\n    paramIndex++;\n  }\n\n  // Provider filtering\n  if (filters.provider) {\n    whereConditions.push(`provider = $${paramIndex}`);\n    queryParams.push(filters.provider);\n    paramIndex++;\n  }\n\n  // Confidence filtering\n  if (filters.minConfidence !== undefined) {\n    whereConditions.push(`confidence_score >= $${paramIndex}`);\n    queryParams.push(filters.minConfidence);\n    paramIndex++;\n  }\n\n  // Duration filtering (from metadata)\n  if (filters.minDuration !== undefined) {\n    whereConditions.push(`(metadata->>'openaiResponse'->>'totalDuration')::float >= $${paramIndex}`);\n    queryParams.push(filters.minDuration);\n    paramIndex++;\n  }\n\n  if (filters.maxDuration !== undefined) {\n    whereConditions.push(`(metadata->>'openaiResponse'->>'totalDuration')::float <= $${paramIndex}`);\n    queryParams.push(filters.maxDuration);\n    paramIndex++;\n  }\n\n  // Date range filtering\n  if (filters.dateRange) {\n    whereConditions.push(\n      `created_at >= $${paramIndex} AND created_at <= $${paramIndex + 1}`\n    );\n    queryParams.push(filters.dateRange.start, filters.dateRange.end);\n    paramIndex += 2;\n  }\n\n  // Key topics filtering\n  if (filters.keyTopics && filters.keyTopics.length > 0) {\n    whereConditions.push(`key_topics && $${paramIndex}`);\n    queryParams.push(filters.keyTopics);\n    paramIndex++;\n  }\n\n  const whereClause = whereConditions.join(' AND ');\n\n  // Build ORDER BY clause\n  let orderClause = '';\n  if (query && sortBy === 'relevance') {\n    orderClause = `ORDER BY ts_rank(search_vector, plainto_tsquery('english', $${paramIndex})) ${sortOrder.toUpperCase()}`;\n    queryParams.push(query);\n    paramIndex++;\n  } else {\n    const validSortFields = {\n      created_at: 'created_at',\n      word_count: 'word_count',\n      confidence: 'confidence_score',\n      duration: \"(metadata->>'openaiResponse'->>'totalDuration')::float\",\n      cost: 'cost_cents',\n    };\n\n    const sortField = validSortFields[sortBy as keyof typeof validSortFields] || 'created_at';\n    orderClause = `ORDER BY ${sortField} ${sortOrder.toUpperCase()}`;\n  }\n\n  // Main search query with highlights\n  const searchQuery = `\n    SELECT\n      id, text, summary, confidence_score, language, key_topics,\n      word_count, character_count, cost_cents, created_at, completed_at,\n      session_id, recording_id, metadata,\n      ${query\n        ? `ts_rank(search_vector, plainto_tsquery('english', $${paramIndex})) as relevance_score,\n           ts_headline('english', text, plainto_tsquery('english', $${paramIndex}),\n             'StartSel=<mark>, StopSel=</mark>, MaxWords=50, MinWords=20') as highlight`\n        : '0 as relevance_score, substr(text, 1, 200) as highlight'\n      }\n    FROM transcriptions\n    WHERE ${whereClause}\n    ${orderClause}\n    LIMIT $${paramIndex + 1} OFFSET $${paramIndex + 2}\n  `;\n\n  if (query) {\n    queryParams.push(query, query); // For ts_rank and ts_headline\n  }\n  queryParams.push(limit, offset);\n\n  // Count query\n  const countQuery = `\n    SELECT COUNT(*) as total\n    FROM transcriptions\n    WHERE ${whereClause}\n  `;\n\n  const countParams = queryParams.slice(0, query ? paramIndex - 2 : paramIndex);\n\n  const [searchResults, countResults] = await Promise.all([\n    db.query(searchQuery, queryParams),\n    db.query(countQuery, countParams),\n  ]);\n\n  const results: SearchResult[] = searchResults.map((row: any) => ({\n    id: row.id,\n    text: row.text,\n    summary: row.summary || '',\n    confidence_score: row.confidence_score || 0,\n    language: row.language,\n    key_topics: row.key_topics || [],\n    word_count: row.word_count || 0,\n    duration: row.metadata?.openaiResponse?.totalDuration || 0,\n    cost_cents: row.cost_cents || 0,\n    created_at: row.created_at,\n    session_id: row.session_id,\n    recording_id: row.recording_id,\n    relevance_score: row.relevance_score || 0,\n    highlight_snippets: row.highlight ? [row.highlight] : [],\n    metadata: row.metadata,\n  }));\n\n  const executionTime = performance.now() - startTime;\n\n  return {\n    results,\n    total: parseInt(countResults[0]?.total || '0'),\n    executionTime,\n  };\n}\n\n/**\n * Semantic search using vector similarity (placeholder implementation)\n * In production, this would use vector embeddings\n */\nasync function semanticSearchTranscriptions(\n  query: string,\n  filters: SearchFilters,\n  limit: number,\n  offset: number,\n  sortBy: string = 'relevance',\n  sortOrder: string = 'desc'\n): Promise<{ results: SearchResult[]; total: number; executionTime: number }> {\n  // For now, fall back to regular full-text search\n  // In production, implement with vector embeddings using pgvector or similar\n  console.log('Semantic search requested - falling back to full-text search');\n  return searchTranscriptions(query, filters, limit, offset, sortBy, sortOrder);\n}\n\n/**\n * Get search aggregations for analytics\n */\nasync function getSearchAggregations(\n  query: string,\n  filters: SearchFilters,\n  aggregations: string[]\n): Promise<any> {\n  const results: any = {};\n\n  for (const agg of aggregations) {\n    switch (agg) {\n      case 'language_counts':\n        results.language_counts = await db.query(`\n          SELECT language, COUNT(*) as count\n          FROM transcriptions\n          WHERE user_id = $1 AND status = 'completed'\n          GROUP BY language\n          ORDER BY count DESC\n        `, [filters.userId]);\n        break;\n\n      case 'provider_counts':\n        results.provider_counts = await db.query(`\n          SELECT provider, COUNT(*) as count\n          FROM transcriptions\n          WHERE user_id = $1 AND status = 'completed'\n          GROUP BY provider\n          ORDER BY count DESC\n        `, [filters.userId]);\n        break;\n\n      case 'monthly_usage':\n        results.monthly_usage = await db.query(`\n          SELECT\n            DATE_TRUNC('month', created_at) as month,\n            COUNT(*) as transcription_count,\n            SUM(cost_cents) as total_cost,\n            SUM(word_count) as total_words\n          FROM transcriptions\n          WHERE user_id = $1 AND status = 'completed'\n          AND created_at >= NOW() - INTERVAL '12 months'\n          GROUP BY DATE_TRUNC('month', created_at)\n          ORDER BY month DESC\n        `, [filters.userId]);\n        break;\n\n      case 'top_topics':\n        results.top_topics = await db.query(`\n          SELECT\n            unnest(key_topics) as topic,\n            COUNT(*) as frequency\n          FROM transcriptions\n          WHERE user_id = $1 AND status = 'completed'\n          AND key_topics IS NOT NULL AND array_length(key_topics, 1) > 0\n          GROUP BY topic\n          ORDER BY frequency DESC\n          LIMIT 20\n        `, [filters.userId]);\n        break;\n    }\n  }\n\n  return results;\n}\n\nasync function authenticateRequest(request: NextRequest) {\n  const token = extractToken(request);\n  if (!token) {\n    return { error: 'Authentication token required', status: 401 };\n  }\n\n  const session = verifyToken(token);\n  const validation = validateSession(session);\n\n  if (!validation.isValid) {\n    return { error: validation.error || 'Invalid session', status: 401 };\n  }\n\n  return { session: session! };\n}\n\nexport async function OPTIONS(request: NextRequest) {\n  return new NextResponse(null, {\n    status: 200,\n    headers: {\n      ...WORKBOOK_SECURITY_HEADERS,\n      'Access-Control-Allow-Origin':\n        process.env.NODE_ENV === 'development'\n          ? '*'\n          : 'https://6fbmethodologies.com',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, Authorization',\n      'Access-Control-Allow-Credentials': 'true',\n    },\n  });\n}
