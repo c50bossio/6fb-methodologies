@@ -102,7 +102,7 @@ export default function VerifyMembershipPage() {
                   type="email"
                   placeholder="your@email.com"
                   value={email}
-                  onChange={setEmail}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
                 />

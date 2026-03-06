@@ -146,7 +146,7 @@ function SignupForm() {
             label="Email Address"
             type="email"
             value={email}
-            onChange={setEmail}
+            onChange={(e) => setEmail(e.target.value)}
             disabled={true} // Email is pre-filled from verification
             helperText="Email verified from previous step"
           />
@@ -156,7 +156,7 @@ function SignupForm() {
             type="text"
             placeholder="John Doe"
             value={name}
-            onChange={setName}
+            onChange={(e) => setName(e.target.value)}
             required
             disabled={isLoading}
           />
@@ -167,10 +167,9 @@ function SignupForm() {
               type={showPassword ? 'text' : 'password'}
               placeholder="At least 8 characters"
               value={password}
-              onChange={setPassword}
+              onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
-              validate={validatePassword}
             />
             <button
               type="button"
@@ -186,7 +185,7 @@ function SignupForm() {
             type={showPassword ? 'text' : 'password'}
             placeholder="Re-enter your password"
             value={confirmPassword}
-            onChange={setConfirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             required
             disabled={isLoading}
           />

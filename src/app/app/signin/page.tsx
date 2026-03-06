@@ -307,7 +307,7 @@ export default function SignInPage() {
                   placeholder="you@example.com"
                   required
                   value={email}
-                  onChange={setEmail}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 />
               </div>
@@ -352,7 +352,7 @@ export default function SignInPage() {
                     placeholder="Enter your password"
                     required
                     value={password}
-                    onChange={setPassword}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 pr-10"
                   />
                   <button
@@ -413,7 +413,7 @@ export default function SignInPage() {
                     placeholder="At least 8 characters"
                     required
                     value={password}
-                    onChange={setPassword}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 pr-10"
                   />
                   <button
@@ -437,7 +437,7 @@ export default function SignInPage() {
                     placeholder="Re-enter your password"
                     required
                     value={confirmPassword}
-                    onChange={setConfirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 pr-10"
                   />
                   <button

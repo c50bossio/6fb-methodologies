@@ -113,7 +113,7 @@ export default function SubscribePage() {
                 type="text"
                 placeholder="John Doe"
                 value={name}
-                onChange={setName}
+                onChange={(e) => setName(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -123,7 +123,7 @@ export default function SubscribePage() {
                 type="email"
                 placeholder="your@email.com"
                 value={email}
-                onChange={setEmail}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />

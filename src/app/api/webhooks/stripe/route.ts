@@ -306,8 +306,7 @@ class StripeWebhookProcessor {
       const quantity = parseInt(session.metadata?.quantity || '1')
       const customerEmail = session.customer_details?.email || 'unknown@email.com'
       const totalAmount = session.amount_total || 0
-      const customerName = session.metadata?.customerName || session.customer_details?.name
-
+      const customerName = session.metadata?.customerName || session.customer_details?.name || "Guest"
       // Calculate remaining tickets using real inventory system
       const cityId = session.metadata?.cityId || 'unknown-city'
       const { gaRemaining, vipRemaining } = await this.getRemainingTicketCounts(cityId)
@@ -548,10 +547,8 @@ class StripeWebhookProcessor {
       // Send SMS alert to team
       if (process.env.TEAM_ALERT_PHONE) {
         try {
-          await smsService.sendSMS(
-            process.env.TEAM_ALERT_PHONE,
-            `🎯 6FB Workshop Alert: ${cityId} ${tier.toUpperCase()} down to ${remainingSpots} spots!`
-          )
+          await smsService.sendSystemAlert(
+            `🎯 6FB Workshop Alert: ${cityId} ${tier.toUpperCase()} down to ${remainingSpots} spots!`, 'high')
         } catch (smsError) {
           console.error('Failed to send inventory SMS alert:', smsError)
         }
