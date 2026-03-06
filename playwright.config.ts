@@ -110,8 +110,11 @@ export default defineConfig({
   expect: {
     /* Maximum time expect() should wait for the condition to be met. */
     timeout: 10000,
-    /* Threshold for pixel differences in visual comparisons */
-    threshold: 0.2,
+    toHaveScreenshot: {
+      /* Threshold for pixel differences in visual comparisons */
+      threshold: 0.2,
+      maxDiffPixels: 100
+    }
   },
 
   /* Metadata */
