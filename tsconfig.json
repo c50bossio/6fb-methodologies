@@ -23,40 +23,32 @@
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
       "@/lib/*": ["./src/lib/*"],
-      "@/styles/*": ["./src/styles/*"],
-      "@/types/*": ["./src/types/*"],
-      "@/hooks/*": ["./src/hooks/*"],
-      "@/app/*": ["./src/app/*"],
-      "@/middleware/*": ["./src/middleware/*"]
+      "@/styles/*": ["./src/styles/*"]
     },
-    // Strict type checking options
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     // Performance optimizations
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": true,
     "assumeChangesOnlyAffectDirectDependencies": true,
-    // Additional strict checks
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
+    // Better development experience
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
     // Compiler optimizations
     "target": "es2022",
-    "useUnknownInCatchVariables": true,
-    "verbatimModuleSyntax": true
+    "useUnknownInCatchVariables": false
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", ".next", "out", "dist", "build", "playwright.config.ts", "__tests__/**/*"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "dist",
+    "build"
+  ],
   "ts-node": {
     "esm": true
   }

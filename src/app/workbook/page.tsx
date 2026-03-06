@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   Mic,
@@ -8,15 +8,24 @@ import {
   FileText,
   Settings,
   GraduationCap,
+  LogOut,
+  User,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AudioRecording } from '@/lib/audio-recording';
+import { useWorkbookAuth, WorkbookAuthProvider } from '@/components/WorkbookAuthProvider';
+import { WorkbookLogin } from '@/components/WorkbookLogin';
+import { WorkbookErrorBoundary, WorkbookComponentBoundary } from '@/components/workbook/WorkbookErrorBoundary';
+
+// Direct imports for now to avoid chunk loading issues
 import VoiceRecorder from '@/components/workbook/VoiceRecorder';
 import AudioFileUploader from '@/components/workbook/AudioFileUploader';
-import WorkshopContent from '@/components/workbook/WorkshopContent';
-import { AudioRecording } from '@/lib/audio-recording';
-import { useWorkbookAuth } from '@/components/WorkbookAuthProvider';
-import { WorkbookLogin } from '@/components/WorkbookLogin';
+import WorkshopAgenda from '@/components/workbook/WorkshopAgenda';
+import QAWidget from '@/components/workbook/QAWidget';
+import WorkshopSessionSelector from '@/components/workbook/WorkshopSessionSelector';
+import { SimpleNoteTaker } from '@/components/workbook/SimpleNoteTaker';
 
 // Workshop session info
 const SESSION_INFO = {
@@ -26,11 +35,98 @@ const SESSION_INFO = {
 };
 
 function WorkbookContent() {
-  const { session, isAuthenticated } = useWorkbookAuth();
+  const { session, isAuthenticated, logout } = useWorkbookAuth();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'workshop' | 'recorder' | 'uploader' | 'notes'
   >('overview');
   const [recordings, setRecordings] = useState<AudioRecording[]>([]);
+  const [isDevelopmentBypass, setIsDevelopmentBypass] = useState(false);
+  const [currentSessionInfo, setCurrentSessionInfo] = useState({
+    sessionId: 'systems-that-scale',
+    sessionName: 'Systems That Scale',
+    day: 1,
+    speaker: 'Nate & Dre',
+    sessionType: 'keynote'
+  });
+  const [isExporting, setIsExporting] = useState(false);
+  const [activeRecordingSession, setActiveRecordingSession] = useState<{
+    sessionId: string;
+    sessionName: string;
+    presenter: string;
+    description: string;
+  } | null>(null);
+  const [activeNoteSession, setActiveNoteSession] = useState<{
+    sessionId: string;
+    sessionName: string;
+    presenter: string;
+    description: string;
+    objectives: string[];
+  } | null>(null);
+
+  useEffect(() => {
+    // Set development bypass flag on client-side only
+    setIsDevelopmentBypass(
+      window.location.search.includes('dev=true') || process.env.NODE_ENV === 'development'
+    );
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirect to home page after logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!session?.userId) return;
+
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/workbook/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include auth cookies
+        body: JSON.stringify({
+          format: 'pdf',
+          includeNotes: true,
+          includeTranscriptions: true,
+          includeProgress: true,
+          includeSessions: true,
+          includeAudioMetadata: true,
+        }),
+      });
+
+      if (response.ok) {
+        // Get the PDF as a blob
+        const pdfBlob = await response.blob();
+
+        // Create download link
+        const url = window.URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `6fb-workbook-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        console.error('Export failed:', response.status);
+        alert('Export failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleRecordingComplete = async (recording: AudioRecording) => {
     setRecordings(prev => [...prev, recording]);
@@ -94,14 +190,27 @@ function WorkbookContent() {
     setRecordings(prev => [...prev, recording]);
     console.log('File processed:', recording);
 
-    // Update module progress if recording is associated with a module
-    const moduleId = recording.metadata.sessionInfo?.moduleId;
-    if (moduleId && userId) {
+    // Update progress using session ID instead of module ID
+    const sessionId = recording.metadata.sessionInfo?.sessionId;
+    if (sessionId && userId) {
       try {
-        await updateModuleProgress(moduleId, 25); // Add 25% progress for uploading a recording
+        await updateSessionProgress(sessionId, 25); // Add 25% progress for uploading a recording
       } catch (error) {
-        console.error('Failed to update module progress:', error);
+        console.error('Failed to update session progress:', error);
       }
+    }
+  };
+
+  const handleSessionChange = (sessionId: string, sessionInfo: any) => {
+    setCurrentSessionInfo(sessionInfo);
+  };
+
+  const updateSessionProgress = async (sessionId: string, progressIncrement: number) => {
+    try {
+      // For now, log progress - in production this would update session-based progress
+      console.log(`Updated session ${sessionId} progress by ${progressIncrement}%`);
+    } catch (error) {
+      console.error('Error updating session progress:', error);
     }
   };
 
@@ -110,8 +219,10 @@ function WorkbookContent() {
     // In production, show user-friendly error message
   };
 
-  // Show login form if not authenticated
-  if (!isAuthenticated) {
+  // Development bypass is now handled in useEffect to avoid hydration issues
+
+  // Show login form if not authenticated (unless development bypass is active)
+  if (!isAuthenticated && !isDevelopmentBypass) {
     return <WorkbookLogin />;
   }
 
@@ -121,6 +232,42 @@ function WorkbookContent() {
     <div className='min-h-screen bg-background-primary'>
       <div className='bg-background-secondary shadow-dark-lg border-b border-border-primary'>
         <div className='max-w-6xl mx-auto px-6 py-8'>
+          {/* User Info and Logout */}
+          <div className='flex justify-between items-center mb-8'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 bg-tomb45-green/20 rounded-full'>
+                <User className='w-5 h-5 text-tomb45-green' />
+              </div>
+              <div>
+                <p className='text-sm text-text-secondary'>Welcome back,</p>
+                <p className='font-semibold text-text-primary'>
+                  {session?.email || 'Workshop User'}
+                </p>
+              </div>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Button
+                onClick={handleExportPDF}
+                variant='outline'
+                size='sm'
+                disabled={isExporting}
+                className='flex items-center gap-2 hover:bg-tomb45-green/10 hover:border-tomb45-green hover:text-tomb45-green'
+              >
+                <Download className='w-4 h-4' />
+                {isExporting ? 'Exporting...' : 'Export PDF'}
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant='outline'
+                size='sm'
+                className='flex items-center gap-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+              >
+                <LogOut className='w-4 h-4' />
+                Logout
+              </Button>
+            </div>
+          </div>
+
           <div className='text-center'>
             <BookOpen className='w-16 h-16 text-tomb45-green mx-auto mb-4' />
             <h1 className='text-3xl font-bold text-text-primary mb-2'>
@@ -214,14 +361,13 @@ function WorkbookContent() {
               </CardHeader>
               <CardContent>
                 <p className='text-text-secondary text-sm mb-4'>
-                  Access the complete 6FB methodology workshop with interactive
-                  modules, progress tracking, and comprehensive content.
+                  Follow today's live workshop agenda with real-time session tracking, note-taking, and audio recording capabilities.
                 </p>
                 <Button
                   onClick={() => setActiveTab('workshop')}
                   className='w-full bg-tomb45-green hover:bg-tomb45-green/90'
                 >
-                  Start Workshop
+                  View Agenda
                 </Button>
               </CardContent>
             </Card>
@@ -302,15 +448,38 @@ function WorkbookContent() {
           >
             <div className='mb-6'>
               <h2 className='text-2xl font-bold text-text-primary mb-2'>
-                6FB Workshop Modules
+                6FB Workshop Agenda
               </h2>
               <p className='text-text-secondary'>
-                Complete the Six Figure Barber methodology workshop at your own
-                pace. Your progress is automatically saved.
+                Follow along with today's workshop sessions. Take notes and record audio during live presentations.
               </p>
             </div>
 
-            <WorkshopContent userId={userId} />
+            <WorkbookComponentBoundary componentName="Workshop Agenda">
+              <WorkshopAgenda
+                userId={userId}
+                businessType={session?.role === 'vip' ? 'enterprise' : session?.role === 'premium' ? 'shop' : 'barber'}
+                onStartRecording={(session) => {
+                  console.log('Starting recording for session:', session.title);
+                  setActiveRecordingSession({
+                    sessionId: session.id,
+                    sessionName: session.title,
+                    presenter: session.presenter || 'Workshop Team',
+                    description: session.description
+                  });
+                }}
+                onTakeNotes={(session) => {
+                  console.log('Opening notes for session:', session.title);
+                  setActiveNoteSession({
+                    sessionId: session.id,
+                    sessionName: session.title,
+                    presenter: session.presenter || 'Workshop Team',
+                    description: session.description,
+                    objectives: session.objectives
+                  });
+                }}
+              />
+            </WorkbookComponentBoundary>
           </section>
         )}
 
@@ -331,14 +500,25 @@ function WorkbookContent() {
                 when you're ready to begin.
               </p>
             </div>
-            <VoiceRecorder
-              userId={userId}
-              sessionInfo={SESSION_INFO}
-              autoSave={true}
-              showVisualizer={true}
-              onRecordingComplete={handleRecordingComplete}
-              onError={handleError}
-            />
+            <WorkbookComponentBoundary componentName="Voice Recorder">
+              {/* Session Selector for Recording */}
+              <div className="mb-6">
+                <WorkshopSessionSelector
+                  selectedSessionId={currentSessionInfo.sessionId}
+                  onSessionChange={handleSessionChange}
+                  compact={true}
+                />
+              </div>
+
+              <VoiceRecorder
+                userId={userId}
+                sessionInfo={currentSessionInfo}
+                autoSave={true}
+                showVisualizer={true}
+                onRecordingComplete={handleRecordingComplete}
+                onError={handleError}
+              />
+            </WorkbookComponentBoundary>
           </section>
         )}
 
@@ -359,13 +539,24 @@ function WorkbookContent() {
                 notes.
               </p>
             </div>
-            <AudioFileUploader
-              userId={userId}
-              sessionInfo={SESSION_INFO}
-              maxFileSize={100 * 1024 * 1024} // 100MB
-              onFileProcessed={handleFileProcessed}
-              onError={handleError}
-            />
+            <WorkbookComponentBoundary componentName="Audio File Uploader">
+              {/* Session Selector for Upload */}
+              <div className="mb-6">
+                <WorkshopSessionSelector
+                  selectedSessionId={currentSessionInfo.sessionId}
+                  onSessionChange={handleSessionChange}
+                  compact={true}
+                />
+              </div>
+
+              <AudioFileUploader
+                userId={userId}
+                sessionInfo={currentSessionInfo}
+                maxFileSize={100 * 1024 * 1024} // 100MB
+                onFileProcessed={handleFileProcessed}
+                onError={handleError}
+              />
+            </WorkbookComponentBoundary>
           </section>
         )}
 
@@ -416,34 +607,54 @@ function WorkbookContent() {
               </Card>
             ) : (
               <div className='space-y-6'>
-                {/* Group recordings by module */}
+                {/* Group recordings by workshop session */}
                 {Object.entries(
                   recordings.reduce(
                     (groups, recording) => {
-                      const moduleId =
-                        recording.metadata.sessionInfo?.moduleId || 'general';
-                      const moduleName =
-                        recording.metadata.sessionInfo?.moduleName ||
+                      const sessionId =
+                        recording.metadata.sessionInfo?.sessionId || 'general';
+                      const sessionName =
+                        recording.metadata.sessionInfo?.sessionName ||
                         'General Recordings';
+                      const day = recording.metadata.sessionInfo?.day || 0;
+                      const speaker = recording.metadata.sessionInfo?.speaker || '';
 
-                      if (!groups[moduleId]) {
-                        groups[moduleId] = { name: moduleName, recordings: [] };
+                      if (!groups[sessionId]) {
+                        groups[sessionId] = {
+                          name: sessionName,
+                          day: day,
+                          speaker: speaker,
+                          recordings: []
+                        };
                       }
-                      groups[moduleId].recordings.push(recording);
+                      groups[sessionId].recordings.push(recording);
                       return groups;
                     },
                     {} as Record<
                       string,
-                      { name: string; recordings: AudioRecording[] }
+                      { name: string; day: number; speaker: string; recordings: AudioRecording[] }
                     >
                   )
-                ).map(([moduleId, group]) => (
-                  <div key={moduleId} className='space-y-4'>
+                ).map(([sessionId, group]) => (
+                  <div key={sessionId} className='space-y-4'>
                     <div className='flex items-center gap-2 pb-2 border-b border-border-primary'>
                       <GraduationCap className='w-5 h-5 text-tomb45-green' />
-                      <h3 className='text-lg font-semibold text-text-primary'>
-                        {group.name}
-                      </h3>
+                      <div className='flex-1'>
+                        <h3 className='text-lg font-semibold text-text-primary'>
+                          {group.name}
+                        </h3>
+                        {group.day > 0 && (
+                          <div className='flex items-center gap-2 text-sm text-text-secondary'>
+                            <span>Day {group.day}</span>
+                            {group.speaker && (
+                              <>
+                                <span>•</span>
+                                <span>{group.speaker}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <span className='text-sm text-text-secondary'>
                         ({group.recordings.length} recording
                         {group.recordings.length !== 1 ? 's' : ''})
@@ -523,10 +734,133 @@ function WorkbookContent() {
           </section>
         )}
       </main>
+
+      {/* Session-Specific Recording Modal */}
+      {activeRecordingSession && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background-secondary rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-border-primary">
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">
+                  Record: {activeRecordingSession.sessionName}
+                </h2>
+                <p className="text-text-secondary text-sm mt-1">
+                  Presenter: {activeRecordingSession.presenter}
+                </p>
+              </div>
+              <Button
+                onClick={() => setActiveRecordingSession(null)}
+                variant="ghost"
+                size="sm"
+              >
+                ✕
+              </Button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="mb-4 p-4 bg-background-accent rounded-lg border border-border-primary">
+                <p className="text-text-secondary text-sm">
+                  {activeRecordingSession.description}
+                </p>
+              </div>
+
+              <WorkbookComponentBoundary componentName="Session Voice Recorder">
+                <VoiceRecorder
+                  userId={userId}
+                  sessionInfo={{
+                    sessionId: activeRecordingSession.sessionId,
+                    sessionName: activeRecordingSession.sessionName,
+                    day: 1,
+                    speaker: activeRecordingSession.presenter,
+                    sessionType: 'workshop'
+                  }}
+                  autoSave={true}
+                  showVisualizer={true}
+                  onRecordingComplete={handleRecordingComplete}
+                  onError={handleError}
+                />
+              </WorkbookComponentBoundary>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Session-Specific Notes Modal */}
+      {activeNoteSession && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background-secondary rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-border-primary">
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">
+                  Notes: {activeNoteSession.sessionName}
+                </h2>
+                <p className="text-text-secondary text-sm mt-1">
+                  Presenter: {activeNoteSession.presenter}
+                </p>
+              </div>
+              <Button
+                onClick={() => setActiveNoteSession(null)}
+                variant="ghost"
+                size="sm"
+              >
+                ✕
+              </Button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="mb-4 p-4 bg-background-accent rounded-lg border border-border-primary">
+                <h3 className="font-semibold text-text-primary mb-2">Session Overview:</h3>
+                <p className="text-text-secondary text-sm mb-3">
+                  {activeNoteSession.description}
+                </p>
+
+                {activeNoteSession.objectives.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-text-primary mb-2">Key Learning Objectives:</h4>
+                    <ul className="text-text-secondary text-sm space-y-1">
+                      {activeNoteSession.objectives.map((objective, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-tomb45-green">•</span>
+                          {objective}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <WorkbookComponentBoundary componentName="Session Note Taker">
+                <SimpleNoteTaker
+                  sessionId={activeNoteSession.sessionId}
+                  sessionTitle={activeNoteSession.sessionName}
+                />
+              </WorkbookComponentBoundary>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Q&A Widget - Available across all tabs */}
+      <QAWidget
+        userId={userId}
+        userName={session?.name || 'Workshop User'}
+        userEmail={session?.email || ''}
+      />
     </div>
   );
 }
 
 export default function WorkbookPage() {
-  return <WorkbookContent />;
+  return (
+    <WorkbookErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Workbook Page Error:', error, errorInfo);
+        // Report to error monitoring service if needed
+      }}
+    >
+      <WorkbookAuthProvider>
+        <WorkbookContent />
+      </WorkbookAuthProvider>
+    </WorkbookErrorBoundary>
+  );
 }

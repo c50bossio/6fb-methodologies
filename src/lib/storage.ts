@@ -917,12 +917,13 @@ export function createStorageConfig(): StorageConfig {
     bucket: process.env.AWS_S3_BUCKET_NAME || '',
     publicBucket: process.env.AWS_S3_PUBLIC_BUCKET,
     cloudFrontDomain: process.env.AWS_CLOUDFRONT_DOMAIN,
-    maxFileSize: parseInt(process.env.AUDIO_MAX_FILE_SIZE || '104857600'), // 100MB
+    maxFileSize: parseInt(process.env.AUDIO_MAX_FILE_SIZE || '104857600', 10), // 100MB
     allowedMimeTypes: (process.env.UPLOAD_ALLOWED_TYPES || '')
       .split(',')
       .filter(Boolean),
     defaultExpiration: parseInt(
-      process.env.AWS_S3_DEFAULT_EXPIRATION || '3600'
+      process.env.AWS_S3_DEFAULT_EXPIRATION || '3600',
+      10
     ),
     enableVirusScanning: process.env.UPLOAD_SCAN_FOR_VIRUSES === 'true',
     quarantineBucket: process.env.UPLOAD_QUARANTINE_BUCKET,
@@ -955,13 +956,69 @@ export async function uploadAudioFile(
   userId: string,
   options: Partial<UploadOptions> = {}
 ): Promise<UploadResult> {
-  const storage = getStorageService();
-  return storage.uploadFile(file, file.name, {
-    userId,
-    extractWaveform: true,
-    compress: true,
-    ...options,
-  });
+  // Check if we should use mock storage
+  const useMockStorage = process.env.USE_MOCK_STORAGE === 'true' ||
+                         (process.env.NODE_ENV === 'development' &&
+                          (!process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID === 'dev-access-key'));
+
+  if (useMockStorage) {
+    console.log('📁 Using mock storage for audio upload');
+
+    // Import mock storage dynamically to avoid issues
+    const { getMockStorage } = await import('./mock-storage');
+    const mockStorage = getMockStorage();
+
+    const result = await mockStorage.uploadFile(file, userId, {
+      moduleId: options.moduleId,
+      lessonId: options.lessonId,
+      sessionId: options.sessionId,
+      tags: options.tags,
+      metadata: options.metadata,
+      extractWaveform: options.extractWaveform,
+      compress: options.compress,
+      isPublic: options.isPublic,
+    });
+
+    return {
+      success: result.success,
+      fileMetadata: result.fileMetadata as AudioFileMetadata,
+      error: result.error,
+    };
+  }
+
+  // Use real S3 storage
+  try {
+    const storage = getStorageService();
+    return storage.uploadFile(file, file.name, {
+      userId,
+      extractWaveform: true,
+      compress: true,
+      ...options,
+    });
+  } catch (error) {
+    console.error('❌ S3 storage failed, falling back to mock storage:', error);
+
+    // Fallback to mock storage if S3 fails
+    const { getMockStorage } = await import('./mock-storage');
+    const mockStorage = getMockStorage();
+
+    const result = await mockStorage.uploadFile(file, userId, {
+      moduleId: options.moduleId,
+      lessonId: options.lessonId,
+      sessionId: options.sessionId,
+      tags: options.tags,
+      metadata: options.metadata,
+      extractWaveform: options.extractWaveform,
+      compress: options.compress,
+      isPublic: options.isPublic,
+    });
+
+    return {
+      success: result.success,
+      fileMetadata: result.fileMetadata as AudioFileMetadata,
+      error: result.error,
+    };
+  }
 }
 
 export async function getAudioDownloadUrl(

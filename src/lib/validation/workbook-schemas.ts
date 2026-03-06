@@ -4,6 +4,31 @@
 import { z } from 'zod';
 
 // ==============================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// ==============================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+// Limits key length and value types to prevent validation bypass
+export const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+).default({});
+
+// Bounded details schema for error responses (optional variant)
+export const BoundedDetailsSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+).optional();
+
+// ==============================================================
 // CORE DATA TYPE SCHEMAS
 // ==============================================================
 
@@ -332,7 +357,7 @@ export const ContentItemSchema = z.object({
   description: z.string().optional(),
   url: z.string().url('Invalid content URL').optional(),
   content: z.string().optional(),
-  metadata: z.record(z.any()).default({}),
+  metadata: BoundedMetadataSchema,
   moduleId: z.string().uuid().optional(),
   lessonId: z.string().optional(),
   tags: z.array(z.string()).default([]),
@@ -447,7 +472,7 @@ export const WorkbookErrorResponseSchema = z.object({
   success: z.literal(false),
   error: z.string().min(1, 'Error message is required'),
   code: z.string().optional(),
-  details: z.record(z.any()).optional(),
+  details: BoundedDetailsSchema,
   timestamp: z.number().int().positive(),
 });
 

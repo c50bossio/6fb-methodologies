@@ -1,0 +1,172 @@
+{
+  "timestamp": "2025-09-20T13:54:07.113Z",
+  "overall": {
+    "passed": 17,
+    "failed": 0,
+    "warnings": 0,
+    "warning": null
+  },
+  "tests": [
+    {
+      "status": "PASSED",
+      "test": "Inventory API - dallas-jan-2026",
+      "message": "Correct initial counts: GA=35, VIP=15",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.246Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Validation API - dallas-jan-2026",
+      "message": "GA validation works correctly",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.268Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Inventory API - atlanta-feb-2026",
+      "message": "Correct initial counts: GA=35, VIP=15",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.386Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Validation API - atlanta-feb-2026",
+      "message": "GA validation works correctly",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.400Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Inventory API - vegas-mar-2026",
+      "message": "Correct initial counts: GA=35, VIP=15",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.517Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Validation API - vegas-mar-2026",
+      "message": "GA validation works correctly",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.530Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Inventory API - nyc-apr-2026",
+      "message": "Correct initial counts: GA=35, VIP=15",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.646Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Validation API - nyc-apr-2026",
+      "message": "GA validation works correctly",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.661Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Inventory API - chicago-may-2026",
+      "message": "Correct initial counts: GA=35, VIP=15",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.778Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Validation API - chicago-may-2026",
+      "message": "GA validation works correctly",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.793Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Inventory API - sf-jun-2026",
+      "message": "Correct initial counts: GA=35, VIP=15",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.909Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Validation API - sf-jun-2026",
+      "message": "GA validation works correctly",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:07.923Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Frontend Display",
+      "message": "Homepage loads with city information",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:09.965Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Payment Integration",
+      "message": "Stripe not detected in HTML",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:09.966Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Race Condition Setup",
+      "message": "Initial GA count: 35",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:09.988Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Concurrent Validation",
+      "message": "All concurrent validations succeeded",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.026Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Race Condition Safety",
+      "message": "Inventory unchanged after concurrent validations",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.043Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Pricing Integration",
+      "message": "Pricing page missing expected elements",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.448Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Registration Integration",
+      "message": "Registration page missing quantity controls",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.617Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Admin Expansion",
+      "message": "Admin functions require authentication - simulating test",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.617Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Admin Security",
+      "message": "Admin endpoints accessible without auth",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.649Z"
+    },
+    {
+      "status": "PASSED",
+      "test": "Invalid City Handling",
+      "message": "Invalid city properly rejected",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.669Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Malformed Request Handling",
+      "message": "Malformed requests not properly handled",
+      "details": null,
+      "timestamp": "2025-09-20T13:54:10.681Z"
+    }
+  ]
+}

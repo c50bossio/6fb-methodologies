@@ -11,6 +11,33 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// Bounded answer schema for assessment responses (replaces z.any())
+const BoundedAnswerSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.array(z.string().max(1000)).max(100),
+  z.null(),
+]);
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -516,7 +543,7 @@ export const ModuleProgressSchema = z.object({
   unlockedAt: TimestampSchema.optional(),
   expiresAt: TimestampSchema.optional(),
   accessCount: z.number().min(0),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   tags: z.array(z.string()),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
@@ -555,7 +582,7 @@ export const LessonProgressSchema = z.object({
   unlockedAt: TimestampSchema.optional(),
   sessionCount: z.number().min(0),
   averageSessionLength: z.number().min(0),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -591,7 +618,7 @@ export const AssessmentProgressSchema = z.object({
   responses: z.array(
     z.object({
       questionId: z.string(),
-      answer: z.any(),
+      answer: BoundedAnswerSchema,
       isCorrect: z.boolean().optional(),
       pointsEarned: z.number().min(0),
       timeSpent: z.number().min(0),
@@ -601,7 +628,7 @@ export const AssessmentProgressSchema = z.object({
   feedback: z.string().optional(),
   allowReview: z.boolean(),
   reviewedAt: TimestampSchema.optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -617,7 +644,7 @@ export const ActivityRecordSchema = z.object({
   noteId: UUIDSchema.optional(),
   audioId: UUIDSchema.optional(),
   sessionId: UUIDSchema.optional(),
-  details: z.record(z.any()),
+  details: BoundedMetadataSchema,
   duration: z.number().min(0).optional(),
   result: z.string().optional(),
   timestamp: TimestampSchema,
@@ -636,7 +663,7 @@ export const ActivityRecordSchema = z.object({
       city: z.string().optional(),
     })
     .optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
 });
 
 // Input schemas for API operations

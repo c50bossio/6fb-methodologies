@@ -9,28 +9,11 @@ yarn-error.log*
 .next/trace.json
 out/
 
-# Environment files - ALL variants (API key protection)
-.env
-.env.*
-!.env.example
-!.env.*.example
-
-# Specific environment protection
+# Environment files
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.development
-.env.production
-.env.staging
-
-# API Key files
-**/api-keys.*
-**/*-credentials.*
-**/*-secrets.*
-**/*.key
-**/*.pem
-.secrets/
 
 # TypeScript
 tsconfig.tsbuildinfo
@@ -78,11 +61,6 @@ deployment-manifest.json
 performance-metrics.json
 performance-report-*.json
 
-# Member data (contains sensitive emails)
-data/
-data/*.csv
-data/*.json
-
 # OS generated files
 .Thumbs.db
 .DS_Store
@@ -93,3 +71,6 @@ data/*.json
 ehthumbs.db
 Desktop.ini
 .vercel
+.env*.local
+*.env*
+!.env.example

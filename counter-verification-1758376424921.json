@@ -1,0 +1,102 @@
+{
+  "timestamp": "2025-09-20T13:53:44.274Z",
+  "overall": {
+    "passed": 0,
+    "failed": 9,
+    "warnings": 0,
+    "warning": null
+  },
+  "tests": [
+    {
+      "status": "FAILED",
+      "test": "Inventory API - dallas-jan-2026",
+      "message": "Network error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.286Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Inventory API - atlanta-feb-2026",
+      "message": "Network error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.390Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Inventory API - vegas-mar-2026",
+      "message": "Network error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.493Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Inventory API - nyc-apr-2026",
+      "message": "Network error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.596Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Inventory API - chicago-may-2026",
+      "message": "Network error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.700Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Inventory API - sf-jun-2026",
+      "message": "Network error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.805Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Frontend Display",
+      "message": "Homepage error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.909Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Race Condition Test",
+      "message": "Error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.912Z"
+    },
+    {
+      "status": "FAILED",
+      "test": "Counter Integration",
+      "message": "Error: Error",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.916Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Admin Expansion",
+      "message": "Admin functions require authentication - simulating test",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.916Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Admin Endpoints",
+      "message": "Unexpected response: undefined",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.918Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Invalid City Handling",
+      "message": "Invalid city not properly handled",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.919Z"
+    },
+    {
+      "status": "WARNING",
+      "test": "Malformed Request Handling",
+      "message": "Malformed requests not properly handled",
+      "details": null,
+      "timestamp": "2025-09-20T13:53:44.921Z"
+    }
+  ]
+}

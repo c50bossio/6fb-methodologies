@@ -124,6 +124,15 @@ export default function AppAccessPage() {
           </Card>
         </div>
 
+        {/* View All Pricing Options */}
+        <div className="text-center mb-8">
+          <Link href="/app/pricing">
+            <Button size="lg" variant="outline" className="border-tomb45-green text-tomb45-green hover:bg-tomb45-green hover:text-black">
+              View All Pricing Options
+            </Button>
+          </Link>
+        </div>
+
         {/* Already have account */}
         <div className="text-center">
           <p className="text-text-muted mb-2">Already have an account?</p>

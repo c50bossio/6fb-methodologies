@@ -47,8 +47,10 @@ export async function GET(request: NextRequest) {
     if (action === 'list') {
       // List all members (limited for performance)
       const allMembers = getAllCSVMembers();
-      const limit = parseInt(url.searchParams.get('limit') || '50');
-      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const rawLimit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const rawOffset = parseInt(url.searchParams.get('offset') || '0', 10);
+      const limit = isNaN(rawLimit) || rawLimit < 1 ? 50 : Math.min(rawLimit, 500);
+      const offset = isNaN(rawOffset) || rawOffset < 0 ? 0 : rawOffset;
 
       const paginatedMembers = allMembers
         .slice(offset, offset + limit)

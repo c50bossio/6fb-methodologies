@@ -11,6 +11,34 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// Bounded WebRTC media constraints schema (for audio/video config)
+const BoundedMediaConstraintsSchema = z.record(
+  z.string().max(100),
+  z.union([
+    z.string().max(1000),
+    z.number(),
+    z.boolean(),
+  ])
+);
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -976,7 +1004,7 @@ export const SessionParticipantSchema = z.object({
     speakingTime: z.number().min(0),
   }),
   breakoutRoomId: UUIDSchema.optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   invitedAt: TimestampSchema,
   joinedAt: TimestampSchema.optional(),
   updatedAt: TimestampSchema,
@@ -1239,8 +1267,8 @@ export const LiveSessionSchema = z.object({
       })
     ),
     mediaConstraints: z.object({
-      audio: z.union([z.boolean(), z.record(z.any())]),
-      video: z.union([z.boolean(), z.record(z.any())]),
+      audio: z.union([z.boolean(), BoundedMediaConstraintsSchema]),
+      video: z.union([z.boolean(), BoundedMediaConstraintsSchema]),
     }),
     bandwidth: z.object({
       audio: z.number().min(0),
@@ -1286,7 +1314,7 @@ export const LiveSessionSchema = z.object({
   embedCode: z.string().optional(),
   isPublic: z.boolean(),
   publicJoinEnabled: z.boolean(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   tags: z.array(z.string()),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,

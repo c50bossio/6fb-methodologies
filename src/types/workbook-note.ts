@@ -11,6 +11,30 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// Bounded attrs schema for rich text nodes (optional variant)
+const BoundedAttrsSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+).optional();
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -868,13 +892,13 @@ export const ExportFormatSchema = z.enum([
 // Rich text schemas
 export const RichTextMarkSchema = z.object({
   type: z.string(),
-  attrs: z.record(z.any()).optional(),
+  attrs: BoundedAttrsSchema,
 });
 
 export const RichTextNodeSchema: z.ZodType<RichTextNode> = z.lazy(() =>
   z.object({
     type: z.string(),
-    attrs: z.record(z.any()).optional(),
+    attrs: BoundedAttrsSchema,
     content: z.array(RichTextNodeSchema).optional(),
     text: z.string().optional(),
     marks: z.array(RichTextMarkSchema).optional(),
@@ -898,7 +922,7 @@ export const NoteTagSchema = z.object({
   usageCount: z.number().min(0),
   lastUsed: TimestampSchema.optional(),
   parentTagId: UUIDSchema.optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -919,7 +943,7 @@ export const NoteCategorySchema = z.object({
   }),
   noteCount: z.number().min(0),
   lastUsed: TimestampSchema.optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -955,7 +979,7 @@ export const NoteLinkSchema = z.object({
       length: z.number().optional(),
     })
     .optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -1108,7 +1132,7 @@ export const WorkbookNoteSchema = z.object({
   wordCount: z.number().min(0),
   characterCount: z.number().min(0),
   tags: z.array(z.string()),
-  customFields: z.record(z.any()),
+  customFields: BoundedMetadataSchema,
   links: z.array(NoteLinkSchema),
   collaborators: z.array(NoteCollaboratorSchema),
   version: z.number().min(1),
@@ -1159,7 +1183,7 @@ export const WorkbookNoteSchema = z.object({
       filename: z.string(),
       fileSize: z.number().min(0),
       mimeType: z.string(),
-      metadata: z.record(z.any()),
+      metadata: BoundedMetadataSchema,
       uploadedAt: TimestampSchema,
     })
   ),
@@ -1180,7 +1204,7 @@ export const WorkbookNoteSchema = z.object({
       keyId: z.string().optional(),
     })
     .optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   lastViewedAt: TimestampSchema.optional(),

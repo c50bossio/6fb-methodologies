@@ -110,3 +110,30 @@ export async function getSubscriptionInfo(): Promise<{
 
   return response.json();
 }
+
+/**
+ * Create an app purchase (one-time payment)
+ */
+export async function createAppPurchase(
+  appType: 'calculator' | 'productivity' | 'bundle',
+  email: string,
+  name?: string
+): Promise<{
+  checkoutUrl: string;
+  sessionId: string;
+  customerId?: string;
+  message?: string;
+}> {
+  const response = await fetch(`${COMMAND_CENTER_API_URL}/api/auth/purchase-app`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appType, email, name }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Purchase failed');
+  }
+
+  return response.json();
+}

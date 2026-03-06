@@ -3,6 +3,24 @@
 
 import { z } from 'zod';
 
+// ==============================================================
+// BOUNDED DETAILS SCHEMA (Security: Replaces z.any())
+// ==============================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded details schema for error/security responses
+const BoundedDetailsSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+).optional();
+
 // Login request validation schema
 export const LoginRequestSchema = z.object({
   email: z
@@ -88,7 +106,7 @@ export const ErrorResponseSchema = z.object({
   error: z.string().min(1, 'Error message is required'),
   message: z.string().optional(),
   code: z.string().optional(),
-  details: z.record(z.any()).optional(),
+  details: BoundedDetailsSchema,
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
@@ -107,7 +125,7 @@ export const SecurityEventSchema = z.object({
   ip: z.string().min(1, 'IP address is required'),
   userAgent: z.string().optional(),
   timestamp: z.number().int().positive('Invalid timestamp'),
-  details: z.record(z.any()).optional(),
+  details: BoundedDetailsSchema,
 });
 
 export type SecurityEvent = z.infer<typeof SecurityEventSchema>;

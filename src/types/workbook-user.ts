@@ -11,6 +11,24 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -429,7 +447,7 @@ export const WorkbookUserSchema = z.object({
   lastActivityAt: TimestampSchema.optional(),
   loginCount: z.number().min(0),
   preferences: UserPreferencesSchema,
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   tags: z.array(z.string()),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,

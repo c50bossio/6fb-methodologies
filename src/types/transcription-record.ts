@@ -11,6 +11,24 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -863,7 +881,7 @@ export const TranscriptionRecordSchema = z.object({
   quality: TranscriptionQualitySchema,
   searchIndexId: UUIDSchema.optional(),
   isIndexed: z.boolean(),
-  rawResponse: z.record(z.any()),
+  rawResponse: BoundedMetadataSchema,
   processing: z.object({
     startedAt: TimestampSchema,
     completedAt: TimestampSchema.optional(),
@@ -879,7 +897,7 @@ export const TranscriptionRecordSchema = z.object({
   shareExpiry: TimestampSchema.optional(),
   viewCount: z.number().min(0),
   downloadCount: z.number().min(0),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   deletedAt: TimestampSchema.optional(),

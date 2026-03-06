@@ -887,7 +887,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     };
 
     /**
-     * Upload complete recording with chunked upload
+     * Upload complete recording as single file
      */
     const uploadRecording = async (
       recording: AudioRecording
@@ -901,7 +901,6 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         // Combine all chunks into a single blob
         const combinedBlob = await recorder.combineChunks(recording);
         const totalSize = combinedBlob.size;
-        const totalChunks = Math.ceil(totalSize / CHUNK_UPLOAD_SIZE);
 
         setUploadProgress({
           status: 'uploading',
@@ -909,100 +908,41 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           uploadedBytes: 0,
           totalBytes: totalSize,
           chunkIndex: 0,
-          totalChunks,
+          totalChunks: 1,
         });
 
-        // Upload in chunks
-        const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        let uploadedBytes = 0;
+        // Create form data for single file upload
+        const formData = new FormData();
+        formData.append('audio', new File([combinedBlob], `recording_${recording.id}.webm`, { type: 'audio/webm' }));
+        formData.append('title', recordingMetadata.title || `Recording ${new Date().toISOString()}`);
+        formData.append('description', recordingMetadata.description || '');
+        formData.append('moduleId', recordingMetadata.moduleId || '');
+        formData.append('lessonId', recordingMetadata.lessonId || '');
+        formData.append('sessionId', recordingMetadata.sessionId || '');
+        formData.append('tags', JSON.stringify(recordingMetadata.tags));
+        formData.append('isPublic', recordingMetadata.isPrivate ? 'false' : 'true');
 
-        for (let i = 0; i < totalChunks; i++) {
-          if (signal.aborted) throw new Error('Upload aborted');
-
-          const start = i * CHUNK_UPLOAD_SIZE;
-          const end = Math.min(start + CHUNK_UPLOAD_SIZE, totalSize);
-          const chunk = combinedBlob.slice(start, end);
-
-          const formData = new FormData();
-          formData.append('file', chunk);
-          formData.append('uploadId', uploadId);
-          formData.append('chunkIndex', i.toString());
-          formData.append('totalChunks', totalChunks.toString());
-          formData.append('originalName', `recording_${recording.id}.webm`);
-          formData.append(
-            'metadata',
-            JSON.stringify({
-              ...recordingMetadata,
-              recordingId: recording.id,
-              duration: recording.totalDuration,
-              quality: recording.metadata.quality,
-            })
-          );
-
-          const response = await fetch('/api/workbook/audio/upload', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-            signal,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Upload chunk ${i + 1} failed`);
-          }
-
-          uploadedBytes += chunk.size;
-          const progress = (uploadedBytes / totalSize) * 100;
-
-          setUploadProgress({
-            status: 'uploading',
-            progress,
-            uploadedBytes,
-            totalBytes: totalSize,
-            chunkIndex: i,
-            totalChunks,
-          });
-
-          onUploadProgress?.({
-            status: 'uploading',
-            progress,
-            uploadedBytes,
-            totalBytes: totalSize,
-            chunkIndex: i,
-            totalChunks,
-          });
-        }
-
-        // Complete upload
-        const completeResponse = await fetch('/api/workbook/audio', {
+        const response = await fetch('/api/workbook/audio/upload', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          body: formData,
           credentials: 'include',
-          body: JSON.stringify({
-            uploadId,
-            metadata: {
-              ...recordingMetadata,
-              recordingId: recording.id,
-              duration: recording.totalDuration,
-              quality: recording.metadata.quality,
-            },
-          }),
+          signal,
         });
 
-        if (!completeResponse.ok) {
-          throw new Error('Failed to complete upload');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Upload failed with status ${response.status}`);
         }
 
-        const result = await completeResponse.json();
+        const result = await response.json();
 
         setUploadProgress({
           status: 'completed',
           progress: 100,
           uploadedBytes: totalSize,
           totalBytes: totalSize,
-          chunkIndex: totalChunks - 1,
-          totalChunks,
+          chunkIndex: 0,
+          totalChunks: 1,
         });
 
         onUploadProgress?.({
@@ -1010,11 +950,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           progress: 100,
           uploadedBytes: totalSize,
           totalBytes: totalSize,
-          chunkIndex: totalChunks - 1,
-          totalChunks,
+          chunkIndex: 0,
+          totalChunks: 1,
         });
 
-        return result.data?.id || null;
+        return result.recording?.id || null;
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : 'Upload failed';
@@ -1029,75 +969,143 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     };
 
     /**
-     * Transcribe recording using backend API
+     * Transcribe recording using enhanced backend API
      */
     const handleTranscribeRecording = async (recording: AudioRecording) => {
       if (!userId || !autoTranscribe) return;
 
       try {
+        setTranscriptionResult({
+          id: '',
+          text: '',
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        // Create FormData for file upload
+        const combinedBlob = await recorder.combineChunks(recording);
+        const formData = new FormData();
+        formData.append('audio', new File([combinedBlob], `recording_${recording.id}.webm`, { type: 'audio/webm' }));
+        formData.append('recordingId', recording.id);
+        formData.append('sessionId', sessionInfo?.sessionId || '');
+        formData.append('language', 'en');
+        formData.append('model', 'whisper-1');
+        formData.append('responseFormat', 'verbose_json');
+        formData.append('enableChunking', 'true');
+        formData.append('chunkSizeMinutes', '5');
+        formData.append('priority', 'normal');
+
+        if (recordingMetadata.title) {
+          formData.append('prompt', `This is a recording titled: ${recordingMetadata.title}`);
+        }
+
         // Start transcription
         const response = await fetch('/api/workbook/audio/transcribe', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          body: formData,
           credentials: 'include',
-          body: JSON.stringify({
-            recordingId: recording.id,
-            language: 'en',
-            model: 'whisper-1',
-          }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to start transcription');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to start transcription');
         }
 
         const result = await response.json();
-        const transcriptionId = result.data?.id;
 
-        if (transcriptionId) {
-          // Poll for transcription completion
-          const pollTranscription = async (): Promise<void> => {
-            try {
-              const statusResponse = await fetch(
-                `/api/workbook/audio/transcription/${transcriptionId}`,
-                {
-                  credentials: 'include',
-                }
-              );
+        if (result.success && result.transcription) {
+          const transcription = result.transcription;
 
-              if (statusResponse.ok) {
-                const statusResult = await statusResponse.json();
-                const transcription = statusResult.data;
+          setTranscriptionResult({
+            id: transcription.id,
+            text: transcription.text || '',
+            status: transcription.status,
+            confidence: transcription.confidence_score,
+            language: transcription.language,
+            segments: transcription.segments,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
 
-                setTranscriptionResult(transcription);
-
-                if (transcription.status === 'completed') {
-                  onTranscriptionComplete?.(transcription);
-                } else if (transcription.status === 'failed') {
-                  onError?.(
-                    transcription.error || 'Transcription failed',
-                    'transcription'
-                  );
-                } else if (transcription.status === 'processing') {
-                  // Continue polling
-                  setTimeout(pollTranscription, 2000);
-                }
-              }
-            } catch (error) {
-              console.error('Transcription polling error:', error);
-            }
-          };
-
-          // Start polling
-          setTimeout(pollTranscription, 1000);
+          if (transcription.status === 'completed') {
+            onTranscriptionComplete?.(transcription);
+          } else if (transcription.status === 'pending') {
+            // Start polling for completion
+            pollTranscriptionStatus(transcription.id);
+          }
         }
       } catch (error) {
-        const errorMsg =
-          error instanceof Error ? error.message : 'Transcription failed';
+        const errorMsg = error instanceof Error ? error.message : 'Transcription failed';
+        setTranscriptionResult(prev => prev ? {
+          ...prev,
+          status: 'failed',
+          error: errorMsg,
+        } : null);
         onError?.(errorMsg, 'transcription');
       }
+    };
+
+    /**
+     * Poll transcription status until completion
+     */
+    const pollTranscriptionStatus = async (transcriptionId: string) => {
+      const pollInterval = 2000; // 2 seconds
+      const maxPolls = 300; // 10 minutes max
+      let pollCount = 0;
+
+      const poll = async (): Promise<void> => {
+        if (pollCount >= maxPolls) {
+          console.warn('Transcription polling timed out');
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `/api/workbook/audio/transcribe?id=${transcriptionId}`,
+            { credentials: 'include' }
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            const transcription = result.transcription;
+
+            setTranscriptionResult({
+              id: transcription.id,
+              text: transcription.text || '',
+              status: transcription.status,
+              confidence: transcription.confidence_score,
+              language: transcription.language,
+              segments: transcription.segments,
+              error: transcription.error_message,
+              createdAt: transcription.created_at,
+              updatedAt: transcription.updated_at,
+            });
+
+            if (transcription.status === 'completed') {
+              onTranscriptionComplete?.(transcription);
+            } else if (transcription.status === 'failed') {
+              onError?.(
+                transcription.error_message || 'Transcription failed',
+                'transcription'
+              );
+            } else if (transcription.status === 'processing' || transcription.status === 'pending') {
+              // Continue polling
+              pollCount++;
+              setTimeout(poll, pollInterval);
+            }
+          }
+        } catch (error) {
+          console.error('Transcription polling error:', error);
+          pollCount++;
+          if (pollCount < maxPolls) {
+            setTimeout(poll, pollInterval);
+          }
+        }
+      };
+
+      // Start polling
+      setTimeout(poll, 1000);
     };
 
     /**
@@ -1220,10 +1228,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     };
 
     const handleChunkAvailable = (chunk: AudioChunk) => {
-      // Auto-upload chunks if enabled
-      if (autoSave && userId) {
-        uploadChunk(chunk);
-      }
+      // Note: Individual chunk upload disabled - we upload the complete recording instead
+      console.log('Audio chunk received:', chunk.size, 'bytes');
     };
 
     // Attach event listeners
@@ -1278,14 +1284,18 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       setError(null);
       await recorder.initialize();
 
-      // Enhance session info with module data
-      const enhancedSessionInfo = {
+      // Validate and enhance session info with defaults and module data
+      const validatedSessionInfo = {
+        day: sessionInfo?.day || 1,
+        session: sessionInfo?.session || 'Audio Recording Session',
+        speaker: sessionInfo?.speaker,
+        sessionId: sessionInfo?.sessionId,
         ...sessionInfo,
         moduleId: selectedModuleId,
         moduleName: WORKSHOP_MODULES.find(m => m.id === selectedModuleId)?.name,
       };
 
-      await recorder.startRecording(enhancedSessionInfo);
+      await recorder.startRecording(validatedSessionInfo);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to start recording';

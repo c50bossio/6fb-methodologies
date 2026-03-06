@@ -1,39 +1,27 @@
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { EcosystemHero } from '@/components/sections/ecosystem/EcosystemHero';
-import { BossioStandardCards } from '@/components/sections/ecosystem/BossioStandardCards';
-import { AppsGrid } from '@/components/sections/ecosystem/AppsGrid';
-import { PricingCards } from '@/components/sections/ecosystem/PricingCards';
-import { CommunityCards } from '@/components/sections/ecosystem/CommunityCards';
-import { SuccessStories } from '@/components/sections/ecosystem/SuccessStories';
-import { FinalCTA } from '@/components/sections/ecosystem/FinalCTA';
-
-export const metadata = {
-  title: 'Chris Bossio Ecosystem | Transform Your Barber Business',
-  description:
-    'Build a six-figure barbershop business with proven systems, AI-powered tools, and community support. Join 2,000+ successful barbers in the 6FB ecosystem.',
-  keywords:
-    'barber business, six figure barber, barbershop management, barber coaching, barber apps, Chris Bossio',
-  openGraph: {
-    title: 'Chris Bossio Ecosystem | Transform Your Barber Business',
-    description:
-      'Build a six-figure barbershop business with proven systems, AI-powered tools, and community support.',
-    type: 'website',
-  },
-};
+import { Header } from '@/components/layout/Header'
+import { HeroSection } from '@/components/sections/HeroSection'
+import { WorkshopOverview } from '@/components/sections/WorkshopOverview'
+import { SpeakerProfiles } from '@/components/sections/SpeakerProfiles'
+import { WorkshopAgenda } from '@/components/sections/WorkshopAgenda'
+import { PricingSection } from '@/components/sections/PricingSection'
+import { TestimonialsSection } from '@/components/sections/TestimonialsSection'
+import { FAQSection } from '@/components/sections/FAQSection'
+import { CTASection } from '@/components/sections/CTASection'
+import { Footer } from '@/components/layout/Footer'
 
 export default function Home() {
   return (
-    <main id='main-content' className='min-h-screen bg-black'>
+    <main className="min-h-screen bg-background-primary">
       <Header />
-      <EcosystemHero />
-      <BossioStandardCards />
-      <AppsGrid />
-      <PricingCards />
-      <CommunityCards />
-      <SuccessStories />
-      <FinalCTA />
+      <HeroSection />
+      <WorkshopOverview />
+      <SpeakerProfiles />
+      <WorkshopAgenda />
+      <PricingSection />
+      <TestimonialsSection />
+      <FAQSection />
+      <CTASection />
       <Footer />
     </main>
-  );
+  )
 }

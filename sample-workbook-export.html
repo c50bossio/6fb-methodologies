@@ -1,0 +1,359 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>6FB Methodologies Workshop Workbook</title>
+      <style>
+        @page {
+          size: A4;
+          margin: 0.75in;
+          background: #fafafa;
+        }
+
+        body {
+          font-family: 'Times New Roman', serif;
+          line-height: 1.4;
+          color: #2d2d2d;
+          font-size: 11pt;
+          background: #fafafa;
+          margin: 0;
+          padding: 20px;
+        }
+
+        /* Workbook Cover Style */
+        .cover-page {
+          text-align: center;
+          padding: 60px 40px;
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+          border: 3px solid #22c55e;
+          border-radius: 12px;
+          margin-bottom: 40px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          page-break-after: always;
+        }
+
+        .cover-page h1 {
+          font-size: 36pt;
+          color: #22c55e;
+          font-weight: bold;
+          margin: 0 0 20px 0;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .cover-page .subtitle {
+          font-size: 18pt;
+          color: #4a4a4a;
+          font-style: italic;
+          margin: 0 0 30px 0;
+        }
+
+        .cover-page .date {
+          font-size: 14pt;
+          color: #666;
+          background: #f8f9fa;
+          padding: 10px 20px;
+          border-radius: 6px;
+          display: inline-block;
+          margin: 20px 0;
+        }
+
+        .cover-page .user-info {
+          font-size: 12pt;
+          color: #666;
+          margin-top: 40px;
+          padding: 20px;
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+        }
+
+        /* Physical Workbook Page Style */
+        .workbook-page {
+          background: #ffffff;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 30px;
+          margin-bottom: 30px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          position: relative;
+        }
+
+        .workbook-page::before {
+          content: "";
+          position: absolute;
+          left: 40px;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background: #ff6b6b;
+        }
+
+        .section-header {
+          background: #22c55e;
+          color: white;
+          padding: 15px 20px;
+          margin: -30px -30px 30px -30px;
+          font-size: 16pt;
+          font-weight: bold;
+          border-radius: 8px 8px 0 0;
+          text-align: center;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        /* Note Style */
+        .note-entry {
+          background: #fff;
+          border: 1px solid #ddd;
+          border-left: 4px solid #22c55e;
+          border-radius: 6px;
+          padding: 15px 20px;
+          margin: 15px 0;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .note-title {
+          font-weight: bold;
+          color: #2d2d2d;
+          margin-bottom: 8px;
+          font-size: 12pt;
+        }
+
+        .note-content {
+          line-height: 1.6;
+          color: #4a4a4a;
+        }
+
+        .note-date {
+          font-size: 9pt;
+          color: #888;
+          font-style: italic;
+          margin-top: 10px;
+          text-align: right;
+        }
+
+        /* Action Items */
+        .action-item {
+          border-left-color: #f59e0b;
+          background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .action-completed {
+          border-left-color: #10b981;
+          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+
+        .action-badge {
+          display: inline-block;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 8pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+
+        .action-pending {
+          background: #fbbf24;
+          color: #92400e;
+        }
+
+        .action-done {
+          background: #10b981;
+          color: white;
+        }
+
+        /* Progress Tracking */
+        .progress-section {
+          background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+          border: 2px solid #64748b;
+          border-radius: 10px;
+          padding: 20px;
+          margin: 20px 0;
+        }
+
+        .progress-title {
+          font-size: 14pt;
+          font-weight: bold;
+          color: #1e293b;
+          margin-bottom: 15px;
+          text-align: center;
+        }
+
+        .progress-bar {
+          background: #e2e8f0;
+          height: 20px;
+          border-radius: 10px;
+          overflow: hidden;
+          margin: 10px 0;
+          border: 1px solid #cbd5e1;
+        }
+
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #22c55e, #16a085);
+          transition: width 0.3s ease;
+        }
+
+        /* Lines for writing */
+        .writing-lines {
+          background-image: repeating-linear-gradient(
+            transparent,
+            transparent 24px,
+            #e2e8f0 24px,
+            #e2e8f0 25px
+          );
+          min-height: 150px;
+          padding: 25px 0;
+          margin: 20px 0;
+        }
+
+        .page-break {
+          page-break-before: always;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- Cover Page -->
+      <div class="cover-page">
+        <h1>6FB Methodologies</h1>
+        <div class="subtitle">Workshop Workbook</div>
+        <div class="date">Friday, September 26, 2025</div>
+        <div class="user-info">
+          <strong>Participant:</strong> sample-user<br>
+          <strong>Workshop Location:</strong> In-Person Intensive<br>
+          <strong>Coaches:</strong> Dre, Nate & Bossio
+        </div>
+      </div>
+
+      
+        <div class="workbook-page">
+          <div class="section-header">Workshop Progress Summary</div>
+          <div class="progress-section">
+            <div class="progress-title">Your Learning Journey</div>
+            
+              <div style="margin: 15px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span style="font-weight: bold;">Foundation & Mindset</span>
+                  <span style="color: #22c55e; font-weight: bold;">85% Complete</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 85%;"></div>
+                </div>
+              </div>
+            
+              <div style="margin: 15px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span style="font-weight: bold;">Business Systems</span>
+                  <span style="color: #22c55e; font-weight: bold;">60% Complete</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 60%;"></div>
+                </div>
+              </div>
+            
+              <div style="margin: 15px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span style="font-weight: bold;">Marketing & Branding</span>
+                  <span style="color: #22c55e; font-weight: bold;">40% Complete</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 40%;"></div>
+                </div>
+              </div>
+            
+          </div>
+        </div>
+      
+
+      
+        <div class="workbook-page">
+          <div class="section-header">Workshop Notes & Action Items</div>
+          
+            <div class="note-entry action-item">
+              
+                <div class="action-badge action-pending">
+                  ⏳ Action Item
+                </div>
+              
+              <div class="note-title">Key Insight on Pricing Strategy</div>
+              <div class="note-content">Premium pricing reflects premium service. Don't compete on price - compete on value and experience.</div>
+              <div class="note-date">Fri, Sep 26, 2025</div>
+            </div>
+          
+            <div class="note-entry ">
+              
+              <div class="note-title">Client Retention Strategy</div>
+              <div class="note-content">Focus on building relationships, not just cutting hair. Each client should feel like VIP treatment.</div>
+              <div class="note-date">Fri, Sep 26, 2025</div>
+            </div>
+          
+            <div class="note-entry action-completed">
+              
+                <div class="action-badge action-done">
+                  ✓ Completed
+                </div>
+              
+              <div class="note-title">Action Item: Implement Booking System</div>
+              <div class="note-content">Research and implement online booking system within 2 weeks. Compare options: Booksy, Schedulicity, custom solution.</div>
+              <div class="note-date">Fri, Sep 26, 2025</div>
+            </div>
+          
+        </div>
+      
+
+      <!-- Action Plan Pages -->
+      <div class="workbook-page page-break">
+        <div class="section-header">My Action Plan</div>
+        <div style="margin: 20px 0;">
+          <h3>📝 Key Takeaways from This Workshop</h3>
+          <div class="writing-lines" style="min-height: 200px;"></div>
+        </div>
+
+        <div style="margin: 20px 0;">
+          <h3>🎯 Top 3 Action Items to Implement</h3>
+          <div style="margin: 15px 0; padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <strong>1. Priority Action:</strong>
+            <div class="writing-lines" style="min-height: 60px; margin-top: 10px;"></div>
+          </div>
+          <div style="margin: 15px 0; padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <strong>2. Secondary Action:</strong>
+            <div class="writing-lines" style="min-height: 60px; margin-top: 10px;"></div>
+          </div>
+          <div style="margin: 15px 0; padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <strong>3. Long-term Goal:</strong>
+            <div class="writing-lines" style="min-height: 60px; margin-top: 10px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Page -->
+      <div class="workbook-page page-break">
+        <div class="section-header">Workshop Completion Certificate</div>
+        <div style="text-align: center; padding: 40px 20px;">
+          <div style="font-size: 24pt; color: #22c55e; margin: 20px 0;">🎉 Congratulations! 🎉</div>
+          <div style="font-size: 16pt; margin: 20px 0;">You have successfully completed the</div>
+          <div style="font-size: 20pt; font-weight: bold; color: #22c55e; margin: 20px 0;">6FB Methodologies Workshop</div>
+          <div style="font-size: 14pt; margin: 30px 0;">This workbook contains your personal journey through the workshop</div>
+
+          <div style="margin: 40px 0; padding: 20px; border: 2px solid #22c55e; border-radius: 10px; background: #f0fdf4;">
+            <div style="font-size: 12pt; color: #166534;">
+              <strong>What's Next?</strong><br>
+              • Implement your action plan<br>
+              • Join our community for ongoing support<br>
+              • Schedule your 90-day check-in<br>
+              • Visit 6fbmethodologies.com for resources
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; font-size: 9pt; color: #888; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+          <p><strong>6FB Methodologies Workshop System</strong></p>
+          <p>Generated on Friday, September 26, 2025</p>
+          <p>Visit <strong>6fbmethodologies.com</strong> for continued learning and support</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  

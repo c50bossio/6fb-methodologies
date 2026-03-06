@@ -240,7 +240,7 @@ export class CustomerService {
 
       return {
         customers: customersResult.rows as Customer[],
-        total: parseInt(countResult.rows[0].count),
+        total: parseInt(countResult.rows[0].count, 10),
       };
     } finally {
       client.release();
@@ -474,16 +474,16 @@ export class CustomerService {
 
       const ticketsSold = { ga: 0, vip: 0 };
       ticketsResult.rows.forEach((row: { tier: 'ga' | 'vip'; count: string }) => {
-        ticketsSold[row.tier as 'ga' | 'vip'] = parseInt(row.count);
+        ticketsSold[row.tier as 'ga' | 'vip'] = parseInt(row.count, 10);
       });
 
       return {
-        totalCustomers: parseInt(totalsResult.rows[0].total_customers),
+        totalCustomers: parseInt(totalsResult.rows[0].total_customers, 10),
         totalRevenue: parseFloat(totalsResult.rows[0].total_revenue),
         ticketsSold,
         topCities: citiesResult.rows.map((row: { city_id: string; customer_count: string; revenue: string }) => ({
           cityId: row.city_id,
-          customerCount: parseInt(row.customer_count),
+          customerCount: parseInt(row.customer_count, 10),
           revenue: parseFloat(row.revenue),
         })),
       };
@@ -652,7 +652,7 @@ export class CustomerService {
 
       return {
         purchases,
-        total: parseInt(countResult.rows[0].count),
+        total: parseInt(countResult.rows[0].count, 10),
       };
     } finally {
       client.release();

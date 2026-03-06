@@ -143,7 +143,7 @@ export const audioQualityConfigs: Record<AudioQuality, MediaTrackConstraints> =
 export const defaultRecordingConfig: AudioRecordingConfig = {
   quality: 'standard',
   enableVoiceActivityDetection: true,
-  chunkDuration: 30,
+  chunkDuration: 1, // 1 second chunks for better data collection
   enableNoiseSupression: true,
   enableEchoCancellation: true,
   enableAutoGainControl: true,
@@ -349,8 +349,8 @@ export class AudioRecorder {
         this.handleRecordingError(event);
       };
 
-      // Start recording with chunked intervals
-      this.mediaRecorder.start();
+      // Start recording with chunked intervals using timeslice for automatic data collection
+      this.mediaRecorder.start(this.config.chunkDuration * 1000);
       this.setupChunkTimer();
       this.setupVoiceActivityDetection();
 
@@ -421,6 +421,8 @@ export class AudioRecorder {
       this.setState('processing');
 
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        // Request any remaining data before stopping
+        this.mediaRecorder.requestData();
         this.mediaRecorder.stop();
       }
 
@@ -550,25 +552,30 @@ export class AudioRecorder {
     userId: string,
     recording: AudioRecording
   ): Promise<string> {
-    const sessionInfo = recording.metadata.sessionInfo!;
+    const sessionInfo = recording.metadata.sessionInfo;
     const duration = Math.round(recording.totalDuration / 60); // minutes
 
+    // Provide defaults when sessionInfo is missing or incomplete
+    const sessionName = sessionInfo?.session || 'Unknown Session';
+    const sessionDay = sessionInfo?.day || 1;
+    const sessionSpeaker = sessionInfo?.speaker;
+
     const noteId = saveNote(userId, {
-      title: `Audio Recording - ${sessionInfo.session}`,
-      content: `Audio recording from ${sessionInfo.session} session (${duration} minutes).\n\nRecorded on ${recording.startTime.toLocaleDateString()} at ${recording.startTime.toLocaleTimeString()}.`,
+      title: `Audio Recording - ${sessionName}`,
+      content: `Audio recording from ${sessionName} session (${duration} minutes).\n\nRecorded on ${recording.startTime.toLocaleDateString()} at ${recording.startTime.toLocaleTimeString()}.`,
       category: 'session-note',
-      speaker: sessionInfo.speaker as
+      speaker: sessionSpeaker as
         | 'Dre'
         | 'Nate'
         | 'Bossio'
         | 'Attendee'
         | undefined,
-      day: sessionInfo.day,
-      session: sessionInfo.session,
+      day: sessionDay,
+      session: sessionName,
       tags: [
         'audio',
         'recording',
-        sessionInfo.session.toLowerCase().replace(/\s+/g, '-'),
+        sessionName.toLowerCase().replace(/\s+/g, '-'),
       ],
       isPrivate: true,
     });

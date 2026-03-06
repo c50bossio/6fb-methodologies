@@ -109,7 +109,7 @@ class DatabaseConnection {
   private initializePool() {
     const config: DatabaseConfig = {
       host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
+      port: parseInt(process.env.DB_PORT || '5432', 10),
       database: process.env.DB_NAME || 'postgres',
       user: process.env.DB_USER || 'app_user',
       password:
@@ -118,18 +118,20 @@ class DatabaseConnection {
         process.env.NODE_ENV === 'production'
           ? { rejectUnauthorized: false }
           : false,
-      max: parseInt(process.env.DB_POOL_MAX || '20'),
-      min: parseInt(process.env.DB_POOL_MIN || '2'),
-      idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'),
+      max: parseInt(process.env.DB_POOL_MAX || '20', 10),
+      min: parseInt(process.env.DB_POOL_MIN || '2', 10),
+      idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10),
       connectionTimeoutMillis: parseInt(
-        process.env.DB_CONNECTION_TIMEOUT || '5000'
+        process.env.DB_CONNECTION_TIMEOUT || '5000',
+        10
       ),
-      acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '60000'),
-      createTimeoutMillis: parseInt(process.env.DB_CREATE_TIMEOUT || '30000'),
-      destroyTimeoutMillis: parseInt(process.env.DB_DESTROY_TIMEOUT || '5000'),
-      reapIntervalMillis: parseInt(process.env.DB_REAP_INTERVAL || '1000'),
+      acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '60000', 10),
+      createTimeoutMillis: parseInt(process.env.DB_CREATE_TIMEOUT || '30000', 10),
+      destroyTimeoutMillis: parseInt(process.env.DB_DESTROY_TIMEOUT || '5000', 10),
+      reapIntervalMillis: parseInt(process.env.DB_REAP_INTERVAL || '1000', 10),
       createRetryIntervalMillis: parseInt(
-        process.env.DB_CREATE_RETRY_INTERVAL || '200'
+        process.env.DB_CREATE_RETRY_INTERVAL || '200',
+        10
       ),
       propagateCreateError: false,
     };

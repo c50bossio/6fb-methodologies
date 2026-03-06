@@ -1,0 +1,50 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - img [ref=e11]
+          - generic [ref=e14]:
+            - paragraph [ref=e15]: Welcome back,
+            - paragraph [ref=e16]: Workshop User
+        - button "Logout" [ref=e17] [cursor=pointer]:
+          - img [ref=e18] [cursor=pointer]
+          - text: Logout
+      - generic [ref=e21]:
+        - img [ref=e22]
+        - heading "6FB Workshop Workbook" [level=1] [ref=e25]
+        - paragraph [ref=e26]: Interactive workshop exercises and audio tools
+      - tablist "Workbook sections" [ref=e27]:
+        - tab "Overview" [ref=e28] [cursor=pointer]:
+          - img [ref=e29] [cursor=pointer]
+          - generic [ref=e32] [cursor=pointer]: Overview
+        - tab "Workshop" [active] [selected] [ref=e33] [cursor=pointer]:
+          - img [ref=e34] [cursor=pointer]
+          - generic [ref=e37] [cursor=pointer]: Workshop
+        - tab "Voice Recorder" [ref=e38] [cursor=pointer]:
+          - img [ref=e39] [cursor=pointer]
+          - generic [ref=e42] [cursor=pointer]: Voice Recorder
+        - tab "File Upload" [ref=e43] [cursor=pointer]:
+          - img [ref=e44] [cursor=pointer]
+          - generic [ref=e47] [cursor=pointer]: File Upload
+        - tab "Notes (0)" [ref=e48] [cursor=pointer]:
+          - img [ref=e49] [cursor=pointer]
+          - generic [ref=e52] [cursor=pointer]: Notes (0)
+    - main [ref=e53]:
+      - tabpanel [ref=e54]:
+        - generic [ref=e55]:
+          - heading "6FB Workshop Modules" [level=2] [ref=e56]
+          - paragraph [ref=e57]: Complete the Six Figure Barber methodology workshop at your own pace. Your progress is automatically saved.
+        - generic [ref=e60]:
+          - heading "Loading Workshop Content" [level=3] [ref=e62]
+          - paragraph [ref=e63]: Fetching your personalized workshop modules and progress...
+  - alert [ref=e64]
+  - generic [ref=e67] [cursor=pointer]:
+    - img [ref=e68] [cursor=pointer]
+    - generic [ref=e70] [cursor=pointer]: 1 error
+    - button "Hide Errors" [ref=e71] [cursor=pointer]:
+      - img [ref=e72] [cursor=pointer]
+```

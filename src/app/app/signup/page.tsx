@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createAccount } from '@/lib/command-center-api';
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -107,27 +107,142 @@ export default function SignupPage() {
     const storedEmail = sessionStorage.getItem('6fb-app-signup-email');
     if (!storedEmail) {
       return (
-        <div className="min-h-screen bg-background-primary flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <CardContent className="pt-6 text-center">
-              <h2 className="text-xl font-semibold text-text-primary mb-4">
-                Session Expired
-              </h2>
-              <p className="text-text-secondary mb-6">
-                Please start the signup process again.
-              </p>
-              <Link href="/app">
-                <Button variant="primary" size="lg" className="w-full">
-                  Start Over
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="max-w-md w-full mx-auto">
+          <CardContent className="pt-6 text-center">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">
+              Session Expired
+            </h2>
+            <p className="text-text-secondary mb-6">
+              Please start the signup process again.
+            </p>
+            <Link href="/app">
+              <Button variant="primary" size="lg" className="w-full">
+                Start Over
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       );
     }
   }
 
+  return (
+    <Card>
+      <CardHeader className="text-center">
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-tomb45-green/10 flex items-center justify-center">
+          <UserPlus className="w-8 h-8 text-tomb45-green" />
+        </div>
+        <CardTitle>Create Your Account</CardTitle>
+        <CardDescription>
+          {signupType === 'skool_member'
+            ? 'Set up your 6FB Command Center account.'
+            : 'Complete your registration to access the app.'}
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        <form onSubmit={handleSignup} className="space-y-4">
+          <Input
+            label="Email Address"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            disabled={true} // Email is pre-filled from verification
+            helperText="Email verified from previous step"
+          />
+
+          <Input
+            label="Full Name"
+            type="text"
+            placeholder="John Doe"
+            value={name}
+            onChange={setName}
+            required
+            disabled={isLoading}
+          />
+
+          <div className="relative">
+            <Input
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="At least 8 characters"
+              value={password}
+              onChange={setPassword}
+              required
+              disabled={isLoading}
+              validate={validatePassword}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-9 text-text-muted hover:text-text-primary"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+
+          <Input
+            label="Confirm Password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            required
+            disabled={isLoading}
+          />
+
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={isLoading || !email || !name || !password || !confirmPassword}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Creating Account...
+              </>
+            ) : (
+              'Create Account'
+            )}
+          </Button>
+        </form>
+
+        <p className="mt-6 text-xs text-text-muted text-center">
+          By creating an account, you agree to our{' '}
+          <a href="https://6fbmethodologies.com/terms" className="text-tomb45-green hover:underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="https://6fbmethodologies.com/privacy" className="text-tomb45-green hover:underline">
+            Privacy Policy
+          </a>
+          .
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SignupLoading() {
+  return (
+    <Card className="max-w-md w-full mx-auto">
+      <CardContent className="pt-6 text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-tomb45-green" />
+        <p className="mt-4 text-text-secondary">Loading...</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function SignupPage() {
   return (
     <div className="min-h-screen bg-background-primary">
       {/* Header */}
@@ -150,107 +265,9 @@ export default function SignupPage() {
 
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 py-12">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-tomb45-green/10 flex items-center justify-center">
-              <UserPlus className="w-8 h-8 text-tomb45-green" />
-            </div>
-            <CardTitle>Create Your Account</CardTitle>
-            <CardDescription>
-              {signupType === 'skool_member'
-                ? 'Set up your 6FB Command Center account.'
-                : 'Complete your registration to access the app.'}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <form onSubmit={handleSignup} className="space-y-4">
-              <Input
-                label="Email Address"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                disabled={true} // Email is pre-filled from verification
-                helperText="Email verified from previous step"
-              />
-
-              <Input
-                label="Full Name"
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={setName}
-                required
-                disabled={isLoading}
-              />
-
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="At least 8 characters"
-                  value={password}
-                  onChange={setPassword}
-                  required
-                  disabled={isLoading}
-                  validate={validatePassword}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-text-muted hover:text-text-primary"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-
-              <Input
-                label="Confirm Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Re-enter your password"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                required
-                disabled={isLoading}
-              />
-
-              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full"
-                disabled={isLoading || !email || !name || !password || !confirmPassword}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  'Create Account'
-                )}
-              </Button>
-            </form>
-
-            <p className="mt-6 text-xs text-text-muted text-center">
-              By creating an account, you agree to our{' '}
-              <a href="https://6fbmethodologies.com/terms" className="text-tomb45-green hover:underline">
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="https://6fbmethodologies.com/privacy" className="text-tomb45-green hover:underline">
-                Privacy Policy
-              </a>
-              .
-            </p>
-          </CardContent>
-        </Card>
+        <Suspense fallback={<SignupLoading />}>
+          <SignupForm />
+        </Suspense>
       </main>
     </div>
   );

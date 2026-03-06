@@ -11,6 +11,24 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -538,7 +556,7 @@ export const BaseContentBlockSchema = z.object({
   required: z.boolean(),
   title: z.string().optional(),
   description: z.string().optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
 });
 
 export const TextContentBlockSchema = BaseContentBlockSchema.extend({
@@ -622,7 +640,7 @@ export const QuizQuestionSchema = z.object({
       correctAnswer: z.union([z.string(), z.number()]).optional(),
     })
     .optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
 });
 
 export const AssessmentSchema = z.object({
@@ -637,7 +655,7 @@ export const AssessmentSchema = z.object({
   showCorrectAnswers: z.boolean(),
   allowReview: z.boolean(),
   questions: z.array(QuizQuestionSchema),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
 });
 
 // Prerequisites and objectives schemas
@@ -710,7 +728,7 @@ export const WorkshopLessonSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']),
   publishedAt: TimestampSchema.optional(),
   lastModifiedBy: UUIDSchema,
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });
@@ -814,7 +832,7 @@ export const WorkshopModuleSchema = z.object({
       })
     )
     .optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });

@@ -477,19 +477,19 @@ export class StorageDatabaseService {
       const sizeByType: Record<string, number> = {};
 
       typeBreakdownResult.rows.forEach(row => {
-        filesByType[row.mime_type] = parseInt(row.file_count);
-        sizeByType[row.mime_type] = parseInt(row.total_size);
+        filesByType[row.mime_type] = parseInt(row.file_count, 10);
+        sizeByType[row.mime_type] = parseInt(row.total_size, 10);
       });
 
       const uploadsByDay = uploadsResult.rows.map(row => ({
         date: row.upload_date,
-        count: parseInt(row.upload_count),
-        size: parseInt(row.upload_size),
+        count: parseInt(row.upload_count, 10),
+        size: parseInt(row.upload_size, 10),
       }));
 
       return {
-        totalFiles: parseInt(totalsResult.rows[0].total_files),
-        totalSize: parseInt(totalsResult.rows[0].total_size),
+        totalFiles: parseInt(totalsResult.rows[0].total_files, 10),
+        totalSize: parseInt(totalsResult.rows[0].total_size, 10),
         filesByType,
         sizeByType,
         uploadsByDay,

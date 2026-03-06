@@ -1,0 +1,25 @@
+HTTP/1.1 200 OK
+x-frame-options: DENY
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.stripe.com"), accelerometer=(), autoplay=(), encrypted-media=(), fullscreen=(), gyroscope=(), magnetometer=(), midi=(), sync-xhr=(), usb=(), web-share=()
+cache-control: no-store, max-age=0
+cache-control: no-store, private, no-cache, must-revalidate
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.openai.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.openai.com https://api.stripe.com; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';
+cross-origin-embedder-policy: unsafe-none
+cross-origin-opener-policy: same-origin-allow-popups
+cross-origin-resource-policy: cross-origin
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+x-xss-protection: 1; mode=block
+vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch
+content-type: application/json
+set-cookie: workbook-token=eyJ1c2VySWQiOiJ1c2VyXzE3NTg2NTk4NjAwMTUiLCJlbWFpbCI6InRlc3RANmZibWV0aG9kb2xvZ2llcy5jb20iLCJuYW1lIjoiV29ya3Nob3AgUGFydGljaXBhbnQiLCJyb2xlIjoiYmFzaWMiLCJwZXJtaXNzaW9ucyI6WyJ2aWV3X2NvbnRlbnQiLCJzYXZlX3Byb2dyZXNzIl0sImlhdCI6MTc1ODY1OTg2MCwiZXhwIjoxNzU4NzQ2MjYwLCJpc3MiOiI2ZmItbWV0aG9kb2xvZ2llcyIsImF1ZCI6Indvcmtib29rLXVzZXJzIn0%3D; Path=/; Expires=Wed, 24 Sep 2025 20:37:40 GMT; Max-Age=86400; HttpOnly; SameSite=lax
+set-cookie: workbook-refresh=eyJ1c2VySWQiOiJ1c2VyXzE3NTg2NTk4NjAwMTUiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc1ODY1OTg2MCwiZXhwIjoxNzU5MjY0NjYwLCJpc3MiOiI2ZmItbWV0aG9kb2xvZ2llcyJ9; Path=/; Expires=Tue, 30 Sep 2025 20:37:40 GMT; Max-Age=604800; HttpOnly; SameSite=lax
+Date: Tue, 23 Sep 2025 20:37:40 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

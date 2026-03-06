@@ -28,7 +28,7 @@ app.prepare().then(() => {
     cors: {
       origin: process.env.NODE_ENV === 'production'
         ? ['https://6fbmethodologies.com', 'https://www.6fbmethodologies.com']
-        : ['http://localhost:3000'],
+        : ['http://localhost:3000', 'http://localhost:3001'],
       methods: ['GET', 'POST'],
       credentials: true,
     },

@@ -11,6 +11,30 @@
 import { z } from 'zod';
 
 // =============================================================================
+// BOUNDED METADATA SCHEMA (Security: Replaces z.any())
+// =============================================================================
+
+// Bounded primitive value - prevents arbitrary nested objects
+const BoundedPrimitiveSchema = z.union([
+  z.string().max(10000),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+// Bounded metadata schema - replaces z.record(z.any()) for security
+const BoundedMetadataSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+);
+
+// Bounded optional metadata schema
+const BoundedMetadataOptionalSchema = z.record(
+  z.string().max(100),
+  BoundedPrimitiveSchema
+).optional();
+
+// =============================================================================
 // Base Types and Enums
 // =============================================================================
 
@@ -646,7 +670,7 @@ export const UploadSessionSchema = z.object({
   startedAt: TimestampSchema,
   completedAt: TimestampSchema.optional(),
   lastProgressAt: TimestampSchema.optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
 });
 
 // Main audio recording schema
@@ -695,14 +719,14 @@ export const AudioRecordingSchema = z.object({
   version: z.number().min(1),
   parentRecordingId: UUIDSchema.optional(),
   qualityScore: z.number().min(0).max(100).optional(),
-  analysisData: z.record(z.any()).optional(),
+  analysisData: BoundedMetadataOptionalSchema,
   recordedAt: TimestampSchema,
   uploadedAt: TimestampSchema.optional(),
   processedAt: TimestampSchema.optional(),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   deletedAt: TimestampSchema.optional(),
-  metadata: z.record(z.any()),
+  metadata: BoundedMetadataSchema,
 });
 
 // Processing job schema
@@ -745,7 +769,7 @@ export const AudioProcessingJobSchema = z.object({
           })
         )
         .optional(),
-      analysis: z.record(z.any()).optional(),
+      analysis: BoundedMetadataOptionalSchema,
       transcription: z
         .object({
           id: UUIDSchema,
@@ -767,7 +791,7 @@ export const AudioProcessingJobSchema = z.object({
     .object({
       code: z.string(),
       message: z.string(),
-      details: z.record(z.any()).optional(),
+      details: BoundedMetadataOptionalSchema,
       retryable: z.boolean(),
     })
     .optional(),

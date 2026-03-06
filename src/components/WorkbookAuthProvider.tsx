@@ -54,7 +54,7 @@ export function WorkbookAuthProvider({ children }: WorkbookAuthProviderProps) {
 
   // Verify current authentication status with proper debouncing and rate limiting
   const verifyAuthentication = useCallback(async () => {
-    // Rate limiting: Don't verify more than once every 2 seconds, but allow initial loads
+    // Rate limiting: Don't verify more than once every 5 seconds, but allow initial loads
     const now = Date.now();
     const timeSinceLastVerification = now - lastVerificationTime.current;
     const isInitialLoad = lastVerificationTime.current === 0;
@@ -65,7 +65,7 @@ export function WorkbookAuthProvider({ children }: WorkbookAuthProviderProps) {
       isLoading,
     });
 
-    if (!isInitialLoad && timeSinceLastVerification < 2000) {
+    if (!isInitialLoad && timeSinceLastVerification < 5000) {
       console.log(
         '⏱️ Auth verification rate limited - ensuring isLoading is false'
       );
@@ -101,11 +101,18 @@ export function WorkbookAuthProvider({ children }: WorkbookAuthProviderProps) {
             `✅ Auth verification successful for: ${data.user?.email}`
           );
         } else if (response.status === 401) {
-          // 401 is expected when not authenticated - don't log as error
+          // 401 is expected when not authenticated - handle gracefully
+          try {
+            const errorData = await response.json();
+            if (errorData.message?.includes('Legacy authentication token')) {
+              console.log('🧹 Legacy token detected - will clear on next login');
+            } else {
+              console.log('ℹ️ Auth verification: Not authenticated (401 - expected)');
+            }
+          } catch {
+            console.log('ℹ️ Auth verification: Not authenticated (401 - expected)');
+          }
           setSession(null);
-          console.log(
-            'ℹ️ Auth verification: Not authenticated (401 - expected)'
-          );
         } else {
           // Other errors should be logged
           console.warn(
