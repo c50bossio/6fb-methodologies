@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Package, Users, Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -86,8 +87,15 @@ export default function PricingPage() {
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-900">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
-          <Link href="/" className="text-xl sm:text-2xl font-bold text-white hover:opacity-90 transition-opacity">
-            <span className="text-green-500">6FB</span> Methodologies
+          <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
+            <Image
+              src="/images/6fb-logo.png"
+              alt="6FB Logo"
+              width={120}
+              height={60}
+              className="h-10 sm:h-12 w-auto"
+              priority
+            />
           </Link>
         </div>
       </header>
