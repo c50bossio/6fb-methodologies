@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { CityWorkshop } from '@/types'
-import { getTotalAvailableSpots } from '@/lib/cities'
+import { getTotalAvailableSpotsSync } from '@/lib/cities'
 
 interface CityCardProps {
   city: CityWorkshop
@@ -35,8 +35,8 @@ export function CityCard({ city, index, className }: CityCardProps) {
 
   // Memoize expensive calculations
   const availability = useMemo(() => {
-    const ga = getTotalAvailableSpots(city.id, 'ga')
-    const vip = getTotalAvailableSpots(city.id, 'vip')
+    const ga = getTotalAvailableSpotsSync(city.id, 'ga')
+    const vip = getTotalAvailableSpotsSync(city.id, 'vip')
     const total = ga + vip
     const isBooked = ga === 0 && vip === 0
 

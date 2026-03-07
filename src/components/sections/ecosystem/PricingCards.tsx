@@ -74,7 +74,7 @@ function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
               'w-full',
               tier.variant === 'featured' && 'shadow-green-glow'
             )}
-            variant={tier.variant === 'featured' ? 'default' : 'outline'}
+            variant={tier.variant === 'featured' ? 'primary' : 'outline'}
           >
             {tier.ctaText}
           </Button>
